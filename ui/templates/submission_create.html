@@ -1,0 +1,47 @@
+{% extends "layout/submission_base.html" %}
+{% block submission_content %}
+<div class="section">
+  <div class="section__header">
+    <h1 class="section__title">Submit New Brain</h1>
+  </div>
+  <div class="section__body typo">
+    <blockquote class="warn">
+      <ul>
+        <li class="text-red">Do not copy others' source code. We will run plagiarism detection programs to compare your source code. Copycats will fail this project!</li>
+        <li>Do not share your source code with others. Similar submissions will be treated as plagiarism.</li>
+        <li>Do not use alternative account to submit your code, otherwise yourself will be recognized as a copycat.</li>
+        <li>Do not submit C++ source code. Only C language is supported.</li>
+        <li>Do not abuse our cloud execution service, for example, intentionally trying to shutdown our judge machine.</li>
+      </ul>
+    </blockquote>
+    <blockquote class="note">
+      <ul>
+        <li>We recommended you to use <a href="https://sourceforge.net/projects/orwelldevcpp/" target="_blank">Dev-C++</a> instead of Visual Studio.</li>
+        <li>You can only submit your code once every {{ DI('models.Submission.LIMIT_MIN_INTERVAL')|duration }}.</li>
+        <li>However if we cannot compile your code, you will get another chance to submit your code.</li>
+        <li>Your code should not larger than {{ DI('models.Submission.LIMIT_SIZE_CODE')|filesize }}.</li>
+        <li>The executable file after compilation should not larger than {{ DI('models.Submission.LIMIT_SIZE_EXECUTABLE')|filesize }}.</li>
+      </ul>
+    </blockquote>
+  {% if not canSubmit %}
+    <p>Sorry, you cannot submit code currently due to the submission frequency limitation. Please try again later.</p>
+  {% else %}
+    <p>Please paste your C source code of your brain in the text box below. Your code will be automatically compiled and judged by our system.</p>
+    <form method="post">
+      <div class="row">
+        <div class="columns">
+          <label>C Source Code:</label>
+          <textarea name="code" class="monospace textbox" autofocus required></textarea>
+        </div>
+      </div>
+      <div class="row">
+        <div class="columns">
+          <input type="hidden" name="_csrf" value="{{ ui_context.csrf_token }}">
+          <button class="primary rounded button" type="submit">Submit Code</button>
+        </div>
+      </div>
+    </form>
+  {% endif %}
+  </div>
+</div>
+{% endblock %}

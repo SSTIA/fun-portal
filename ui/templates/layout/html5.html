@@ -1,0 +1,32 @@
+{#{% import "components/form.html" as form with context %}
+{% import "components/sidemenu.html" as sidemenu with context %}
+{% import "components/paginator.html" as paginator with context %}#}
+<!DOCTYPE html>
+<html data-page="{{ page_name }}" data-layout="{{ layout_name }}" class="layout--{{ layout_name }} page--{{ page_name }} nojs">
+<head>
+  <meta charset="UTF-8">
+  <meta http-equiv="Content-Type" content="text/html; charset=UTF-8"/>
+  <meta http-equiv="X-UA-Compatible" content="chrome=1"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1" />
+
+  <link rel="apple-touch-icon" sizes="120x120" href="{{ static_url('/apple-icon-120x120.png') }}">
+  <link rel="icon" type="image/png" sizes="192x192"  href="{{ static_url('/android-icon-192x192.png') }}">
+  <link rel="icon" type="image/png" sizes="32x32" href="{{ static_url('/favicon-32x32.png') }}">
+  <link rel="icon" type="image/png" sizes="16x16" href="{{ static_url('/favicon-16x16.png') }}">
+  <meta name="theme-color" content="#579e9a">
+
+  <link rel="stylesheet" media="all" href="{{ static_url('/vendors.css') }}">
+  <link rel="stylesheet" media="all" href="{{ static_url('/main.css') }}">
+  <title>{{ page_title }} - GomokuFun</title>
+  <script>
+    var _htmlNode = document.documentElement;
+    _htmlNode.className = _htmlNode.className.replace(' nojs', ' hasjs');
+    var UiContext = {{ ui_context|json|safe }};
+  </script>
+</head>
+<body>
+  {% block body %}{% endblock %}
+  <script type="text/javascript" src="{{ static_url('/vendors.js') }}"></script>
+  <script type="text/javascript" src="{{ static_url('/main.js') }}"></script>
+</body>
+</html>

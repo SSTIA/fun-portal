@@ -1,0 +1,44 @@
+{% extends "layout/submission_base.html" %}
+{% block submission_content %}
+<div class="section">
+  <div class="section__header">
+    <h1 class="section__title">My Submissions</h1>
+  </div>
+{% if sdocs|length === 0 %}
+  <div class="section__body typo">
+    <blockquote class="note">
+      <p>You have not submited any code. <a href="{{ url('/submission/create') }}">Click here</a> to submit your code!</p>
+    </blockquote>
+  </div>
+{% else %}
+  <div class="section__body no-padding">
+    <table class="data-table">
+      <colgroup>
+        <col class="status">
+        <col class="time">
+        <col class="action">
+      </colgroup>
+      <thead>
+        <tr>
+          <th class="status">Status</th>
+          <th class="time">Submit At</th>
+          <th class="action">Actions</th>
+        </tr>
+      </thead>
+      <tbody>
+      {% for sdoc in sdocs %}
+        <tr>
+          <td class="status">{{ DI('models.Submission.STATUS_TEXT')[sdoc.status] }}</td>
+          <td class="time">{{ sdoc.createdAt|datetime }}</td>
+          <td class="action">
+            <a href="{{ url('/submission/{0}', false, [sdoc._id]) }}" class="typo-a">Detail</a> ·
+            <a href="{{ url('/submission/{0}/match', false, [sdoc._id]) }}" class="typo-a">Matches</a>
+          </td>
+        </tr>
+      {% endfor %}
+      </tbody>
+    </table>
+  </div>
+{% endif %}
+</div>
+{% endblock %}

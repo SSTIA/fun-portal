@@ -1,0 +1,67 @@
+$nav-item-height = 50px
+$nav-button-height = 35px
+
+.nav
+  background: #FFF
+  box-shadow: 0 0 20px rgba(#000, 0.1)
+
+.nav__logo
+  &, &:visited, &:hover
+    color: oc-teal-5
+    text-decoration: none
+    padding: rem(0 10px)
+
+.nav__item
+  display: inline-block
+  line-height: rem($nav-item-height)
+  padding: rem(0 10px)
+  font-size: rem($font-size-secondary)
+  position: relative
+  transition: color .3s ease-out-cubic
+
+  &:after
+    display: block
+    margin: 0 auto
+    margin-top: rem(-3px)
+    width: 0
+    height: rem(3px)
+    background: transparent
+    content: ''
+    transition: background-color .3s, width .3s
+    transition-timing-function: ease-out-cubic
+
+  &, &:visited, &:active
+    color: oc-gray-5
+
+  &:hover
+    color: oc-gray-8
+    text-decoration: none
+
+    &:after
+      background-color: oc-cyan-2
+      width: 100%
+
+  &.active
+    color: oc-gray-9
+
+    &:after
+      background-color: oc-pink-4
+      width: 100%
+
+.nav__button
+  display: inline-block
+  line-height: rem($nav-button-height)
+  padding: rem(0 30px)
+  background: oc-blue-3
+  border-radius: rem(($nav-button-height / 2))
+  font-size: rem($font-size-secondary)
+  transition: background-color .3s linear
+
+  &, &:visited, &:hover
+    color: #FFF
+    text-decoration: none
+
+  &:hover
+    background-color: oc-blue-5
+
+

@@ -1,0 +1,50 @@
+{% extends "layout/user_base.html" %}
+{% block user_content %}
+<div class="section">
+  <div class="section__header">
+    <h1 class="section__title">My Profile</h1>
+  </div>
+  <div class="section__body"><form method="post">
+  {% if udoc.profile.initial %}
+    <div class="typo">
+      <blockquote class="note">
+        You are required to fill in your personal information before continuing.
+      </blockquote>
+    </div>
+  {% endif %}
+    <div class="row">
+      <div class="medium-5 columns">
+        <label>Student ID</label>
+        <input type="text" name="studentId" class="textbox" readonly value="{{ udoc.profile.studentId }}">
+      </div>
+    </div>
+    <div class="row">
+      <div class="medium-5 columns">
+        <label>Real Name (required)</label>
+        <input type="text" name="realName" class="textbox" autofocus value="{{ udoc.profile.realName }}" required>
+        <p class="help-text">Your real name is only visible to TAs. Others will not know who you are.</p>
+      </div>
+    </div>
+    <div class="row">
+      <div class="medium-5 columns">
+        <label>Display Name (required)</label>
+        <input type="text" name="displayName" class="textbox" value="{{ udoc.profile.displayName }}" required>
+        <p class="help-text">Will be displayed <span class="text-red">publicly</span> in scoreboard.</p>
+      </div>
+    </div>
+    <div class="row">
+      <div class="medium-5 columns">
+        <label>Teacher Full Name in Chinese (required)</label>
+        <input type="text" name="teacher" class="textbox" value="{{ udoc.profile.teacher }}" required>
+        <p class="help-text">Please tell us your teacher name so that we can identify different classes.</p>
+      </div>
+    </div>
+    <div class="row">
+      <div class="medium-5 columns">
+        <input type="hidden" name="_csrf" value="{{ ui_context.csrf_token }}">
+        <button class="primary rounded button" type="submit">Save</button>
+      </div>
+    </div>
+  </form></div>
+</div>
+{% endblock %}

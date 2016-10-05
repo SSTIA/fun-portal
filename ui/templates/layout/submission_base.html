@@ -1,0 +1,33 @@
+{% extends "layout/basic.html" %}
+{% block content %}
+<div class="row" data-sticky-parent>
+  <div class="medium-9 columns">
+    {% block submission_content %}{% endblock %}
+  </div>
+  <div class="medium-3 columns"><div data-sticky="medium">
+    <div class="section side">
+      <ol class="menu">
+        <li class="menu__item">
+          <a href="{{ url('/submission') }}" class="menu__link{% if page_name == 'submission_main' %} active{% endif %}">
+            <span class="icon icon-flag"></span>
+            My Submissions
+          </a>
+        </li>
+        <li class="menu__item">
+          <a href="{{ url('/submission/create') }}" class="menu__link{% if page_name == 'submission_create' %} active{% endif %}">
+            <span class="icon icon-send"></span>
+            Submit New Brain
+          </a>
+        </li>
+        <li class="menu__seperator"></li>
+        <li class="menu__item">
+          <a href="{{ url('/submission/match') }}" class="menu__link{% if page_name == 'submission_all' %} active{% endif %}">
+            <span class="icon icon-schedule"></span>
+            All Matches
+          </a>
+        </li>
+      </ol>
+    </div>
+  </div></div>
+</div>
+{% endblock %}

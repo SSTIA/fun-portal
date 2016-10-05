@@ -1,0 +1,25 @@
+<div class="nav">
+  <div class="row"><div class="columns" layout="row center-justify">
+    <ol layout="row center-left">
+      <li><a href="{{ url('/') }}" class="nav__logo">GomokuJudge</a></li>
+      <li><a href="{{ url('/') }}" class="nav__item{% if nav_type == 'scoreboard' %} active{% endif %}">Scoreboard</a></li>
+      <li><a href="{{ url('/submission') }}" class="nav__item{% if nav_type == 'submission' %} active{% endif %}">Submission</a></li>
+    </ol>
+    <ol layout="row center-right">
+    {% if req.session.user %}
+      <li><a href="{{ url('/user/profile') }}" class="nav__item{% if nav_type == 'user' %} active{% endif %}">
+      {% if req.session.user.profile.studentId %}
+        {{ req.session.user.profile.studentId }}
+        {% if not req.session.user.profile.initial %}
+        ({{ req.session.user.profile.displayName }})
+        {% endif %}
+      {% else %}
+        User Center
+      {% endif %}
+      </a></li>
+    {% else %}
+      <li><a href="{{ url('/login') }}" class="nav__button">Sign In</a></li>
+    {% endif %}
+    </ol>
+  </div></div>
+</div>

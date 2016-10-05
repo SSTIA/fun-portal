@@ -1,0 +1,9 @@
+base:
+  db: mongodb://localhost/portal
+  secret: your_secret
+  port: 80
+  host: http://127.0.0.1
+  csp_report_url: /
+  url_prefix:
+  cdn_prefix:
+  sso_url: http://127.0.0.1:20212

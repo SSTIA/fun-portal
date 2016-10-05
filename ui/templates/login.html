@@ -1,0 +1,37 @@
+{% extends "layout/immersive.html" %}
+{% block content %}
+<div class="row">
+  <div class="columns">
+    <div class="section">
+      <div class="section__header">
+        <h1 class="section__title">Sign In</h1>
+      </div>
+      <div class="section__body">
+        <div class="supplementary">
+          <p>Use your Tongji account to sign in. Don't worry, we will not save your credentials.</p>
+        </div>
+      </div>
+      <div class="section__body"><form action="http://tjis.tongji.edu.cn:58080/amserver/UI/Login">
+      {% if error !== undefined %}
+        <div class="typo">
+          <blockquote class="warn"><p>{{ error }}</p></blockquote>
+        </div>
+      {% endif %}
+        <div class="row"><div class="columns">
+          <label>Tongji Student ID</label>
+          <input type="text" class="textbox" name="Login.Token1" autofocus>
+        </div></div>
+        <div class="row"><div class="columns">
+          <label>Tongji Password</label>
+          <input type="password" class="textbox" name="Login.Token2">
+        </div></div>
+        <div class="row columns"><div class="text-center">
+          <input type="hidden" name="goto" value="{{ url('/login', true) }}">
+          <input type="hidden" name="gotoOnFail" value="{{ url('/login?failure', true) }}">
+          <button class="expanded rounded primary button" type="submit">Sign In</button>
+        </div></div>
+      </form></div>
+    </div>
+  </div>
+</div>
+{% endblock %}

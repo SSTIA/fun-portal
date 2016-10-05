@@ -1,0 +1,13 @@
+{% set layout_name = "basic" %}
+{% extends "layout/html5.html" %}
+{% block body %}
+
+{% include "partials/nav.html" %}
+
+<div class="main">
+  {% block content %}{% endblock %}
+</div>
+
+{% include "partials/footer.html" %}
+
+{% endblock %}
