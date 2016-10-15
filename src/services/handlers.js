@@ -1,11 +1,10 @@
+import express from 'express';
 import glob from 'glob';
-import Router from 'express-promise-router';
-import escapeHtml from 'escape-html';
 import errors from 'libs/errors';
 
 export default (app, logger) => {
 
-  const router = Router();
+  const router = express.Router();
   app.use(router);
 
   const handlers = glob
@@ -17,7 +16,7 @@ export default (app, logger) => {
 
   // Fallback: Generate 404
   app.use((req, res, next) => {
-    const err = new errors.UserError('该页面不存在');
+    const err = new errors.UserError('Page Not Found');
     err.status = 404;
     next(err);
   });
@@ -27,7 +26,7 @@ export default (app, logger) => {
     if (err.code !== 'EBADCSRFTOKEN') {
       return next(err);
     }
-    err = new errors.UserError('CSRF Token 验证失败');
+    err = new errors.UserError('Incorrect CSRF Token. Please re-login and try again.');
     err.status = 403;
     next(err);
   });
@@ -38,13 +37,13 @@ export default (app, logger) => {
       err.status = 500;
     }
     if (err.status === 500) {
-      err.message = `服务端错误：${err.message}`;
+      err.message = `Server internal error: ${err.message}`;
     }
     next(err);
   });
 
   // Handle Error outputs
-  app.use((err, req, res) => {
+  app.use((err, req, res, next) => {
     if (err.status === 500) {
       logger.error(err);
     }
@@ -53,13 +52,16 @@ export default (app, logger) => {
       err: true,
       status: err.status,
       msg: err.message,
-      msgHtml: err.messageHtml || escapeHtml(err.message),
       name: err.name,
     };
-    if (req.xhr) {
+    if (req.is('json') || req.xhr) {
       res.json(errObject);
     } else {
-      res.render('error', { error: errObject });
+      res.render('error', {
+        error: errObject,
+        nav_type: 'error',
+        page_title: err.name,
+      });
     }
   });
 

@@ -1,0 +1,20 @@
+{% extends "layout/basic.html" %}
+{% block content %}
+<div class="row">
+  <div class="large-push-3 large-6 medium-push-2 medium-8 columns">
+    <div class="section">
+      <div class="section__header">
+        <h1 class="section__title"><span class="icon icon-warning text-red"></span> Oops! {{ error.name }}</h1>
+      </div>
+      <div class="section__body typo">
+        <p>{{ error.msg }}</p>
+      </div>
+      <div class="section__body">
+        <div class="supplementary">
+          <p>Have questions about this error? Contact TA in the QQ group.</p>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}

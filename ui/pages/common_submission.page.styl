@@ -1,0 +1,18 @@
+.submission-status--text
+  for key, value in $submission-status-color
+    &.{key}
+      color: value !important
+
+.submission-status--icon
+  display: inline-block
+  width: 1.15em
+  for key, value in $submission-status-icon
+    &.{key}:before
+      content: value
+      color: $submission-status-color[key]
+
+.submission-status--border
+  border-left: rem(3px) solid transparent
+  for key, value in $submission-status-color
+    &.{key}
+      border-left: rem(3px) solid lighten(value, 10%)

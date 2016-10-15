@@ -54,7 +54,7 @@ const stickyPage = new AutoloadPage(() => {
   if (shouldListenResize) {
     $(window).on('resize', _.throttle(() => updateStickies($stickies), 300));
   }
-  $(document).on('vjLayout', _.throttle(stickyRelayout, 100));
+  stickyRelayout();
 });
 
 export default stickyPage;

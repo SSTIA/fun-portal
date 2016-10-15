@@ -5,6 +5,7 @@
     {% block submission_content %}{% endblock %}
   </div>
   <div class="medium-3 columns"><div data-sticky="medium">
+  {% if page_name !== 'submission_detail' %}
     <div class="section side">
       <ol class="menu">
         <li class="menu__item">
@@ -28,6 +29,8 @@
         </li>
       </ol>
     </div>
+  {% endif %}
+  {% block submission_sidebar %}{% endblock %}
   </div></div>
 </div>
 {% endblock %}

@@ -14,7 +14,7 @@ export default class Handler {
   @web.get('/profile')
   @web.middleware(utils.checkLogin())
   async getUserProfileAction(req, res) {
-    const udoc = await DI.models.User.getUserObjectByIdAsync(req.session.user._id);
+    const udoc = req.credential;
     res.render('user_profile', {
       page_title: 'My Profile',
       udoc,
@@ -23,17 +23,16 @@ export default class Handler {
 
   @web.post('/profile')
   @web.middleware(utils.sanitizeBody({
-    realName: utils.checkNonEmpty(),
-    displayName: utils.checkNonEmpty(),
-    teacher: utils.checkNonEmpty(),
+    realName: utils.checkNonEmptyString(),
+    displayName: utils.checkNonEmptyString(),
+    teacher: utils.checkNonEmptyString(),
   }))
   @web.middleware(utils.checkLogin())
   async postUserProfileAction(req, res) {
-    const udoc = await DI.models.User.getUserObjectByIdAsync(req.session.user._id);
+    const udoc = req.credential;
     _.assign(udoc.profile, req.data);
     udoc.profile.initial = false;
     await udoc.save();
-    req.session.user = udoc;
     res.redirect(utils.url('/user/profile'));
   }
 

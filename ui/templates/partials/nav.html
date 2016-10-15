@@ -6,12 +6,12 @@
       <li><a href="{{ url('/submission') }}" class="nav__item{% if nav_type == 'submission' %} active{% endif %}">Submission</a></li>
     </ol>
     <ol layout="row center-right">
-    {% if req.session.user %}
+    {% if req.credential %}
       <li><a href="{{ url('/user/profile') }}" class="nav__item{% if nav_type == 'user' %} active{% endif %}">
-      {% if req.session.user.profile.studentId %}
-        {{ req.session.user.profile.studentId }}
-        {% if not req.session.user.profile.initial %}
-        ({{ req.session.user.profile.displayName }})
+      {% if req.credential.profile.studentId %}
+        {{ req.credential.profile.studentId }}
+        {% if not req.credential.profile.initial %}
+        ({{ req.credential.profile.displayName }})
         {% endif %}
       {% else %}
         User Center

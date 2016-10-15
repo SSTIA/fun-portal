@@ -1,10 +1,9 @@
 import errorFactory from 'dg-error-factory';
-import escapeHtml from 'escape-html';
 
 const errors = {
-  PrivilegeError: errorFactory('PrivilegeError', function () {
+  PermissionError: errorFactory('PermissionError', function () {
     this.status = 403;
-    this.message = 'You don\'t have the permission to perform this action. Please log in to continue.';
+    this.message = 'You don\'t have the permission to perform this action.';
   }),
 
   UserError: errorFactory('UserError', function () {

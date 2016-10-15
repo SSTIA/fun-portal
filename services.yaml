@@ -7,6 +7,11 @@ logger:
 eventBus:
   path: eventBus
 
+mq:
+  path: mq
+  inject:
+    - logger
+
 mongodbConnection:
   path: mongodb.connection
   inject:
@@ -27,24 +32,24 @@ webCommon:
   inject:
     - webServer
 
+webStatic:
+  path: web.static
+  inject:
+    - webServer
+
 webSession:
   path: web.session
   inject:
     - webServer
     - mongodbConnection
 
-webSecurity:
-  path: web.security
-  inject:
-    - webServer
-
-webStatic:
-  path: web.static
-  inject:
-    - webServer
-
 webTemplate:
   path: web.template
+  inject:
+    - webServer
+
+webSecurity:
+  path: web.security
   inject:
     - webServer
 

@@ -1,6 +1,5 @@
+import csurf from 'csurf';
 import helmet from 'helmet';
-import csrf from 'csurf';
-import _ from 'lodash';
 
 export default (app) => {
 
@@ -10,7 +9,7 @@ export default (app) => {
       scriptSrc: ["'self'", "'unsafe-inline'", "'unsafe-eval'"],
       styleSrc: ["'self'", "'unsafe-inline'"],
       imgSrc: ["'self'", "data:"],
-      reportUri: `${DI.config.csp_report_url}`,
+      reportUri: `${DI.config.cspReportUrl}`,
     },
   }));
   app.use(helmet.xssFilter());
@@ -18,16 +17,15 @@ export default (app) => {
   app.use(helmet.frameguard());
   app.use(helmet.hidePoweredBy());
 
-  // Expose CSRF token to view
-  app.use(csrf());
+  const csrf = csurf();
+
+  // Check csrf tokens
   app.use((req, res, next) => {
-    res.locals.ui_context = res.locals.ui_context || {};
-    if (req.csrfToken) {
-      res.locals.ui_context.csrf_token = req.csrfToken();
-    } else {
-      res.locals.ui_context.csrf_token = '__TOKEN__';
+    if (req.url.indexOf('/api/') !== -1) {
+      next();
+      return;
     }
-    next();
+    return csrf(req, res, next);
   });
 
 };

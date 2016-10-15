@@ -30,7 +30,7 @@ export function post(url, dataOrForm = {}, dataType = 'json') {
   } else {
     // {foo: 'bar'}
     postData = $.param({
-      csrf_token: UiContext.csrf_token,
+      csrfToken: UiContext.csrfToken,
       ...dataOrForm,
     }, true);
   }

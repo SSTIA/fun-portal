@@ -14,23 +14,28 @@
   <div class="section__body no-padding">
     <table class="data-table">
       <colgroup>
-        <col class="status">
-        <col class="time">
-        <col class="action">
+        <col class="col--status submission-status--border">
+        <col class="col--time">
+        <col class="col--action">
       </colgroup>
       <thead>
         <tr>
-          <th class="status">Status</th>
-          <th class="time">Submit At</th>
-          <th class="action">Actions</th>
+          <th class="col--status submission-status--border">Status</th>
+          <th class="col--time">Submit At</th>
+          <th class="col--action">Actions</th>
         </tr>
       </thead>
       <tbody>
       {% for sdoc in sdocs %}
         <tr>
-          <td class="status">{{ DI('models.Submission.STATUS_TEXT')[sdoc.status] }}</td>
-          <td class="time">{{ sdoc.createdAt|datetime }}</td>
-          <td class="action">
+          <td class="col--status submission-status--border {{ sdoc.status }}">
+            <span class="icon submission-status--icon {{ sdoc.status }}"></span>
+            <span class="submission-status--text {{ sdoc.status }}">
+              {{ DI('models.Submission.STATUS_TEXT')[sdoc.status] }}
+            </span>
+          </td>
+          <td class="col--time">{{ sdoc.createdAt|datetime }}</td>
+          <td class="col--action">
             <a href="{{ url('/submission/{0}', false, [sdoc._id]) }}" class="typo-a">Detail</a> ·
             <a href="{{ url('/submission/{0}/match', false, [sdoc._id]) }}" class="typo-a">Matches</a>
           </td>

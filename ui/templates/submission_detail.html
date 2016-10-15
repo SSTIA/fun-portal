@@ -1,0 +1,43 @@
+{% extends "layout/submission_base.html" %}
+{% block submission_content %}
+<div class="section">
+  <div class="section__header">
+    <h1 class="section__title">
+      <span class="icon submission-status--icon {{ sdoc.status }}"></span>
+      <span class="submission-status--text {{ sdoc.status }}">
+        {{ DI('models.Submission.STATUS_TEXT')[sdoc.status] }}
+      </span>
+    </h1>
+  </div>
+  <div class="section__body typo">
+    <pre>{{ sdoc.text }}</pre>
+  </div>
+</div>
+<div class="section">
+  <div class="section__header">
+    <h1 class="section__title">Source Code</h1>
+  </div>
+  <div class="section__body">
+    <pre><code class="cpp">{{ sdoc.code }}</code></pre>
+  </div>
+</div>
+{% endblock %}
+{% block submission_sidebar %}
+<div class="side section">
+  <div class="section__body typo">
+    <dl class="large horizontal">
+      <dt>Status</dt>
+      <dd>
+        <span class="icon submission-status--icon {{ sdoc.status }}"></span>
+        <span class="submission-status--text {{ sdoc.status }}">
+          {{ DI('models.Submission.STATUS_TEXT')[sdoc.status] }}
+        </span>
+      </dd>
+      <dt>Submit By</dt>
+      <dd>{{ sdoc.user.profile.displayName }}</dd>
+      <dt>Submit At</dt>
+      <dd>{{ sdoc.createdAt|datetime }}</dd>
+    </dl>
+  </div>
+</div>
+{% endblock %}

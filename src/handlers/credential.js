@@ -1,5 +1,6 @@
 import * as web from 'express-decorators';
 import utils from 'libs/utils';
+import credential from 'libs/credential';
 
 const DIRECTORY_COOKIE = 'iPlanetDirectoryPro';
 
@@ -13,14 +14,14 @@ export default class Handler {
     if (directory !== undefined) {
       try {
         const user = await DI.models.User.authenticateSsoAsync(directory);
-        req.session.user = user;
+        await credential.setCredential(req, user._id);
         res.redirect(utils.url('/'));
         return;
       } catch (e) {
         errors.error = e.message;
       }
     }
-    if (req.query.failure) {
+    if (req.query.failure !== undefined) {
       errors.error = 'Unable to login using Tongji account. Incorrect student ID or password.';
     }
     res.render('login', {

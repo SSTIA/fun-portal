@@ -1,5 +1,6 @@
 import _ from 'lodash';
 import validator from 'validator';
+import auth from 'basic-auth';
 import errors from 'libs/errors';
 
 const utils = {};
@@ -14,7 +15,7 @@ utils.substitute = (str, obj) => {
 };
 
 utils.url = (s, absolute = false, obj = null) => {
-  let url = `${DI.config.url_prefix}${s}`;
+  let url = `${DI.config.urlPrefix}${s}`;
   if (absolute) {
     url = `${DI.config.host}${url}`;
   }
@@ -25,24 +26,35 @@ utils.url = (s, absolute = false, obj = null) => {
 };
 
 utils.static_url = (s) => {
-  return `${DI.config.cdn_prefix}${s}`;
+  return `${DI.config.cdnPrefix}${s}`;
 };
 
 utils.checkLogin = () => (req, res, next) => {
-  if (!req.session.user) {
-    throw new errors.PrivilegeError();
+  if (!req.credential) {
+    throw new errors.PermissionError();
   }
   next();
 };
 
 utils.checkProfile = () => (req, res, next) => {
-  if (!req.session.user) {
+  if (!req.credential) {
     next();
     return;
   }
-  if (req.session.user.profile.initial) {
+  if (req.credential.profile.initial) {
     res.redirect(utils.url('/user/profile'));
     return;
+  }
+  next();
+};
+
+utils.checkAPI = () => (req, res, next) => {
+  const credentials = auth(req);
+  if (!credentials
+    || credentials.name !== DI.config.api.credential.username
+    || credentials.pass !== DI.config.api.credential.password
+  ) {
+    throw new errors.PermissionError();
   }
   next();
 };
@@ -54,7 +66,7 @@ const sanitize = (source, patterns) => {
       throw new errors.ValidationError(`Missing required parameter '${key}'`);
     }
     try {
-      ret[key] = patterns[key](String(source[key]));
+      ret[key] = patterns[key](source[key]);
     } catch (err) {
       throw new errors.ValidationError(`Parameter '${key}' is expected to be a(n) ${err.message}`);
     }
@@ -78,18 +90,44 @@ utils.sanitizeBody = (patterns) => sanitizeExpress('body', patterns);
 
 utils.sanitizeQuery = (patterns) => sanitizeExpress('query', patterns);
 
-utils.checkInt = () => (str) => {
+utils.checkInt = () => (any) => {
+  if (typeof any === 'number') {
+    return Math.floor(any);
+  }
+  const str = String(any);
   if (!validator.isInt(str)) {
     throw new Error('integer number');
   }
   return validator.toInt(str);
 };
 
-utils.checkNonEmpty = () => (str) => {
-  if (str.trim().length === 0) {
-    throw new Error('non empty string');
+utils.checkString = () => (any) => {
+  if (typeof any === 'string') {
+    return any;
   }
-  return str.trim();
+  throw new Error('string');
+};
+
+utils.checkNonEmptyString = () => (any) => {
+  if (typeof any === 'string') {
+    if (any.trim().length === 0) {
+      throw new Error('non empty string');
+    }
+    return any.trim();
+  }
+  throw new Error('non empty string');
+};
+
+utils.checkBool = () => (any) => {
+  if (typeof any === 'boolean') {
+    return any;
+  }
+  if (any === 'true') {
+    return true;
+  } else if (any === 'false') {
+    return false;
+  }
+  throw new Error('boolean');
 };
 
 export default utils;

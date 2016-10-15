@@ -5,7 +5,7 @@ const sso = {};
 async function requestAsync(actionUrl, directory) {
   try {
     return await rp({
-      url: `${DI.config.sso_url}${actionUrl}`,
+      url: `${DI.config.ssoUrl}${actionUrl}`,
       qs: {
         sessionid: directory,
       },

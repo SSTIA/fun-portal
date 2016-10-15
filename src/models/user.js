@@ -2,6 +2,7 @@ import bcrypt from 'bcrypt-as-promised';
 import mongoose from 'mongoose';
 import objectId from 'libs/objectId';
 import errors from 'libs/errors';
+import roles from 'libs/roles';
 import sso from 'libs/sso';
 
 export default () => {
@@ -10,6 +11,7 @@ export default () => {
     userName: String,
     userName_std: String,
     isSsoAccount: Boolean,
+    role: String,
     hash: String,   // only for isSsoAccount=false
     profile: {
       realName: String,
@@ -44,7 +46,7 @@ export default () => {
    */
   UserSchema.statics.getUserObjectByUserNameAsync = async function (userName, throwWhenNotFound = true) {
     const userNameNormalized = this.normalizeUserName(userName);
-    const user = await this.findOne({ userName_std: userNameNormalized }).exec();
+    const user = await this.findOne({ userName_std: userNameNormalized });
     if (user === null && throwWhenNotFound) {
       throw new errors.UserError('User not found');
     }
@@ -63,7 +65,7 @@ export default () => {
         return null;
       }
     }
-    const user = await this.findOne({ _id: id }).exec();
+    const user = await this.findOne({ _id: id });
     if (user === null && throwWhenNotFound) {
       throw new errors.UserError('User not found');
     }
@@ -81,6 +83,7 @@ export default () => {
     }
     const newUser = new this({
       isSsoAccount: true,
+      role: 'student',
       profile: {
         realName,
         studentId,
@@ -113,6 +116,7 @@ export default () => {
     }
     const newUser = new this({
       isSsoAccount: false,
+      role: 'student',
       profile: {
         realName: '',
         studentId: '',
@@ -187,6 +191,20 @@ export default () => {
     }
     await user.save();
     return user;
+  };
+
+  /**
+   * Check whether a user has a permission
+   * @return {Boolean}
+   */
+  UserSchema.methods.hasPermission = function (perm) {
+    if (this.role === undefined) {
+      return false;
+    }
+    if (roles[this.role] === undefined) {
+      return false;
+    }
+    return (roles[this.role] & perm) !== 0;
   };
 
   /**

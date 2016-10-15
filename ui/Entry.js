@@ -1,5 +1,5 @@
 // eslint-disable-next-line camelcase
-__webpack_public_path__ = UiContext.cdn_prefix;
+__webpack_public_path__ = UiContext.cdnPrefix;
 
 import 'jquery.transit';
 
@@ -16,7 +16,6 @@ import './misc/structure.styl';
 import './misc/section.styl';
 
 import { PageLoader } from './misc/PageLoader';
-import delay from './utils/delay';
 
 const pageLoader = new PageLoader();
 
@@ -39,12 +38,6 @@ async function load() {
     } catch (e) {
       console.error(`Failed to load page ${page.name}\n${e.stack}`);
     }
-  }
-  for (const section of $('.section')) {
-    const $section = $(section);
-    $section.addClass('visible');
-    await delay(150);
-    $section.trigger('vjLayout');
   }
 }
 

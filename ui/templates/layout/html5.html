@@ -1,6 +1,3 @@
-{#{% import "components/form.html" as form with context %}
-{% import "components/sidemenu.html" as sidemenu with context %}
-{% import "components/paginator.html" as paginator with context %}#}
 <!DOCTYPE html>
 <html data-page="{{ page_name }}" data-layout="{{ layout_name }}" class="layout--{{ layout_name }} page--{{ page_name }} nojs">
 <head>
@@ -17,7 +14,7 @@
 
   <link rel="stylesheet" media="all" href="{{ static_url('/vendors.css') }}">
   <link rel="stylesheet" media="all" href="{{ static_url('/main.css') }}">
-  <title>{{ page_title }} - GomokuFun</title>
+  <title>{% if page_title !== undefined %}{{ page_title }} - GomokuFun{% else %}GomokuFun{% endif %}</title>
   <script>
     var _htmlNode = document.documentElement;
     _htmlNode.className = _htmlNode.className.replace(' nojs', ' hasjs');
