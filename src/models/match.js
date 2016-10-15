@@ -7,8 +7,18 @@ export default () => {
     u2: { type: mongoose.Schema.Types.ObjectId, ref: 'User' },
     u1Submission: { type: mongoose.Schema.Types.ObjectId, ref: 'Submission' },
     u2Submission: { type: mongoose.Schema.Types.ObjectId, ref: 'Submission' },
-    u1Score: Number,  // only exists after match is completed
-    u2Score: Number,  // only exists after match is completed
+    u1Stat: { // only exists after match is completed
+      score: Number,
+      win: Number,
+      lose: Number,
+      draw: Number,
+    },
+    u2Stat: { // only exists after match is completed
+      score: Number,
+      win: Number,
+      lose: Number,
+      draw: Number,
+    },
     rounds: [{
       _id: mongoose.Schema.Types.ObjectId,
       status: String,
