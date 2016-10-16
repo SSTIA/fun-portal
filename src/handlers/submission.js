@@ -147,7 +147,7 @@ export default class Handler {
       req.data.id,
       { executable: 1 }
     );
-    res.send(sdoc.executable.buffer);
+    res.send(new Buffer(sdoc.executable));
   }
 
 }
