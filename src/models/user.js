@@ -174,6 +174,23 @@ export default () => {
   };
 
   /**
+   * For debug purpose only.
+   */
+  UserSchema.statics.authenticateFakeSsoAsync = async function (studentId) {
+    if (DI.config.ssoUrl !== false) {
+      throw new errors.PermissionError();
+    }
+    const userName = this.buildSsoUserName({ studentId });
+    const user = await this.getUserObjectByUserNameAsync(userName, false);
+    if (user === null) {
+      // not signed in before. create a new account
+      // realname API is not working anymore :(
+      return await this.createSsoUserAsync({ realName: '', studentId });
+    }
+    return user;
+  };
+
+  /**
    * Update the profile of a user
    * @return {User} The new user object
    */

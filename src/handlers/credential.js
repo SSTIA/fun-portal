@@ -1,5 +1,6 @@
 import * as web from 'express-decorators';
 import utils from 'libs/utils';
+import errors from 'libs/errors';
 import credential from 'libs/credential';
 
 const DIRECTORY_COOKIE = 'iPlanetDirectoryPro';
@@ -28,6 +29,21 @@ export default class Handler {
       page_title: 'Sign In',
       ...errors,
     });
+  }
+
+  // for debug purpose only, only available when
+  // ssoUrl === false
+  @web.post('/login')
+  @web.middleware(utils.sanitizeBody({
+    studentId: utils.checkNonEmptyString(),
+  }))
+  async postLoginAction(req, res) {
+    if (DI.config.ssoUrl !== false) {
+      throw new errors.PermissionError();
+    }
+    const user = await DI.models.User.authenticateFakeSsoAsync(req.data.studentId);
+    await credential.setCredential(req, user._id);
+    res.redirect(utils.url('/'));
   }
 
   @web.post('/logout')
