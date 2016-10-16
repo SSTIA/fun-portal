@@ -85,7 +85,10 @@ export default class Handler {
   }))
   @web.middleware(utils.checkAPI())
   async apiCompileBegin(req, res) {
-    const sdoc = await DI.models.Submission.judgeStartCompileAsync(req.data.id, req.data.token);
+    const sdoc = await DI.models.Submission.judgeStartCompileAsync(
+      req.data.id,
+      req.data.token
+    );
     await sdoc.populate('user').execPopulate();
     res.json(sdoc);
   }
@@ -140,7 +143,10 @@ export default class Handler {
   }))
   @web.middleware(utils.checkAPI())
   async apiGetBinary(req, res) {
-    const sdoc = await DI.models.Submission.getSubmissionObjectByIdAsync(req.data.id, { executable: 1 });
+    const sdoc = await DI.models.Submission.getSubmissionObjectByIdAsync(
+      req.data.id,
+      { executable: 1 }
+    );
     res.send(sdoc.executable.buffer);
   }
 

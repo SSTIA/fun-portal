@@ -93,16 +93,19 @@ export default () => {
    *
    * @param {Submission} s1
    * @param {User} u1
-   * @param {[{_id: User, submissionId: Submission}]} s2u2docs
+   * @param {[{_id: User, sdocid: Submission}]} s2u2docs
    */
   MatchSchema.statics.addMatchesForSubmissionAsync = async function (s1, u1, s2u2docs) {
+    if (s2u2docs.length === 0) {
+      return [];
+    }
     await this.remove({ u1Submission: s1 });
     const mdocs = await this.insertMany(s2u2docs.map(s2u2doc => ({
       status: this.STATUS_PENDING,
       u1,
       u2: s2u2doc._id,
       u1Submission: s1,
-      u2Submission: s2u2doc.submissionId,
+      u2Submission: s2u2doc.sdocid,
       rounds: generateRoundDocs(),
     })));
     // push each round of each match into the queue
@@ -119,6 +122,7 @@ export default () => {
         });
       }
     }
+    return mdocs;
   };
 
   MatchSchema.index({ u1Submission: 1, u2Submission: -1 }, { unique: true });

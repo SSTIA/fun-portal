@@ -75,11 +75,11 @@ export default () => {
    * @return {Boolean}
    */
   SubmissionSchema.statics.isUserAllowedToSubmitAsync = async function (uid) {
-    const submissions = await this.getUserSubmissionsAsync(uid, 1);
-    if (submissions.length === 0) {
+    const sdocs = await this.getUserSubmissionsAsync(uid, 1);
+    if (sdocs.length === 0) {
       return true;
     }
-    const last = submissions[0];
+    const last = sdocs[0];
     if (last.status === this.STATUS_COMPILE_ERROR) {
       return true;
     }
@@ -101,15 +101,15 @@ export default () => {
     if (code.length > DI.config.compile.limits.sizeOfCode) {
       throw new errors.ValidationError('Your source code is too large.');
     }
-    const newSubmission = new this({
+    const sdoc = new this({
       user: uid,
       code,
       status: this.STATUS_PENDING,
       text: '',
     });
-    await newSubmission.save();
-    await this._compileForMatchAsync(newSubmission);
-    return newSubmission;
+    await sdoc.save();
+    await this._compileForMatchAsync(sdoc);
+    return sdoc;
   };
 
   /**
@@ -118,30 +118,30 @@ export default () => {
    * @param  {MongoId|Submission} sidOrSubmission Submission id or Submission object
    * @return {Submission} The new submission object
    */
-  SubmissionSchema.statics._compileForMatchAsync = async function (submission) {
-    if (submission.taskToken) {
-      const error = new Error('Expect taskToken is undefined');
+  SubmissionSchema.statics._compileForMatchAsync = async function (sdoc) {
+    if (sdoc.taskToken) {
+      const error = new Error('_compileForMatchAsync: Expect taskToken is undefined');
       DI.logger.error(error);
       throw error;
     }
-    submission.executable = null;
-    submission.status = this.STATUS_PENDING;
-    submission.text = '';
-    submission.taskToken = uuid.v4();
-    await submission.save();
+    sdoc.executable = null;
+    sdoc.status = this.STATUS_PENDING;
+    sdoc.text = '';
+    sdoc.taskToken = uuid.v4();
+    await sdoc.save();
     await DI.mq.publish('compile', {
-      submissionId: String(submission._id),
-      token: submission.taskToken,
+      sdocid: String(sdoc._id),
+      token: sdoc.taskToken,
       limits: DI.config.compile.limits,
     });
-    return submission;
+    return sdoc;
   };
 
   /**
    * Get each users' last effective or running submission
    *
    * @param  {Boolean} onlyEffective
-   * @return {[{_id, submissionId}]}
+   * @return {[{_id, sdocid}]}
    */
   SubmissionSchema.statics.getLastSubmissionsByUserAsync = async function (onlyEffective = true) {
     let statusMatchExp;
@@ -154,7 +154,7 @@ export default () => {
       { $match: { status: statusMatchExp } },
       { $sort: { createdAt: -1 } },
       { $project: { user: 1, createdAt : 1, status: 1 } },
-      { $group: { _id: '$user', submissionId: { $first: '$_id' } } },
+      { $group: { _id: '$user', sdocid: { $first: '$_id' } } },
     ]).allowDiskUse(true).exec();
   };
 
@@ -169,7 +169,7 @@ export default () => {
   SubmissionSchema.statics.judgeStartCompileAsync = async function (sid, taskToken) {
     const sdoc = await this.getSubmissionObjectByIdAsync(sid);
     if (sdoc.taskToken !== taskToken) {
-      throw new errors.UserError('Task token does not match');
+      throw new Error('judgeStartCompileAsync: Task token does not match');
     }
     sdoc.status = this.STATUS_COMPILING;
     await sdoc.save();
@@ -188,10 +188,11 @@ export default () => {
   SubmissionSchema.statics.judgeSetSystemErrorAsync = async function (sid, taskToken, text) {
     const sdoc = await this.getSubmissionObjectByIdAsync(sid);
     if (sdoc.taskToken !== taskToken) {
-      throw new errors.UserError('Task token does not match');
+      throw new Error('judgeSetSystemErrorAsync: Task token does not match');
     }
     sdoc.text = text;
     sdoc.status = this.STATUS_SYSTEM_ERROR;
+    sdoc.taskToken = null;
     await sdoc.save();
     return sdoc;
   };
@@ -210,14 +211,15 @@ export default () => {
    */
   SubmissionSchema.statics.judgeCompleteCompileAsync = async function (sid, taskToken, success, text, exeBuffer = null) {
     if (!success && exeBuffer !== null) {
-      throw new Error('No executable should be supplied');
+      throw new Error('judgeCompleteCompileAsync: No executable should be supplied');
     }
     const sdoc = await this.getSubmissionObjectByIdAsync(sid);
     if (sdoc.taskToken !== taskToken) {
-      throw new errors.UserError('Task token does not match');
+      throw new Error('judgeCompleteCompileAsync: Task token does not match');
     }
     sdoc.text = text;
     sdoc.status = success ? this.STATUS_RUNNING : this.STATUS_COMPILE_ERROR;
+    sdoc.taskToken = null;
     if (success && exeBuffer !== null) {
       sdoc.executable = exeBuffer;
     }
@@ -231,19 +233,24 @@ export default () => {
   /**
    * Create related matches for specified submission
    */
-  SubmissionSchema.statics._createMatchAsync = async function (submission) {
-    const compilingSubmissions = await this.find({ status: this.STATUS_COMPILING }).count();
-    if (compilingSubmissions !== 0) {
-      const error = new Error(`Expect compilingSubmissions is 0, got ${compilingSubmissions}`);
+  SubmissionSchema.statics._createMatchAsync = async function (sdoc) {
+    const ncsdocs = await this.find({ status: this.STATUS_COMPILING }).count();
+    if (ncsdocs !== 0) {
+      const error = new Error(`_createMatchAsync: Expect ncsdocs is 0, got ${ncsdocs}`);
       DI.logger.error(error);
       // don't throw any errors
     }
     const lsdocs = await this.getLastSubmissionsByUserAsync(false);
-    await DI.models.Match.addMatchesForSubmissionAsync(
-      submission._id,
-      submission.user,
-      _.filter(lsdocs, lsdoc => !lsdoc._id.equals(submission.user))
+    const mdocs = await DI.models.Match.addMatchesForSubmissionAsync(
+      sdoc._id,
+      sdoc.user,
+      _.filter(lsdocs, lsdoc => !lsdoc._id.equals(sdoc.user))
     );
+    if (mdocs.length === 0) {
+      // no matches are added, mark sdoc as effective
+      sdoc.status = this.STATUS_EFFECTIVE;
+      await sdoc.save();
+    }
   };
 
   SubmissionSchema.index({ user: 1, createdAt: -1 });
