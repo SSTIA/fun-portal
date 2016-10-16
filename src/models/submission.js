@@ -17,11 +17,6 @@ export default () => {
     timestamps: true,
   });
 
-  SubmissionSchema.statics.LIMIT_SIZE_CODE = 1 * 1024 * 1024;
-  SubmissionSchema.statics.LIMIT_SIZE_EXECUTABLE = 1 * 1024 * 1024;
-  SubmissionSchema.statics.LIMIT_SIZE_TEXT = 100 * 1024;
-  SubmissionSchema.statics.LIMIT_MIN_INTERVAL = 1000; //24 * 60 * 60 * 1000;
-
   SubmissionSchema.statics.STATUS_PENDING = 'pending';
   SubmissionSchema.statics.STATUS_COMPILING = 'compiling';
   SubmissionSchema.statics.STATUS_COMPILE_ERROR = 'ce';
@@ -88,7 +83,7 @@ export default () => {
     if (last.status === this.STATUS_COMPILE_ERROR) {
       return true;
     }
-    if (Date.now() - last.createdAt.getTime() > this.LIMIT_MIN_INTERVAL) {
+    if (Date.now() - last.createdAt.getTime() > DI.config.compile.limits.submitInterval) {
       return true;
     }
     return false;
@@ -103,7 +98,7 @@ export default () => {
     if (!this.isUserAllowedToSubmitAsync(uid)) {
       throw new errors.UserError('You are not allowed to submit new code currently');
     }
-    if (code.length > this.LIMIT_SIZE_CODE) {
+    if (code.length > DI.config.compile.limits.sizeOfCode) {
       throw new errors.ValidationError('Your source code is too large.');
     }
     const newSubmission = new this({
@@ -135,8 +130,9 @@ export default () => {
     submission.taskToken = uuid.v4();
     await submission.save();
     await DI.mq.publish('compile', {
-      id: String(submission._id),
+      submissionId: String(submission._id),
       token: submission.taskToken,
+      limits: DI.config.compile.limits,
     });
     return submission;
   };
@@ -243,22 +239,11 @@ export default () => {
       // don't throw any errors
     }
     const lsdocs = await this.getLastSubmissionsByUserAsync(false);
-    const matches = await DI.models.Match.addMatchesForSubmissionAsync(
+    await DI.models.Match.addMatchesForSubmissionAsync(
       submission._id,
       submission.user,
       _.filter(lsdocs, lsdoc => !lsdoc._id.equals(submission.user))
     );
-    // push each round of each match into the queue
-    for (const match of matches) {
-      for (const round of match.rounds) {
-        await DI.mq.publish('judge', {
-          matchId: String(match._id),
-          s1Id: String(match.u1Submission),
-          s2Id: String(match.u2Submission),
-          round: round,
-        });
-      }
-    }
   };
 
   SubmissionSchema.index({ user: 1, createdAt: -1 });

@@ -11,11 +11,24 @@ base:
     credential:
       username: foo
       password: bar
+  compile:
+    limits:
+      sizeOfCode: 1048576     # 1 MB
+      sizeOfBin: 1048576      # 1 MB
+      sizeOfText: 102400      # 100 KB
+      submitInterval: 1000    # 1 s
   match:
-    initialMaps:
-      - 1
-      - 2
-      - 3
+    rules:
+      moveTimeout: 5000       # 5 s
+      roundTimeout: 180000    # 180 s
+      memoryLimit: 367001600  # 350 MB
+      width: 20
+      height: 20
+      winningStones: 6
+    maps:
+      - map1
+      - map2
+      - map3
   mq:
     vhosts:
       /:

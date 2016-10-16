@@ -10,11 +10,11 @@ const upload = multer({
   storage: multer.diskStorage({}),
   limits: {
     fieldSize: Math.max(
-      DI.models.Submission.LIMIT_SIZE_CODE,
-      DI.models.Submission.LIMIT_SIZE_EXECUTABLE,
-      DI.models.Submission.LIMIT_SIZE_TEXT
+      DI.config.compile.limits.sizeOfCode,
+      DI.config.compile.limits.sizeOfBin,
+      DI.config.compile.limits.sizeOfText
     ) * 2,
-    fileSize: DI.models.Submission.LIMIT_SIZE_EXECUTABLE * 2,
+    fileSize: DI.config.compile.limits.sizeOfBin * 2,
   },
 });
 
@@ -78,15 +78,6 @@ export default class Handler {
     });
   }
 
-  @web.get('/api/limits')
-  @web.middleware(utils.checkAPI())
-  async apiGetLimitations(req, res) {
-    res.json(_.pick(DI.models.Submission, [
-      'LIMIT_SIZE_EXECUTABLE',
-      'LIMIT_SIZE_TEXT',
-    ]));
-  }
-
   @web.post('/api/compileBegin')
   @web.middleware(utils.sanitizeBody({
     id: utils.checkNonEmptyString(),
@@ -141,6 +132,16 @@ export default class Handler {
       buffer,
     );
     res.json(sdoc);
+  }
+
+  @web.get('/api/binary')
+  @web.middleware(utils.sanitizeQuery({
+    id: utils.checkNonEmptyString(),
+  }))
+  @web.middleware(utils.checkAPI())
+  async apiGetBinary(req, res) {
+    const sdoc = await DI.models.Submission.getSubmissionObjectByIdAsync(req.data.id, { executable: 1 });
+    res.send(sdoc.executable.buffer);
   }
 
 }

@@ -1,3 +1,4 @@
+import fsp from 'fs-promise';
 import mongoose from 'mongoose';
 
 export default () => {
@@ -24,7 +25,7 @@ export default () => {
       status: String,
       u1Black: Boolean,
       u2Black: Boolean, // !u1Black
-      initialMapId: String,
+      mapId: String,
       beginJudgeAt: Date,
       endJudgeAt: Date,
       logs: String,
@@ -60,20 +61,26 @@ export default () => {
     return this.STATUS_SYSTEM_ERROR;
   };
 
+  MatchSchema.statics.getMapFromIdAsync = async function (mapId) {
+    const filePath = `./maps/${mapId}.json`;
+    const mapContent = await fsp.readFile(filePath);
+    return mapContent.toString();
+  };
+
   /**
    * Generate initial round docs for a match
    * @return {[Match.Round]}
    */
   function generateRoundDocs() {
     const rounds = [];
-    for (const mapId of DI.config.match.initialMaps) {
+    for (const mapId of DI.config.match.maps) {
       for (const u1Black of [true, false]) {
         rounds.push({
           _id: mongoose.Types.ObjectId(),
           status: MatchSchema.statics.STATUS_PENDING,
           u1Black,
           u2Black: !u1Black,
-          initialMapId: String(mapId),
+          mapId: String(mapId),
         });
       }
     }
@@ -90,15 +97,28 @@ export default () => {
    */
   MatchSchema.statics.addMatchesForSubmissionAsync = async function (s1, u1, s2u2docs) {
     await this.remove({ u1Submission: s1 });
-    const mdocs = s2u2docs.map(s2u2doc => ({
+    const mdocs = await this.insertMany(s2u2docs.map(s2u2doc => ({
       status: this.STATUS_PENDING,
       u1,
       u2: s2u2doc._id,
       u1Submission: s1,
       u2Submission: s2u2doc.submissionId,
       rounds: generateRoundDocs(),
-    }));
-    return await this.insertMany(mdocs);
+    })));
+    // push each round of each match into the queue
+    for (const match of mdocs) {
+      for (const round of match.rounds) {
+        await DI.mq.publish('judge', {
+          matchId: String(match._id),
+          s1Id: String(match.u1Submission),
+          s2Id: String(match.u2Submission),
+          roundId: round._id,
+          u1field: round.u1Black ? 'black' : 'white',
+          map: await this.getMapFromIdAsync(round.mapId),
+          rules: DI.config.match.rules,
+        });
+      }
+    }
   };
 
   MatchSchema.index({ u1Submission: 1, u2Submission: -1 }, { unique: true });
