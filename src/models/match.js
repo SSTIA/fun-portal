@@ -112,10 +112,10 @@ export default () => {
     for (const match of mdocs) {
       for (const round of match.rounds) {
         await DI.mq.publish('judge', {
-          matchId: String(match._id),
-          s1Id: String(match.u1Submission),
-          s2Id: String(match.u2Submission),
-          roundId: round._id,
+          mdocid: String(match._id),
+          s1docid: String(match.u1Submission),
+          s2docid: String(match.u2Submission),
+          rid: round._id,
           u1field: round.u1Black ? 'black' : 'white',
           map: await this.getMapFromIdAsync(round.mapId),
           rules: DI.config.match.rules,
