@@ -32,6 +32,7 @@
     "filesize": "^3.3.0",
     "flex-layout-attribute": "^1.0.3",
     "fs-promise": "^0.5.0",
+    "gridfs-stream": "^1.1.1",
     "helmet": "^2.3.0",
     "highlight.js": "^9.7.0",
     "jquery": "^3.1.1",

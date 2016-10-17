@@ -8,7 +8,7 @@ export default () => {
   const SubmissionSchema = new mongoose.Schema({
     user: { type: mongoose.Schema.Types.ObjectId, ref: 'User' },
     code: String,
-    executable: Buffer,
+    exeBlob: mongoose.Schema.Types.ObjectId,  // grid fs
     status: String,
     text: String,
     taskToken: String,    // A unique token for each task, so that duplicate tasks
@@ -36,9 +36,9 @@ export default () => {
   /**
    * Get the submission object by userId
    *
-   * @return {User} Mongoose submission object
+   * @return {Submission} Mongoose submission object
    */
-  SubmissionSchema.statics.getSubmissionObjectByIdAsync = async function (id, projection = { executable: 0 }, throwWhenNotFound = true) {
+  SubmissionSchema.statics.getSubmissionObjectByIdAsync = async function (id, projection = {}, throwWhenNotFound = true) {
     if (!objectId.isValid(id)) {
       if (throwWhenNotFound) {
         throw new errors.UserError('Submission not found');
@@ -124,7 +124,7 @@ export default () => {
       DI.logger.error(error);
       throw error;
     }
-    sdoc.executable = null;
+    sdoc.exeBlob = null;
     sdoc.status = this.STATUS_PENDING;
     sdoc.text = '';
     sdoc.taskToken = uuid.v4();
@@ -206,11 +206,11 @@ export default () => {
    * @param  {String} taskToken
    * @param  {Boolean} success
    * @param  {String} text
-   * @param  {Buffer} exeBuffer
+   * @param  {MongoId} exeBlobId
    * @return {Submisison}
    */
-  SubmissionSchema.statics.judgeCompleteCompileAsync = async function (sid, taskToken, success, text, exeBuffer = null) {
-    if (!success && exeBuffer !== null) {
+  SubmissionSchema.statics.judgeCompleteCompileAsync = async function (sid, taskToken, success, text, exeBlobId = null) {
+    if (!success && exeBlobId !== null) {
       throw new Error('judgeCompleteCompileAsync: No executable should be supplied');
     }
     const sdoc = await this.getSubmissionObjectByIdAsync(sid);
@@ -220,8 +220,8 @@ export default () => {
     sdoc.text = text;
     sdoc.status = success ? this.STATUS_RUNNING : this.STATUS_COMPILE_ERROR;
     sdoc.taskToken = null;
-    if (success && exeBuffer !== null) {
-      sdoc.executable = exeBuffer;
+    if (success && exeBlobId !== null) {
+      sdoc.exeBlob = exeBlobId;
     }
     await sdoc.save();
     if (success) {

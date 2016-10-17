@@ -17,6 +17,11 @@ mongodbConnection:
   inject:
     - logger
 
+gridfs:
+  path: mongodb.gridfs
+  inject:
+    - mongodbConnection
+
 webServer:
   path: web.server
   inject:

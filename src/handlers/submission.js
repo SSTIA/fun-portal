@@ -1,12 +1,11 @@
 import * as web from 'express-decorators';
 import multer from 'multer';
 import fsp from 'fs-promise';
-import _ from 'lodash';
 import utils from 'libs/utils';
 import errors from 'libs/errors';
 import permissions from 'libs/permissions';
 
-const upload = multer({
+const binUpload = multer({
   storage: multer.diskStorage({}),
   limits: {
     fieldSize: Math.max(
@@ -116,15 +115,22 @@ export default class Handler {
     text: utils.checkString(),
     success: utils.checkBool(),
   }))
-  @web.middleware(upload.single('binary'))
+  @web.middleware(binUpload.single('binary'))
   @web.middleware(utils.checkAPI())
   async apiCompileEnd(req, res) {
-    let buffer = null;
+    let file = null;
     if (req.data.success && req.file) {
-      buffer = await fsp.readFile(req.file.path);
+      file = await DI.gridfs.putBlobAsync(fsp.createReadStream(req.file.path), {
+        contentType: 'application/x-xz',
+        metadata: {
+          type: 'submission.binary',
+          submission: req.data.id,
+        },
+      });
       try {
         await fsp.remove(req.file.path);
-      } catch (ignore) {
+      } catch (err) {
+        DI.logger.error(err);
       }
     }
     const sdoc = await DI.models.Submission.judgeCompleteCompileAsync(
@@ -132,7 +138,7 @@ export default class Handler {
       req.data.token,
       req.data.success,
       req.data.text,
-      buffer,
+      file === null ? null : file._id
     );
     res.json(sdoc);
   }
@@ -143,11 +149,16 @@ export default class Handler {
   }))
   @web.middleware(utils.checkAPI())
   async apiGetBinary(req, res) {
-    const sdoc = await DI.models.Submission.getSubmissionObjectByIdAsync(
-      req.data.id,
-      { executable: 1 }
-    );
-    res.send(new Buffer(sdoc.executable));
+    const sdoc = await DI.models.Submission.getSubmissionObjectByIdAsync(req.data.id);
+    if (!sdoc.exeBlob) {
+      throw new errors.UserError('Executable file not found for the submission');
+    }
+    const exists = await DI.gridfs.existsAsync(sdoc.exeBlob);
+    if (!exists) {
+      throw new errors.UserError('Executable blob does not exist in the database for the submission');
+    }
+    res.setHeader('Content-disposition', `attachment; filename=${req.data.id}.7z`);
+    await DI.gridfs.getBlobAsync(sdoc.exeBlob, res);
   }
 
 }
