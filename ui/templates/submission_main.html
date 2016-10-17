@@ -36,8 +36,7 @@
           </td>
           <td class="col--time">{{ sdoc.createdAt|datetime }}</td>
           <td class="col--action">
-            <a href="{{ url('/submission/{0}', false, [sdoc._id]) }}" class="typo-a">Detail</a> ·
-            <a href="{{ url('/submission/{0}/match', false, [sdoc._id]) }}" class="typo-a">Matches</a>
+            <a href="{{ url('/submission/{0}', false, [sdoc._id]) }}" class="typo-a">Detail</a>
           </td>
         </tr>
       {% endfor %}

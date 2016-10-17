@@ -3,7 +3,6 @@ import multer from 'multer';
 import fsp from 'fs-promise';
 import utils from 'libs/utils';
 import errors from 'libs/errors';
-import permissions from 'libs/permissions';
 
 const binUpload = multer({
   storage: multer.diskStorage({}),
@@ -64,16 +63,16 @@ export default class Handler {
   @web.middleware(utils.checkLogin())
   async getSubmissionDetailAction(req, res) {
     const sdoc = await DI.models.Submission.getSubmissionObjectByIdAsync(req.params.id);
-    if (
-      !sdoc.user.equals(req.credential._id)
-      && !req.credential.hasPermission(permissions.PERM_VIEW_ALL_SUBMISSION)
-    ) {
-      throw new errors.PermissionError();
-    }
     await sdoc.populate('user').execPopulate();
+    const mdocs = await DI.models.Match.getMatchesForSubmission(sdoc._id);
+    await DI.models.User.populate(mdocs, 'u1 u2');
+    let maxRounds = 0;
+    mdocs.forEach(mdoc => maxRounds = Math.max(maxRounds, mdoc.rounds.length));
     res.render('submission_detail', {
       page_title: 'Submission Detail',
       sdoc,
+      mdocs,
+      maxRounds,
     });
   }
 

@@ -1,0 +1,25 @@
+.match-status--text
+  for key, value in $match-status-color
+    &.{key}
+      color: value !important
+
+.match-status--icon
+  display: inline-block
+  width: 1.15em
+  for key, value in $match-status-icon
+    &.{key}:before
+      content: value
+      color: $match-status-color[key]
+
+.match-status--border
+  border-left: rem(3px) solid transparent
+  for key, value in $match-status-color
+    &.{key}
+      border-left: rem(3px) solid lighten(value, 10%)
+
+.round-status--cell
+  width: 80px
+  for key, value in $round-status-color
+    &.{key}
+      background: lighten(value, 60%)
+      color: #FFF

@@ -3,6 +3,7 @@ import filesize from 'filesize';
 import moment from 'moment';
 import _ from 'lodash';
 import utils from 'libs/utils';
+import permissions from 'libs/permissions';
 
 export default (app) => {
 
@@ -41,6 +42,8 @@ export default (app) => {
 
   // https://github.com/mozilla/nunjucks/issues/884
   njenv.addGlobal('DI', path => _.get(DI, path));
+
+  njenv.addGlobal('permissions', permissions);
 
   // Expose necessary object
   app.use((req, res, next) => {

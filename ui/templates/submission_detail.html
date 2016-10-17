@@ -1,26 +1,83 @@
 {% extends "layout/submission_base.html" %}
 {% block submission_content %}
-<div class="section">
-  <div class="section__header">
-    <h1 class="section__title">
-      <span class="icon submission-status--icon {{ sdoc.status }}"></span>
-      <span class="submission-status--text {{ sdoc.status }}">
-        {{ DI('models.Submission.STATUS_TEXT')[sdoc.status] }}
-      </span>
-    </h1>
+  <div class="section">
+    <div class="section__header">
+      <h1 class="section__title">
+        <span class="icon submission-status--icon {{ sdoc.status }}"></span>
+        <span class="submission-status--text {{ sdoc.status }}">
+          {{ DI('models.Submission.STATUS_TEXT')[sdoc.status] }}
+        </span>
+      </h1>
+    </div>
+    <div class="section__body typo">
+      <pre>{{ sdoc.text }}</pre>
+    </div>
   </div>
-  <div class="section__body typo">
-    <pre>{{ sdoc.text }}</pre>
+{% if mdocs.length > 0 %}
+  <div class="section">
+    <div class="section__header">
+      <h1 class="section__title">Related Matches</h1>
+    </div>
+    <div class="section__body no-padding">
+      <table class="data-table">
+        <colgroup>
+          <col class="col--status match-status--border">
+          <col class="col--challenger">
+          <col class="col--challengee">
+        {% for mdoc in range(0, maxRounds) %}
+          <col class="col--round-status round-status--cell ">
+        {% endfor %}
+        </colgroup>
+        <thead>
+          <tr>
+            <th class="col--status match-status--border">Status</th>
+            <th class="col--challenger">Challenger</th>
+            <th class="col--challengee">Challengee</th>
+            <th class="col--rounds" colspan="{{ maxRounds }}">Rounds</th>
+          </tr>
+        </thead>
+        <tbody>
+        {% for mdoc in mdocs %}
+          <tr>
+            <td class="col--status match-status--border {{ mdoc.status }}">
+              <span class="icon match-status--icon {{ mdoc.status }}"></span>
+              <span class="match-status--text {{ mdoc.status }}">
+                {{ DI('models.Match.STATUS_TEXT')[mdoc.status] }}
+              </span>
+            </td>
+            <td class="col--challenger">
+              <a href="{{ url('/submission/{0}', false, [mdoc.u1Submission]) }}">
+                {{ mdoc.u1.profile.displayName }}
+              </a>
+            </td>
+            <td class="col--challengee">
+              <a href="{{ url('/submission/{0}', false, [mdoc.u2Submission]) }}">
+                {{ mdoc.u2.profile.displayName }}
+              </a>
+            </td>
+          {% for rdoc in mdoc.rounds %}
+            <td class="col--round-status round-status--cell {{ rdoc.status }}">{{ DI('models.Match.ROUND_STATUS_TEXT')[rdoc.status] }}</td>
+          {% endfor %}
+          </tr>
+        {% endfor %}
+        </tbody>
+      </table>
+    </div>
+    <div class="section__body">
+      <div class="supplementary">Note: Win or lose is referenced to the challenger.</div>
+    </div>
   </div>
-</div>
-<div class="section">
-  <div class="section__header">
-    <h1 class="section__title">Source Code</h1>
+{% endif %}
+{% if sdoc.user.equals(req.credential._id) or req.credential.hasPermission(permissions.PERM_VIEW_ALL_SUBMISSION) %}
+  <div class="section">
+    <div class="section__header">
+      <h1 class="section__title">Source Code</h1>
+    </div>
+    <div class="section__body">
+      <pre><code class="cpp">{{ sdoc.code }}</code></pre>
+    </div>
   </div>
-  <div class="section__body">
-    <pre><code class="cpp">{{ sdoc.code }}</code></pre>
-  </div>
-</div>
+{% endif %}
 {% endblock %}
 {% block submission_sidebar %}
 <div class="side section">

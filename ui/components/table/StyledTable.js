@@ -37,6 +37,7 @@ export default class StyledTable extends DOMAttachedObject {
 
     const stickyOptions = {
       parent: this.$container,
+      offset_top: 0,
     };
     this.$header.stick_in_parent(stickyOptions);
 

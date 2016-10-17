@@ -27,6 +27,7 @@ $success-color = #25ad40
 $fail-color = #fb5555
 $progress-color = #f39800
 $invalid-color = #9fa0a0
+$draw-color = #f39800
 
 $table-padding-h = 10px
 
@@ -71,3 +72,31 @@ $submission-status-icon = {
   'ignored': $icon-close,
 }
 
+// Match Status
+$match-status-color = {
+  'pending': $invalid-color,
+  'se': $invalid-color,
+  'running': $invalid-color,
+  'u1win': $success-color,
+  'u2win': $fail-color,
+  'draw': $draw-color,
+}
+
+$match-status-icon = {
+  'pending': $icon-schedule,
+  'se': $icon-close,
+  'running': $icon-hourglass,
+  'u1win': $icon-check,
+  'u2win': $icon-close,
+  'draw': $icon-help,
+}
+
+// Round Status
+$round-status-color = {
+  'pending': $invalid-color,
+  'se': $invalid-color,
+  'running': $invalid-color,
+  'u1win': $success-color,
+  'u2win': $fail-color,
+  'draw': $draw-color,
+}
