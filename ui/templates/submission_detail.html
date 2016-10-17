@@ -39,24 +39,34 @@
         <tbody>
         {% for mdoc in mdocs %}
           <tr>
-            <td class="col--status match-status--border {{ mdoc.status }}">
-              <span class="icon match-status--icon {{ mdoc.status }}"></span>
-              <span class="match-status--text {{ mdoc.status }}">
-                {{ DI('models.Match.STATUS_TEXT')[mdoc.status] }}
+            {% set status = getRelativeStatus(mdoc.status, mdoc) %}
+            <td class="col--status match-status--border {{ status }}">
+              <span class="icon match-status--icon {{ status }}"></span>
+              <span class="match-status--text {{ status }}">
+                {{ DI('models.Match.STATUS_TEXT')[status] }}
               </span>
             </td>
             <td class="col--challenger">
+            {% if mdoc.u1.equals(sdoc.user) %}
+              <span class="text-aqua">(Submitter)</span>
+            {% else %}
               <a href="{{ url('/submission/{0}', false, [mdoc.u1Submission]) }}">
                 {{ mdoc.u1.profile.displayName }}
               </a>
+            {% endif %}
             </td>
             <td class="col--challengee">
+            {% if mdoc.u2.equals(sdoc.user) %}
+              <span class="text-aqua">(Submitter)</span>
+            {% else %}
               <a href="{{ url('/submission/{0}', false, [mdoc.u2Submission]) }}">
                 {{ mdoc.u2.profile.displayName }}
               </a>
+            {% endif %}
             </td>
           {% for rdoc in mdoc.rounds %}
-            <td class="col--round-status round-status--cell {{ rdoc.status }}">{{ DI('models.Match.ROUND_STATUS_TEXT')[rdoc.status] }}</td>
+            {% set status = getRelativeStatus(rdoc.status, mdoc) %}
+            <td class="col--round-status round-status--cell {{ status }}">{{ DI('models.Match.ROUND_STATUS_TEXT')[status] }}</td>
           {% endfor %}
           </tr>
         {% endfor %}
@@ -64,7 +74,7 @@
       </table>
     </div>
     <div class="section__body">
-      <div class="supplementary">Note: Win or lose is referenced to the challenger.</div>
+      <div class="supplementary">Note: Win or lose is relative to the submitter.</div>
     </div>
   </div>
 {% endif %}

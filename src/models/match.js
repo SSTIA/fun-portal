@@ -45,6 +45,10 @@ export default () => {
   MatchSchema.statics.STATUS_U2WIN = 'u2win';
   MatchSchema.statics.STATUS_DRAW = 'draw';
 
+  MatchSchema.statics.RELATIVE_STATUS_WIN = 'win';
+  MatchSchema.statics.RELATIVE_STATUS_LOSE = 'lose';
+  MatchSchema.statics.RELATIVE_STATUS_DRAW = 'draw';
+
   MatchSchema.statics.JUDGE_EXITCODE_STATUS = {
     1: MatchSchema.statics.STATUS_U1WIN,
     2: MatchSchema.statics.STATUS_U2WIN,
@@ -169,6 +173,32 @@ export default () => {
       }
     }
     return mdocs;
+  };
+
+  /**
+   * Translate MatchStatus into RelativeStatus
+   *
+   * @param  {String}  status
+   * @param  {Boolean} isU1
+   * @return {String}
+   */
+  MatchSchema.statics.getRelativeStatus = function (status, isU1 = true) {
+    if (status !== MatchSchema.statics.STATUS_U1WIN && status !== MatchSchema.statics.STATUS_U2WIN) {
+      return status;
+    }
+    if (isU1) {
+      if (status === MatchSchema.statics.STATUS_U1WIN) {
+        return MatchSchema.statics.RELATIVE_STATUS_WIN;
+      } else {
+        return MatchSchema.statics.RELATIVE_STATUS_LOSE;
+      }
+    } else {
+      if (status === MatchSchema.statics.STATUS_U1WIN) {
+        return MatchSchema.statics.RELATIVE_STATUS_LOSE;
+      } else {
+        return MatchSchema.statics.RELATIVE_STATUS_WIN;
+      }
+    }
   };
 
   /**

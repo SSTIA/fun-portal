@@ -73,6 +73,7 @@ export default class Handler {
       sdoc,
       mdocs,
       maxRounds,
+      getRelativeStatus: (status, mdoc) => DI.models.Match.getRelativeStatus(status, mdoc.u1.equals(sdoc.user)),
     });
   }
 
