@@ -23,3 +23,8 @@
     &.{key}
       background: lighten(value, 60%)
       color: #FFF
+
+.round-status--text
+  for key, value in $round-status-color
+    &.{key}
+      color: value !important
