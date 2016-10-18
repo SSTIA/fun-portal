@@ -12,6 +12,17 @@ const logUpload = multer({
 @web.controller('/match')
 export default class Handler {
 
+  @web.get('/:id')
+  @web.middleware(utils.checkLogin())
+  async getMatchDetailAction(req, res) {
+    const mdoc = await DI.models.Match.getMatchObjectByIdAsync(req.params.id);
+    await mdoc.populate('u1 u2 u1Submission u2Submission').execPopulate();
+    res.render('match_detail', {
+      page_title: 'Match Detail',
+      mdoc,
+    });
+  }
+
   @web.post('/api/roundBegin')
   @web.middleware(utils.sanitizeBody({
     mid: utils.checkNonEmptyString(),

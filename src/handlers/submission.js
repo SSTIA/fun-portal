@@ -66,13 +66,10 @@ export default class Handler {
     await sdoc.populate('user').execPopulate();
     const mdocs = await DI.models.Match.getMatchesForSubmission(sdoc._id);
     await DI.models.User.populate(mdocs, 'u1 u2');
-    let maxRounds = 0;
-    mdocs.forEach(mdoc => maxRounds = Math.max(maxRounds, mdoc.rounds.length));
     res.render('submission_detail', {
       page_title: 'Submission Detail',
       sdoc,
       mdocs,
-      maxRounds,
       getRelativeStatus: (status, mdoc) => DI.models.Match.getRelativeStatus(status, mdoc.u1.equals(sdoc.user)),
     });
   }

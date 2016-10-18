@@ -1,3 +1,21 @@
 .page--submission_detail
   .col--status
-    width: 150px
+    width: rem(150px)
+
+  .col--challenger, .col--challengee
+    width: rem(120px)
+
+  .col--rounds
+    padding: 0 !important
+    height: rem(35px)
+    line-height: rem(35px)
+
+    .round-status--cell
+      box-sizing: border-box
+      padding: rem(0 5px)
+      white-space: nowrap
+      overflow: hidden
+      text-overflow: ellipsis
+
+      &:hover
+        text-decoration: none

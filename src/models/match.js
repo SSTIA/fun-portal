@@ -59,20 +59,15 @@ export default () => {
   MatchSchema.statics.STATUS_TEXT = {
     'pending': 'Pending',
     'running': 'Running',
-    'se': 'System Error',
-    'u1win': 'Win',
-    'u2win': 'Lose',
+    'se': 'Error',
+    'win': 'Win',
+    'lose': 'Lose',
+    'u1win': 'Challenger Win',
+    'u2win': 'Challenger Lose',
     'draw': 'Draw',
   };
 
-  MatchSchema.statics.ROUND_STATUS_TEXT = {
-    'pending': '(Pending)',
-    'running': '(Running)',
-    'se': '(Error)',
-    'u1win': '',
-    'u2win': '',
-    'draw': '',
-  };
+  MatchSchema.statics.ROUND_STATUS_TEXT = MatchSchema.statics.STATUS_TEXT;
 
   /**
    * Get the match object by userId
@@ -268,11 +263,12 @@ export default () => {
   MatchSchema.statics.judgeStartRoundAsync = async function (mdocid, rid) {
     const mdoc = await this.getMatchObjectByIdAsync(mdocid);
     const round = mdoc.rounds.find(rdoc => rdoc._id.equals(rid));
+    console.log(mdocid, rid, round);
     if (round !== undefined) {
-      if (round.status !== this.STATUS_PENDING) {
+      /*if (round.status !== this.STATUS_PENDING) {
         DI.logger.error(`judgeStartRoundAsync: round ${rid} of match ${mdocid} is not in pending state (state = ${round.status})`);
         return;
-      }
+      }*/
       round.status = this.STATUS_RUNNING;
       round.beginJudgeAt = new Date();
       mdoc.updateMatchStatus();
