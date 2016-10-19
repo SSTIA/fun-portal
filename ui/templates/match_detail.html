@@ -145,7 +145,7 @@
       </div>
       <div class="section__body typo">
         <dl class="large horizontal">
-          <dt>User</dt>
+          <dt>Submit By</dt>
           <dd>
             {{ mdoc.u1.profile.displayName }}
           </dd>
@@ -154,7 +154,7 @@
           <dt>Detail</dt>
           <dd>
             <a href="{{ url('/submission/{0}', false, [mdoc.u1Submission._id]) }}">
-              View
+              View #{{ mdoc.u1Submission.version }}
             </a>
           </dd>
         </dl>
@@ -164,7 +164,7 @@
       </div>
       <div class="section__body typo">
         <dl class="large horizontal">
-          <dt>User</dt>
+          <dt>Submit By</dt>
           <dd>
             {{ mdoc.u2.profile.displayName }}
           </dd>
@@ -173,7 +173,7 @@
           <dt>Detail</dt>
           <dd>
             <a href="{{ url('/submission/{0}', false, [mdoc.u2Submission._id]) }}">
-              View
+              View #{{ mdoc.u2Submission.version }}
             </a>
           </dd>
         </dl>

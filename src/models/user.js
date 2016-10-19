@@ -20,9 +20,13 @@ export default () => {
       teacher: String,
       initial: Boolean,
     },
+    submissionNumber: Number,
   };
 
   const UserSchema = new mongoose.Schema(schema, { timestamps: true });
+
+  // User Model
+  let User;
 
   /**
    * Normalize the userName
@@ -45,8 +49,8 @@ export default () => {
    * @return {User} Mongoose user object
    */
   UserSchema.statics.getUserObjectByUserNameAsync = async function (userName, throwWhenNotFound = true) {
-    const userNameNormalized = this.normalizeUserName(userName);
-    const user = await this.findOne({ userName_std: userNameNormalized });
+    const userNameNormalized = User.normalizeUserName(userName);
+    const user = await User.findOne({ userName_std: userNameNormalized });
     if (user === null && throwWhenNotFound) {
       throw new errors.UserError('User not found');
     }
@@ -65,7 +69,7 @@ export default () => {
         return null;
       }
     }
-    const user = await this.findOne({ _id: id });
+    const user = await User.findOne({ _id: id });
     if (user === null && throwWhenNotFound) {
       throw new errors.UserError('User not found');
     }
@@ -73,12 +77,30 @@ export default () => {
   };
 
   /**
+   * Increase the submission counter of a user and return its new value
+   *
+   * @param  {MongoId} id User Id
+   * @return {Number} Submission counter
+   */
+  UserSchema.statics.incAndGetSubmissionNumberAsync = async function (id) {
+    if (!objectId.isValid(id)) {
+      throw new errors.UserError('User not found');
+    }
+    const udoc = await User.findByIdAndUpdate(
+      id,
+      { $inc: { submissionNumber: 1 } },
+      { new: true, select: { submissionNumber: 1 } }
+    ).exec();
+    return udoc.submissionNumber;
+  };
+
+  /**
    * Insert a new SSO account
    * @return {User} Newly created user object
    */
   UserSchema.statics.createSsoUserAsync = async function ({realName, studentId}) {
-    const userName = this.buildSsoUserName({ studentId });
-    if (await this.getUserObjectByUserNameAsync(userName, false) !== null) {
+    const userName = User.buildSsoUserName({ studentId });
+    if (await User.getUserObjectByUserNameAsync(userName, false) !== null) {
       throw new errors.UserError('Username already taken');
     }
     const newUser = new this({
@@ -91,6 +113,7 @@ export default () => {
         teacher: '',
         initial: true,
       },
+      submissionNumber: 0,
     });
     newUser.setUserName(userName);
     try {
@@ -111,7 +134,7 @@ export default () => {
    * @return {User} Newly created user object
    */
   UserSchema.statics.createNonSsoUserAsync = async function ({userName, password}) {
-    if (await this.getUserObjectByUserNameAsync(userName, false) !== null) {
+    if (await User.getUserObjectByUserNameAsync(userName, false) !== null) {
       throw new errors.UserError('Username already taken');
     }
     const newUser = new this({
@@ -124,6 +147,7 @@ export default () => {
         teacher: '',
         initial: true,
       },
+      submissionNumber: 0,
     });
     newUser.setUserName(userName);
     await newUser.setPasswordAsync(password);
@@ -145,7 +169,7 @@ export default () => {
    * @return {User} The user object if password matches
    */
   UserSchema.statics.authenticateAsync = async function (userName, password) {
-    const user = await this.getUserObjectByUserNameAsync(userName);
+    const user = await User.getUserObjectByUserNameAsync(userName);
     const match = await user.testPasswordAsync(password);
     if (!match) {
       throw new errors.UserError('Incorrect username or password');
@@ -163,12 +187,12 @@ export default () => {
       throw new errors.UserError('Session expired. Please sign in again.');
     }
     const studentId = resp.properties.UserToken;
-    const userName = this.buildSsoUserName({ studentId });
-    const user = await this.getUserObjectByUserNameAsync(userName, false);
+    const userName = User.buildSsoUserName({ studentId });
+    const user = await User.getUserObjectByUserNameAsync(userName, false);
     if (user === null) {
       // not signed in before. create a new account
       // realname API is not working anymore :(
-      return await this.createSsoUserAsync({ realName: '', studentId });
+      return await User.createSsoUserAsync({ realName: '', studentId });
     }
     return user;
   };
@@ -180,12 +204,12 @@ export default () => {
     if (DI.config.ssoUrl !== false) {
       throw new errors.PermissionError();
     }
-    const userName = this.buildSsoUserName({ studentId });
-    const user = await this.getUserObjectByUserNameAsync(userName, false);
+    const userName = User.buildSsoUserName({ studentId });
+    const user = await User.getUserObjectByUserNameAsync(userName, false);
     if (user === null) {
       // not signed in before. create a new account
       // realname API is not working anymore :(
-      return await this.createSsoUserAsync({ realName: '', studentId });
+      return await User.createSsoUserAsync({ realName: '', studentId });
     }
     return user;
   };
@@ -198,7 +222,7 @@ export default () => {
     if (profile !== Object(profile)) {
       throw new Error('Parameter `profile` should be an object');
     }
-    const user = await this.getUserObjectByIdAsync(userId);
+    const user = await User.getUserObjectByIdAsync(userId);
     user.profile = {
       ...profile,
       initial: false,
@@ -257,5 +281,7 @@ export default () => {
 
   UserSchema.index({ userName_std: 1 }, { unique: true });
 
-  return mongoose.model('User', UserSchema);
+  User = mongoose.model('User', UserSchema);
+  return User;
+
 };

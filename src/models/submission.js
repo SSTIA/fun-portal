@@ -7,6 +7,7 @@ import errors from 'libs/errors';
 export default () => {
   const SubmissionSchema = new mongoose.Schema({
     user: { type: mongoose.Schema.Types.ObjectId, ref: 'User' },
+    version: Number,  // nth submission of this user
     code: String,
     exeBlob: mongoose.Schema.Types.ObjectId,  // grid fs
     status: String,
@@ -144,8 +145,11 @@ export default () => {
     if (code.length > DI.config.compile.limits.sizeOfCode) {
       throw new errors.ValidationError('Your source code is too large.');
     }
+    const version = await DI.models.User.incAndGetSubmissionNumberAsync(uid);
+    console.log(version);
     const sdoc = new this({
       user: uid,
+      version,
       code,
       status: Submission.STATUS_PENDING,
       text: '',

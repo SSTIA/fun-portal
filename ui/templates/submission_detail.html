@@ -3,7 +3,7 @@
   <div class="section">
     <div class="section__header">
       <h1 class="section__title">
-        {{ sdoc._id }}:
+        {{ sdoc.user.profile.displayName }}'s #{{ sdoc.version }} Submission:
         <span class="icon submission-status--icon {{ sdoc.status }}"></span>
         <span class="submission-status--text {{ sdoc.status }}">
           {{ DI('models.Submission.STATUS_TEXT')[sdoc.status] }}
@@ -18,6 +18,9 @@
   <div class="section">
     <div class="section__header">
       <h1 class="section__title">Related Matches</h1>
+    </div>
+    <div class="section__body">
+      <div class="supplementary">Showing last 50 matches related to this submission.</div>
     </div>
     <div class="section__body no-padding">
       <table class="data-table">
@@ -53,19 +56,21 @@
               {{ mdoc.createdAt|datetime }}
             </td>
             <td class="col--challenger">
+            #{{ mdoc.u1Submission.version }}:
             {% if mdoc.u1.equals(sdoc.user) %}
               <span class="text-aqua">(Submitter)</span>
             {% else %}
-              <a href="{{ url('/submission/{0}', false, [mdoc.u1Submission]) }}">
+              <a href="{{ url('/submission/{0}', false, [mdoc.u1Submission._id]) }}">
                 {{ mdoc.u1.profile.displayName }}
               </a>
             {% endif %}
             </td>
             <td class="col--challengee">
+            #{{ mdoc.u2Submission.version }}:
             {% if mdoc.u2.equals(sdoc.user) %}
               <span class="text-aqua">(Submitter)</span>
             {% else %}
-              <a href="{{ url('/submission/{0}', false, [mdoc.u2Submission]) }}">
+              <a href="{{ url('/submission/{0}', false, [mdoc.u2Submission._id]) }}">
                 {{ mdoc.u2.profile.displayName }}
               </a>
             {% endif %}

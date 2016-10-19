@@ -363,7 +363,7 @@ export default () => {
         { u1Submission: sid },
         { u2Submission: sid },
       ],
-    });
+    }).sort({ _id: -1 }).limit(20);
     return mdocs;
   };
 

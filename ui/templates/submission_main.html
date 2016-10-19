@@ -15,12 +15,14 @@
     <table class="data-table">
       <colgroup>
         <col class="col--status submission-status--border">
+        <col class="col--version">
         <col class="col--time">
         <col class="col--action">
       </colgroup>
       <thead>
         <tr>
           <th class="col--status submission-status--border">Status</th>
+          <th class="col--version">Version</th>
           <th class="col--time">Submit At</th>
           <th class="col--action">Actions</th>
         </tr>
@@ -34,6 +36,7 @@
               {{ DI('models.Submission.STATUS_TEXT')[sdoc.status] }}
             </span>
           </td>
+          <td class="col--version">#{{ sdoc.version }}</td>
           <td class="col--time">{{ sdoc.createdAt|datetime }}</td>
           <td class="col--action">
             <a href="{{ url('/submission/{0}', false, [sdoc._id]) }}" class="typo-a">Detail</a>

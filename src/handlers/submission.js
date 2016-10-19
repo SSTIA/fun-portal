@@ -150,6 +150,7 @@ export default class Handler {
     await sdoc.populate('user').execPopulate();
     const mdocs = await DI.models.Match.getMatchesForSubmission(sdoc._id);
     await DI.models.User.populate(mdocs, 'u1 u2');
+    await DI.models.Submission.populate(mdocs, 'u1Submission u2Submission');
     res.render('submission_detail', {
       page_title: 'Submission Detail',
       sdoc,
