@@ -2,8 +2,77 @@
 {% block content %}
 <div class="row" data-sticky-parent>
   <div class="medium-9 columns">
+    <div class="section">
+      <div class="section__header">
+        <h1 class="section__title">Rounds</h1>
+      </div>
+      <div class="section__body no-padding">
+        <table class="data-table">
+          <colgroup>
+            <col class="col--round-no">
+            <col class="col--map">
+            <col class="col--challenger round-status--cell">
+            <col class="col--challengee round-status--cell">
+            <col class="col--begin-at"></col>
+            <col class="col--end-at"></col>
+            <col class="col--action"></col>
+          </colgroup>
+          <thead>
+            <tr>
+              <th class="col--round-no">#</th>
+              <th class="col--map">Board</th>
+              <th class="col--challenger round-status--cell">{{ mdoc.u1.profile.displayName }}</th>
+              <th class="col--challengee round-status--cell">{{ mdoc.u2.profile.displayName }}</th>
+              <th class="col--begin-at">Begin At</th>
+              <th class="col--end-at">End At</th>
+              <th class="col--action">Action</th>
+            </tr>
+          </thead>
+          <tbody>
+          {% for rdoc in mdoc.rounds %}
+            <tr>
+              <td class="col--round-no">#{{ loop.index }}</td>
+              <td class="col--map">{{ rdoc.mapId }}</td>
+              {% set status = DI('models.Match.getRelativeStatus')(rdoc.status, true) %}
+              <td class="col--challenger">
+                <div class="field-icon field--{% if rdoc.u1Black %}black{% else %}white{% endif %}"></div>
+                <span class="icon round-status--icon {{ status }}"></span>
+                <span class="round-status--text {{ status }}">
+                  {{ DI('models.Match.ROUND_STATUS_TEXT')[status] }}
+                </span>
+              </td>
+              {% set status = DI('models.Match.getRelativeStatus')(rdoc.status, false) %}
+              <td class="col--challengee">
+                <div class="field-icon field--{% if rdoc.u2Black %}black{% else %}white{% endif %}"></div>
+                <span class="icon round-status--icon {{ status }}"></span>
+                <span class="round-status--text {{ status }}">
+                  {{ DI('models.Match.ROUND_STATUS_TEXT')[status] }}
+                </span>
+              </td>
+              <td class="col--begin-at">
+                {% if rdoc.beginJudgeAt %}
+                  {{ rdoc.beginJudgeAt|datetime }}
+                {% else %}
+                  --
+                {% endif %}
+              </td>
+              <td class="col--end-at">
+                {% if rdoc.endJudgeAt %}
+                  {{ rdoc.endJudgeAt|datetime }}
+                {% else %}
+                  --
+                {% endif %}
+              </td>
+              <td class="col--action">View Board</td>
+            </tr>
+          {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    </div>
   {% for rdoc in mdoc.rounds %}
-    <div class="side section">
+  <!--
+    <div class="section">
       <div class="section__header">
         <h1 class="section__title">
           Round #{{ loop.index }}:
@@ -44,6 +113,7 @@
         </dl>
       </div>
     </div>
+  -->
   {% endfor %}
   </div>
   <div class="medium-3 columns"><div data-sticky="medium">
@@ -87,12 +157,6 @@
               View
             </a>
           </dd>
-          <dt>Win</dt>
-          <dd>{{ mdoc.u1Stat.win|default('--') }}</dd>
-          <dt>Lose</dt>
-          <dd>{{ mdoc.u1Stat.lose|default('--') }}</dd>
-          <dt>Draw</dt>
-          <dd>{{ mdoc.u1Stat.draw|default('--') }}</dd>
         </dl>
       </div>
       <div class="section__header">
@@ -112,12 +176,6 @@
               View
             </a>
           </dd>
-          <dt>Win</dt>
-          <dd>{{ mdoc.u2Stat.win|default('--') }}</dd>
-          <dt>Lose</dt>
-          <dd>{{ mdoc.u2Stat.lose|default('--') }}</dd>
-          <dt>Draw</dt>
-          <dd>{{ mdoc.u2Stat.draw|default('--') }}</dd>
         </dl>
       </div>
     </div>
