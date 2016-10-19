@@ -1,6 +1,9 @@
 import mongoose from 'mongoose';
+import bluebird from 'bluebird';
 
 export default async (logger) => {
+
+  mongoose.Promise = bluebird;
 
   const db = await new Promise((resolve, reject) => {
     logger.debug(`MongoDB: Connection Url = ${DI.config.db}`);

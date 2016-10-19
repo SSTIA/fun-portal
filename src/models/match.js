@@ -309,7 +309,6 @@ export default () => {
     if (round !== undefined) {
       round.status = Match.STATUS_RUNNING;
       round.beginJudgeAt = new Date();
-      mdoc.updateMatchStatus();
       await mdoc.save();
     }
     return mdoc;

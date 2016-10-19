@@ -63,13 +63,7 @@ export default () => {
     if (!this.matches) {
       return;
     }
-    let hasRunningMatch = false;
-    for (let i = 0; i < this.matches.length; ++i) {
-      if (DI.models.Match.isRunningStatus(this.matches[i].status)) {
-        hasRunningMatch = true;
-        break;
-      }
-    }
+    const hasRunningMatch = _.some(this.matches, mdoc => DI.models.Match.isRunningStatus(mdoc.status));
     if (hasRunningMatch) {
       this.status = Submission.STATUS_RUNNING;
     } else {
@@ -146,7 +140,6 @@ export default () => {
       throw new errors.ValidationError('Your source code is too large.');
     }
     const version = await DI.models.User.incAndGetSubmissionNumberAsync(uid);
-    console.log(version);
     const sdoc = new this({
       user: uid,
       version,
@@ -220,7 +213,6 @@ export default () => {
     }
     sdoc.status = Submission.STATUS_COMPILING;
     await sdoc.save();
-    // TODO: eventbus
     return sdoc;
   };
 

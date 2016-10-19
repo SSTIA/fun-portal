@@ -4,8 +4,8 @@ base:
   port: 80
   host: http://127.0.0.1
   cspReportUrl: /
-  urlPrefix:
-  cdnPrefix:
+  urlPrefix: ''
+  cdnPrefix: ''
   ssoUrl: http://127.0.0.1:20212   # false to enable debug mode and bypass SSO
   api:
     credential:
@@ -16,7 +16,7 @@ base:
       sizeOfCode: 1048576     # 1 MB
       sizeOfBin: 1048576      # 1 MB
       sizeOfText: 102400      # 100 KB
-      submitInterval: 1000    # 1 s
+      submitInterval: 86400000 # 1 day
   match:
     rules:
       moveTimeout: 5000       # 5 s
@@ -24,7 +24,7 @@ base:
       memoryLimit: 367001600  # 350 MB
       width: 20
       height: 20
-      winningStones: 6
+      winningStones: 5
     maps:
       - map1
       - map2
