@@ -53,11 +53,13 @@ export default () => {
   MatchSchema.statics.RELATIVE_STATUS_LOSE = 'lose';
   MatchSchema.statics.RELATIVE_STATUS_DRAW = 'draw';
 
+  MatchSchema.statics.JUDGE_EXITCODE_MIN = 33;
+
   MatchSchema.statics.JUDGE_EXITCODE_STATUS = {
-    1: MatchSchema.statics.STATUS_U1WIN,
-    2: MatchSchema.statics.STATUS_U2WIN,
-    3: MatchSchema.statics.STATUS_DRAW,
-    4: MatchSchema.statics.STATUS_SYSTEM_ERROR,
+    [MatchSchema.statics.JUDGE_EXITCODE_MIN + 0]: MatchSchema.statics.STATUS_U1WIN,
+    [MatchSchema.statics.JUDGE_EXITCODE_MIN + 1]: MatchSchema.statics.STATUS_U2WIN,
+    [MatchSchema.statics.JUDGE_EXITCODE_MIN + 2]: MatchSchema.statics.STATUS_DRAW,
+    [MatchSchema.statics.JUDGE_EXITCODE_MIN + 3]: MatchSchema.statics.STATUS_SYSTEM_ERROR,
   };
 
   MatchSchema.statics.STATUS_TEXT = {
