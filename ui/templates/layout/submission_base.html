@@ -5,8 +5,11 @@
     {% block submission_content %}{% endblock %}
   </div>
   <div class="medium-3 columns"><div data-sticky="medium">
-  {% if page_name !== 'submission_detail' %}
+    {% block submission_sidebar %}{% endblock %}
     <div class="section side">
+      <div class="section__header">
+        <h1 class="section__title">Submission</h1>
+      </div>
       <ol class="menu">
         <li class="menu__item">
           <a href="{{ url('/submission') }}" class="menu__link{% if page_name == 'submission_main' %} active{% endif %}">
@@ -20,17 +23,8 @@
             Submit New Brain
           </a>
         </li>
-        <li class="menu__seperator"></li>
-        <li class="menu__item">
-          <a href="{{ url('/submission/match') }}" class="menu__link{% if page_name == 'submission_all' %} active{% endif %}">
-            <span class="icon icon-schedule"></span>
-            All Matches
-          </a>
-        </li>
       </ol>
     </div>
-  {% endif %}
-  {% block submission_sidebar %}{% endblock %}
   </div></div>
 </div>
 {% endblock %}

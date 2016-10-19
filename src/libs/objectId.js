@@ -20,6 +20,14 @@ const objectId = {
     }
   },
 
+  getFromIdOrDoc: (idOrDoc, field = '_id') => {
+    if (idOrDoc instanceof mongoose.Types.ObjectId) {
+      return idOrDoc;
+    } else {
+      return idOrDoc[field];
+    }
+  },
+
 };
 
 export default objectId;

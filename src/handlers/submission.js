@@ -35,45 +35,6 @@ export default class Handler {
     });
   }
 
-  @web.get('/create')
-  @web.middleware(utils.checkProfile())
-  @web.middleware(utils.checkLogin())
-  async getSubmissionCreateAction(req, res) {
-    res.render('submission_create', {
-      page_title: 'Submit My Brain',
-      canSubmit: await DI.models.Submission.isUserAllowedToSubmitAsync(req.credential._id),
-    });
-  }
-
-  @web.post('/create')
-  @web.middleware(utils.sanitizeBody({
-    code: utils.checkNonEmptyString(),
-  }))
-  @web.middleware(utils.checkProfile())
-  @web.middleware(utils.checkLogin())
-  async postSubmissionCreateAction(req, res) {
-    await DI.models.Submission.createSubmissionAsync(
-      req.credential._id,
-      req.data.code
-    );
-    res.redirect(utils.url('/submission'));
-  }
-
-  @web.get('/:id')
-  @web.middleware(utils.checkLogin())
-  async getSubmissionDetailAction(req, res) {
-    const sdoc = await DI.models.Submission.getSubmissionObjectByIdAsync(req.params.id);
-    await sdoc.populate('user').execPopulate();
-    const mdocs = await DI.models.Match.getMatchesForSubmission(sdoc._id);
-    await DI.models.User.populate(mdocs, 'u1 u2');
-    res.render('submission_detail', {
-      page_title: 'Submission Detail',
-      sdoc,
-      mdocs,
-      getRelativeStatus: (status, mdoc) => DI.models.Match.getRelativeStatus(status, mdoc.u1.equals(sdoc.user)),
-    });
-  }
-
   @web.post('/api/compileBegin')
   @web.middleware(utils.sanitizeBody({
     id: utils.checkNonEmptyString(),
@@ -156,6 +117,45 @@ export default class Handler {
     }
     res.setHeader('Content-disposition', `attachment; filename=${req.data.id}.7z`);
     await DI.gridfs.getBlobAsync(sdoc.exeBlob, res);
+  }
+
+  @web.get('/create')
+  @web.middleware(utils.checkProfile())
+  @web.middleware(utils.checkLogin())
+  async getSubmissionCreateAction(req, res) {
+    res.render('submission_create', {
+      page_title: 'Submit My Brain',
+      canSubmit: await DI.models.Submission.isUserAllowedToSubmitAsync(req.credential._id),
+    });
+  }
+
+  @web.post('/create')
+  @web.middleware(utils.sanitizeBody({
+    code: utils.checkNonEmptyString(),
+  }))
+  @web.middleware(utils.checkProfile())
+  @web.middleware(utils.checkLogin())
+  async postSubmissionCreateAction(req, res) {
+    await DI.models.Submission.createSubmissionAsync(
+      req.credential._id,
+      req.data.code
+    );
+    res.redirect(utils.url('/submission'));
+  }
+
+  @web.get('/:id')
+  @web.middleware(utils.checkLogin())
+  async getSubmissionDetailAction(req, res) {
+    const sdoc = await DI.models.Submission.getSubmissionObjectByIdAsync(req.params.id);
+    await sdoc.populate('user').execPopulate();
+    const mdocs = await DI.models.Match.getMatchesForSubmission(sdoc._id);
+    await DI.models.User.populate(mdocs, 'u1 u2');
+    res.render('submission_detail', {
+      page_title: 'Submission Detail',
+      sdoc,
+      mdocs,
+      getRelativeStatus: (status, mdoc) => DI.models.Match.getRelativeStatus(status, mdoc.u1.equals(sdoc.user)),
+    });
   }
 
 }

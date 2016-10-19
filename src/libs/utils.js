@@ -59,6 +59,18 @@ utils.checkAPI = () => (req, res, next) => {
   next();
 };
 
+utils.checkPermission = (...permissions) => (req, res, next) => {
+  if (!req.credential) {
+    throw new errors.PermissionError();
+  }
+  permissions.forEach(perm => {
+    if (!req.credential.hasPermission(perm)) {
+      throw new errors.PermissionError();
+    }
+  });
+  next();
+};
+
 const sanitize = (source, patterns) => {
   const ret = {};
   for (var key in patterns) {

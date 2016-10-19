@@ -3,6 +3,7 @@ import multer from 'multer';
 import fsp from 'fs-promise';
 import utils from 'libs/utils';
 import errors from 'libs/errors';
+import permissions from 'libs/permissions';
 
 // file limit is infinity
 const logUpload = multer({
@@ -11,17 +12,6 @@ const logUpload = multer({
 
 @web.controller('/match')
 export default class Handler {
-
-  @web.get('/:id')
-  @web.middleware(utils.checkLogin())
-  async getMatchDetailAction(req, res) {
-    const mdoc = await DI.models.Match.getMatchObjectByIdAsync(req.params.id);
-    await mdoc.populate('u1 u2 u1Submission u2Submission').execPopulate();
-    res.render('match_detail', {
-      page_title: 'Match Detail',
-      mdoc,
-    });
-  }
 
   @web.post('/api/roundBegin')
   @web.middleware(utils.sanitizeBody({
@@ -84,9 +74,28 @@ export default class Handler {
       req.data.mid,
       req.data.rid,
       DI.models.Match.getStatusFromJudgeExitCode(req.data.exitCode),
-      file._id
+      file._id,
+      ''
     );
     res.json(mdoc);
+  }
+
+  @web.get('/refreshStatus')
+  @web.middleware(utils.checkPermission(permissions.REFRESH_MATCH_STATUS))
+  async manageRefreshStatus(req, res) {
+    const result = await DI.models.Match.refreshAllMatches();
+    res.json(result);
+  }
+
+  @web.get('/:id')
+  @web.middleware(utils.checkLogin())
+  async getMatchDetailAction(req, res) {
+    const mdoc = await DI.models.Match.getMatchObjectByIdAsync(req.params.id);
+    await mdoc.populate('u1 u2 u1Submission u2Submission').execPopulate();
+    res.render('match_detail', {
+      page_title: 'Match Detail',
+      mdoc,
+    });
   }
 
 }

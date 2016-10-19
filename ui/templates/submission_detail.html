@@ -3,6 +3,7 @@
   <div class="section">
     <div class="section__header">
       <h1 class="section__title">
+        {{ sdoc._id }}:
         <span class="icon submission-status--icon {{ sdoc.status }}"></span>
         <span class="submission-status--text {{ sdoc.status }}">
           {{ DI('models.Submission.STATUS_TEXT')[sdoc.status] }}
@@ -22,6 +23,7 @@
       <table class="data-table">
         <colgroup>
           <col class="col--status match-status--border">
+          <col class="col--at">
           <col class="col--challenger">
           <col class="col--challengee">
           <col class="col--rounds">
@@ -29,6 +31,7 @@
         <thead>
           <tr>
             <th class="col--status match-status--border">Status</th>
+            <th class="col--at">At</th>
             <th class="col--challenger">Challenger</th>
             <th class="col--challengee">Challengee</th>
             <th class="col--rounds">Round Statistics</th>
@@ -45,6 +48,9 @@
                   {{ DI('models.Match.STATUS_TEXT')[status] }}
                 </span>
               </a>
+            </td>
+            <td class="col--at">
+              {{ mdoc.createdAt|datetime }}
             </td>
             <td class="col--challenger">
             {% if mdoc.u1.equals(sdoc.user) %}
@@ -95,6 +101,9 @@
 {% endblock %}
 {% block submission_sidebar %}
   <div class="side section">
+    <div class="section__header">
+      <h1 class="section__title">Submission Info</h1>
+    </div>
     <div class="section__body typo">
       <dl class="large horizontal">
         <dt>Status</dt>
