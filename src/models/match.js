@@ -356,7 +356,7 @@ export default () => {
    * @param  {MongoId} sid
    * @return {[Match]}
    */
-  MatchSchema.statics.getMatchesForSubmission = async function (sid) {
+  MatchSchema.statics.getMatchesForSubmissionAsync = async function (sid) {
     const mdocs = await Match.find({
       $or: [
         { u1Submission: sid },
@@ -369,7 +369,7 @@ export default () => {
   /**
    * Update status of all matches
    */
-  MatchSchema.statics.refreshAllMatches = async function () {
+  MatchSchema.statics.refreshAllMatchesAsync = async function () {
     let ret = {
       updated: 0,
       all: 0,

@@ -83,7 +83,7 @@ export default class Handler {
   @web.get('/refreshStatus')
   @web.middleware(utils.checkPermission(permissions.REFRESH_MATCH_STATUS))
   async manageRefreshStatus(req, res) {
-    const result = await DI.models.Match.refreshAllMatches();
+    const result = await DI.models.Match.refreshAllMatchesAsync();
     res.json(result);
   }
 

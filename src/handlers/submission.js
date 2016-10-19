@@ -148,7 +148,7 @@ export default class Handler {
   async getSubmissionDetailAction(req, res) {
     const sdoc = await DI.models.Submission.getSubmissionObjectByIdAsync(req.params.id);
     await sdoc.populate('user').execPopulate();
-    const mdocs = await DI.models.Match.getMatchesForSubmission(sdoc._id);
+    const mdocs = await DI.models.Match.getMatchesForSubmissionAsync(sdoc._id);
     await DI.models.User.populate(mdocs, 'u1 u2');
     await DI.models.Submission.populate(mdocs, 'u1Submission u2Submission');
     res.render('submission_detail', {

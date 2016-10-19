@@ -305,7 +305,7 @@ export default () => {
    * @param  {ObjectId} mdocid
    * @param  {String} status Match Status
    */
-  SubmissionSchema.statics._updateSubmatchStatus = async function (sid, mdocid, status) {
+  SubmissionSchema.statics._updateSubMatchStatusAsync = async function (sid, mdocid, status) {
     const sdoc = await Submission.getSubmissionObjectByIdAsync(sid);
     if (!sdoc.matches) {
       // Only compiled submission contains `matches`
@@ -320,7 +320,7 @@ export default () => {
    * Update corresponding sub-match status when a match status is updated
    */
   DI.eventBus.on('match.statusChanged', (match) => {
-    Submission._updateSubmatchStatus(
+    Submission._updateSubMatchStatusAsync(
       objectId.getFromIdOrDoc(match.u1Submission),
       match._id,
       match.status
