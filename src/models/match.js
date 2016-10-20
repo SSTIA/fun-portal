@@ -1,6 +1,7 @@
 import _ from 'lodash';
 import fsp from 'fs-promise';
 import mongoose from 'mongoose';
+import async from 'async';
 import objectId from 'libs/objectId';
 import errors from 'libs/errors';
 
@@ -76,13 +77,30 @@ export default () => {
 
   MatchSchema.statics.ROUND_STATUS_TEXT = MatchSchema.statics.STATUS_TEXT;
 
+  async function updateSingleMatchStatus(matchId) {
+    try {
+      const match = await Match.getMatchObjectByIdAsync(matchId);
+      match.updateMatchStatus();
+      await match.save();
+    } catch (ignored) {
+      // ignore errors
+    }
+  }
+
+  /**
+   * Single worker queue to deal with match status updates to avoid race conditions
+   */
+  const matchStatusUpdateQueue = async.queue((matchId, callback) => {
+    updateSingleMatchStatus(matchId).then(() => callback());
+  }, 1);
+
   /**
    * Update the match status when round status is updated
    */
   MatchSchema.pre('save', function (next) {
     const modifiedPaths = this.modifiedPaths();
     if (_.some(modifiedPaths, path => path.match(/^rounds\.\d+\.status$/))) {
-      this.updateMatchStatus();
+      matchStatusUpdateQueue.push(this._id);
     }
     next();
   });

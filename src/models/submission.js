@@ -1,6 +1,7 @@
 import _ from 'lodash';
 import uuid from 'uuid';
 import mongoose from 'mongoose';
+import async from 'async';
 import objectId from 'libs/objectId';
 import errors from 'libs/errors';
 
@@ -22,6 +23,9 @@ export default () => {
     timestamps: true,
   });
 
+  // Submission Model
+  let Submission;
+
   SubmissionSchema.statics.STATUS_PENDING = 'pending';
   SubmissionSchema.statics.STATUS_COMPILING = 'compiling';
   SubmissionSchema.statics.STATUS_COMPILE_ERROR = 'ce';
@@ -38,8 +42,22 @@ export default () => {
     'effective': 'Effective',
   };
 
-  // Submission Model
-  let Submission;
+  async function updateSingleSubmissionStatus(submissionId) {
+    try {
+      const submission = await Submission.getSubmissionObjectByIdAsync(submissionId);
+      submission.updateSubmissionStatus();
+      await submission.save();
+    } catch (ignored) {
+      // ignore errors
+    }
+  }
+
+  /**
+   * Single worker queue to deal with submission status updates to avoid race conditions
+   */
+  const submissionStatusUpdateQueue = async.queue((submissionId, callback) => {
+    updateSingleSubmissionStatus(submissionId).then(() => callback());
+  }, 1);
 
   /**
    * Update the submission status when match status is updated
@@ -47,7 +65,7 @@ export default () => {
   SubmissionSchema.pre('save', function (next) {
     const modifiedPaths = this.modifiedPaths();
     if (_.some(modifiedPaths, path => path.match(/^matches\.\d+\.status$/))) {
-      this.updateSubmissionStatus();
+      submissionStatusUpdateQueue.push(this._id);
     }
     next();
   });
