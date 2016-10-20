@@ -14,7 +14,6 @@ export default (app) => {
     autoescape: true,
     express: app,
     watch: true,
-    throwOnUndefined: true,
   });
 
   Date.prototype.toJSON = function () {

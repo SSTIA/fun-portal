@@ -39,8 +39,9 @@ export default class Handler {
       req.data.mid,
       req.data.rid,
       DI.models.Match.STATUS_SYSTEM_ERROR,
-      null,
-      req.data.text
+      {
+        text: req.data.text,
+      }
     );
     res.json(mdoc);
   }
@@ -50,6 +51,7 @@ export default class Handler {
     mid: utils.checkNonEmptyString(),
     rid: utils.checkNonEmptyString(),
     exitCode: utils.checkInt(),
+    summary: utils.checkNonEmptyString(),
   }))
   @web.middleware(logUpload.single('log'))
   @web.middleware(utils.checkAPI())
@@ -74,8 +76,11 @@ export default class Handler {
       req.data.mid,
       req.data.rid,
       DI.models.Match.getStatusFromJudgeExitCode(req.data.exitCode),
-      file._id,
-      ''
+      {
+        summary: req.data.summary,
+        logBlob: file._id,
+        text: '',
+      }
     );
     res.json(mdoc);
   }

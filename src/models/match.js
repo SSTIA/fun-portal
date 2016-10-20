@@ -33,6 +33,7 @@ export default () => {
       endJudgeAt: Date,
       logBlob: mongoose.Schema.Types.ObjectId,  // grid fs
       text: String,
+      summary: String,
     }],
   }, {
     timestamps: true,
@@ -279,7 +280,7 @@ export default () => {
     } else if (statusStat[Match.STATUS_U1WIN] < statusStat[Match.STATUS_U2WIN]) {
       this.status = Match.STATUS_U2WIN;
     } else {
-      this.status = Match.DRAW;
+      this.status = Match.STATUS_DRAW;
     }
     // Update u1Stat and u2Stat
     this.u1Stat = {
@@ -320,10 +321,10 @@ export default () => {
    * @param  {MongoId} mdocid Match Id
    * @param  {MongoId} rid Round Id
    * @param  {String} status
-   * @param  {MongoId} logBlobId
+   * @param  {Object} extra Extra fields to be added to the round
    * @return {Match}
    */
-  MatchSchema.statics.judgeCompleteRoundAsync = async function (mdocid, rid, status, logBlobId = null, text = null) {
+  MatchSchema.statics.judgeCompleteRoundAsync = async function (mdocid, rid, status, extra = {}) {
     if (
       status !== Match.STATUS_U1WIN
       && status !== Match.STATUS_U2WIN
@@ -336,16 +337,11 @@ export default () => {
     const round = mdoc.rounds.find(rdoc => rdoc._id.equals(rid));
     if (round !== undefined) {
       round.status = status;
-      if (logBlobId !== null) {
-        round.logBlob = logBlobId;
-      }
-      if (text !== null) {
-        round.text = text;
-      }
       round.endJudgeAt = new Date();
       if (!round.beginJudgeAt) {
         round.beginJudgeAt = new Date();
       }
+      _.assign(round, extra);
       await mdoc.save();
     }
     return mdoc;
