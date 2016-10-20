@@ -7,9 +7,10 @@
   "scripts": {
     "start": "node .dist/server.js",
     "build:server": "gulp clean:server && gulp server",
-    "build:ui": "gulp fe:iconfont && webpack --progress --colors --display-error-details --bail --optimize-minimize",
+    "build:ui:dev": "gulp fe:iconfont && webpack --progress --colors --display-error-details --bail",
+    "build:ui": "npm run build:ui:dev -- --optimize-minimize",
     "watch:server": "gulp clean:server && gulp",
-    "watch:ui": "npm run build:ui -- --watch"
+    "watch:ui": "npm run build:ui:dev -- --watch"
   },
   "dependencies": {
     "app-module-path": "^2.0.0",
