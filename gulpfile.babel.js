@@ -36,6 +36,9 @@ gulp.task('server:develop', ['server'], () => {
     ext: 'js yaml',
     ignore: ['node_modules/', 'ui/', '.uibuild/', '.dist/'],
     tasks: ['server'],
+    env: {
+      'DEBUG': 'rascal:Vhost',
+    },
   });
 });
 
