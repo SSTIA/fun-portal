@@ -25,7 +25,7 @@ base:
       width: 20
       height: 20
       winningStones: 5
-    opening:
+    openings:
       - opening1
       - opening2
       - opening3

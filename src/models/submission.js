@@ -276,7 +276,6 @@ export default () => {
     }
     sdoc.text = text;
     sdoc.status = success ? Submission.STATUS_RUNNING : Submission.STATUS_COMPILE_ERROR;
-    sdoc.taskToken = null;
     if (success && exeBlobId !== null) {
       sdoc.exeBlob = exeBlobId;
     }
