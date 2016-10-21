@@ -2,6 +2,6 @@ import express from 'express';
 
 export default (app) => {
 
-  app.use(express.static(`${__projectRoot}/.uibuild`));
+  app.use(DI.config.urlPrefix, express.static(`${__projectRoot}/.uibuild`));
 
 };

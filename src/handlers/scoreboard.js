@@ -13,7 +13,7 @@ export default class Handler {
   @web.get('/')
   @web.middleware(utils.checkProfile())
   async getScoreboardAction(req, res) {
-    res.render('home', {
+    res.render('scoreboard', {
       page_title: 'Scoreboard',
     });
   }
