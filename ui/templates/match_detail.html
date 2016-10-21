@@ -94,41 +94,33 @@
             {{ mdoc.rounds.length }}
           </dd>
         </dl>
-      </div>
-      <div class="section__header">
-        <h1 class="section__title">Challenger</h2>
-      </div>
-      <div class="section__body typo">
+        <h2 class="section__title">Challenger</h2>
         <dl class="large horizontal">
-          <dt>Submit By</dt>
+          <dt>By</dt>
           <dd>
-            {{ mdoc.u1.profile.displayName }}
+            #{{ mdoc.u1Submission.version }}: {{ mdoc.u1.profile.displayName }}
           </dd>
           <dt>Submit At</dt>
           <dd>{{ mdoc.u1Submission.createdAt|datetime }}</dd>
           <dt>Detail</dt>
           <dd>
             <a href="{{ url('/submission/{0}', false, [mdoc.u1Submission._id]) }}">
-              View #{{ mdoc.u1Submission.version }}
+              View Submission
             </a>
           </dd>
         </dl>
-      </div>
-      <div class="section__header">
-        <h1 class="section__title">Challengee</h2>
-      </div>
-      <div class="section__body typo">
+        <h2 class="section__title">Challengee</h2>
         <dl class="large horizontal">
-          <dt>Submit By</dt>
+          <dt>By</dt>
           <dd>
-            {{ mdoc.u2.profile.displayName }}
+            #{{ mdoc.u2Submission.version }}: {{ mdoc.u2.profile.displayName }}
           </dd>
           <dt>Submit At</dt>
           <dd>{{ mdoc.u2Submission.createdAt|datetime }}</dd>
           <dt>Detail</dt>
           <dd>
             <a href="{{ url('/submission/{0}', false, [mdoc.u2Submission._id]) }}">
-              View #{{ mdoc.u2Submission.version }}
+              View Submission
             </a>
           </dd>
         </dl>

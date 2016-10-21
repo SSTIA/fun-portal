@@ -144,7 +144,6 @@ export default class Handler {
   }
 
   @web.get('/:id')
-  @web.middleware(utils.checkLogin())
   async getSubmissionDetailAction(req, res) {
     const sdoc = await DI.models.Submission.getSubmissionObjectByIdAsync(req.params.id);
     await sdoc.populate('user').execPopulate();

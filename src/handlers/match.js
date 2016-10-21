@@ -93,7 +93,6 @@ export default class Handler {
   }
 
   @web.get('/:id')
-  @web.middleware(utils.checkLogin())
   async getMatchDetailAction(req, res) {
     const mdoc = await DI.models.Match.getMatchObjectByIdAsync(req.params.id);
     await mdoc.populate('u1 u2 u1Submission u2Submission').execPopulate();
@@ -101,6 +100,37 @@ export default class Handler {
       page_title: 'Match Detail',
       mdoc,
     });
+  }
+
+  @web.get('/:id/round/:rid')
+  async getMatchRoundDetailAction(req, res) {
+    const mdoc = await DI.models.Match.getMatchObjectByIdAsync(req.params.id);
+    await mdoc.populate('u1 u2 u1Submission u2Submission').execPopulate();
+    const rdocIndex = mdoc.rounds.findIndex(rdoc => rdoc._id.equals(req.params.rid));
+    if (rdocIndex === -1) {
+      throw new errors.UserError('Round not found');
+    }
+    const rdoc = mdoc.rounds[rdocIndex];
+    res.render('round_detail', {
+      page_title: 'Round Detail',
+      mdoc,
+      rdoc,
+      rdocIndex,
+    });
+  }
+
+  @web.get('/:id/round/:rid/logs')
+  async getMatchRoundLogsAction(req, res) {
+    const mdoc = await DI.models.Match.getMatchObjectByIdAsync(req.params.id);
+    const rdoc = mdoc.rounds.find(rdoc => rdoc._id.equals(req.params.rid));
+    if (rdoc === undefined) {
+      throw new errors.UserError('Round not found');
+    }
+    if (!rdoc.logBlob) {
+      throw new errors.UserError('Logs not available for this round');
+    }
+    //res.setHeader('Content-disposition', `attachment; filename=${req.params.id}-${req.params.rid}.txt`);
+    await DI.gridfs.getBlobAsync(rdoc.logBlob, res);
   }
 
 }

@@ -93,7 +93,7 @@
     </div>
   </div>
 {% endif %}
-{% if sdoc.user.equals(req.credential._id) or req.credential.hasPermission(permissions.PERM_VIEW_ALL_SUBMISSION) %}
+{% if req.credential and (sdoc.user.equals(req.credential._id) or req.credential.hasPermission(permissions.PERM_VIEW_ALL_SUBMISSION)) %}
   <div class="section">
     <div class="section__header">
       <h1 class="section__title">Source Code</h1>

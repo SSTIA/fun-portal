@@ -1,0 +1,90 @@
+{% extends "layout/basic.html" %}
+{% block content %}
+<div class="row" data-sticky-parent>
+  <div class="medium-9 columns">
+    <div class="section">
+      <div class="section__header">
+        <h1 class="section__title">Match Round #{{ rdocIndex+1 }}</h1>
+      </div>
+      <div class="section__body">
+        <ol class="supplementary dot list">
+          <li>
+            {% set status = DI('models.Match.getRelativeStatus')(rdoc.status, true) %}
+            <span class="round-status--text {{ status }}">
+              <span class="icon round-status--icon {{ status }}"></span>
+              {{ DI('models.Match.ROUND_STATUS_TEXT')[status] }}
+              :
+              {{ mdoc.u1.profile.displayName }}
+              <div class="field-icon field--{% if rdoc.u1Black %}black{% else %}white{% endif %}"></div>
+            </span>
+          </li>
+          <li>
+            {% set status = DI('models.Match.getRelativeStatus')(rdoc.status, false) %}
+            <span class="round-status--text {{ status }}">
+              <span class="icon round-status--icon {{ status }}"></span>
+              {{ DI('models.Match.ROUND_STATUS_TEXT')[status] }}
+              :
+              {{ mdoc.u2.profile.displayName }}
+              <div class="field-icon field--{% if rdoc.u2Black %}black{% else %}white{% endif %}"></div>
+            </span>
+          </li>
+        </ol>
+      </div>
+    {% if rdoc.text %}
+      <div class="section__body typo">
+        <h2 class="section__title">System Error Detail:</h2>
+        <pre>{{ rdoc.text }}</pre>
+      </div>
+    {% endif %}
+      <div class="section__body">
+        Board Visualization Coming Soon
+      </div>
+    </div>
+  </div>
+  <div class="medium-3 columns"><div data-sticky="medium">
+    <div class="side section">
+      <ol class="menu">
+        <li class="menu__item">
+          <a href="{{ url('/match/{0}', false, [mdoc._id]) }}" class="menu__link">
+            <span class="icon icon-return"></span>
+            Return to Match
+          </a>
+        </li>
+      {% if rdoc.logBlob %}
+        <li class="menu__item">
+          <a href="{{ url('/match/{0}/round/{1}/logs', false, [mdoc._id, rdoc._id]) }}" class="menu__link">
+            <span class="icon icon-download"></span>
+            Download Round Logs
+          </a>
+        </li>
+      {% endif %}
+      </ol>
+    </div>
+    <div class="side section">
+      <div class="section__body typo">
+        <dl class="large horizontal">
+          <dt>Match</dt>
+          <dd>
+            <span class="icon match-status--icon {{ mdoc.status }}"></span>
+            <span class="match-status--text {{ mdoc.status }}">
+              {{ DI('models.Match.STATUS_TEXT')[mdoc.status] }}
+            </span>
+          </dd>
+          <dt>Challenger</dt>
+          <dd>
+            <a href="{{ url('/submission/{0}', false, [mdoc.u1Submission._id]) }}">
+              #{{ mdoc.u1Submission.version }}: {{ mdoc.u1.profile.displayName }}
+            </a>
+          </dd>
+          <dt>Challengee</dt>
+          <dd>
+            <a href="{{ url('/submission/{0}', false, [mdoc.u2Submission._id]) }}">
+              #{{ mdoc.u2Submission.version }}: {{ mdoc.u2.profile.displayName }}
+            </a>
+          </dd>
+        </dl>
+      </div>
+    </div>
+  </div></div>
+</div>
+{% endblock %}
