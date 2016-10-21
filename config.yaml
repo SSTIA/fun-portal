@@ -25,10 +25,10 @@ base:
       width: 20
       height: 20
       winningStones: 5
-    maps:
-      - map1
-      - map2
-      - map3
+    opening:
+      - opening1
+      - opening2
+      - opening3
   mq:
     vhosts:
       /:

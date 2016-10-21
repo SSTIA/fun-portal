@@ -10,7 +10,7 @@
         <table class="data-table">
           <colgroup>
             <col class="col--round-no">
-            <col class="col--map">
+            <col class="col--opening">
             <col class="col--challenger round-status--cell">
             <col class="col--challengee round-status--cell">
             <col class="col--begin-at"></col>
@@ -20,9 +20,9 @@
           <thead>
             <tr>
               <th class="col--round-no">#</th>
-              <th class="col--map">Board</th>
-              <th class="col--challenger round-status--cell">{{ mdoc.u1.profile.displayName }}</th>
-              <th class="col--challengee round-status--cell">{{ mdoc.u2.profile.displayName }}</th>
+              <th class="col--opening">Opening</th>
+              <th class="col--challenger round-status--cell">#{{ mdoc.u1Submission.version }}: {{ mdoc.u1.profile.displayName }}</th>
+              <th class="col--challengee round-status--cell">#{{ mdoc.u2Submission.version }}: {{ mdoc.u2.profile.displayName }}</th>
               <th class="col--begin-at">Begin At</th>
               <th class="col--end-at">End At</th>
               <th class="col--action">Action</th>
@@ -32,7 +32,7 @@
           {% for rdoc in mdoc.rounds %}
             <tr>
               <td class="col--round-no">#{{ loop.index }}</td>
-              <td class="col--map">{{ rdoc.mapId }}</td>
+              <td class="col--opening">{{ rdoc.openingId }}</td>
               {% set status = DI('models.Match.getRelativeStatus')(rdoc.status, true) %}
               <td class="col--challenger">
                 <div class="field-icon field--{% if rdoc.u1Black %}black{% else %}white{% endif %}"></div>
@@ -63,58 +63,13 @@
                   --
                 {% endif %}
               </td>
-              <td class="col--action">View Board</td>
+              <td class="col--action"><a class="typo-a" href="{{ url('/match/{0}/round/{1}', false, [mdoc._id, rdoc._id]) }}">View Board</a></td>
             </tr>
           {% endfor %}
           </tbody>
         </table>
       </div>
     </div>
-  {% for rdoc in mdoc.rounds %}
-  <!--
-    <div class="section">
-      <div class="section__header">
-        <h1 class="section__title">
-          Round #{{ loop.index }}:
-          <span class="round-status--text {{ rdoc.status }}">
-            {{ DI('models.Match.ROUND_STATUS_TEXT')[rdoc.status] }}
-          </span>
-        </h1>
-      </div>
-    {% if rdoc.text %}
-      <div class="section__body typo">
-        <pre>{{ rdoc.text }}</pre>
-      </div>
-    {% endif %}
-      <div class="section__body typo">
-        <dl class="large horizontal">
-          <dt>Match Begin At</dt>
-          <dd>
-          {% if rdoc.beginJudgeAt %}
-            {{ rdoc.beginJudgeAt|datetime }}
-          {% else %}
-            --
-          {% endif %}
-          </dd>
-          <dt>Match End At</dt>
-          <dd>
-          {% if rdoc.endJudgeAt %}
-            {{ rdoc.endJudgeAt|datetime }}
-          {% else %}
-            --
-          {% endif %}
-          </dd>
-          <dt>Initial Map</dt>
-          <dd>{{ rdoc.mapId }}</dd>
-          <dt>Challenger Field</dt>
-          <dd>{% if rdoc.u1Black %}Black{% else %}White{% endif %}</dd>
-          <dt>Challengee Field</dt>
-          <dd>{% if rdoc.u2Black %}Black{% else %}White{% endif %}</dd>
-        </dl>
-      </div>
-    </div>
-  -->
-  {% endfor %}
   </div>
   <div class="medium-3 columns"><div data-sticky="medium">
     <div class="side section">

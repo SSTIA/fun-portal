@@ -1,5 +1,8 @@
 .DS_Store
 
+# Openings
+openings/*
+
 # Logs
 logs/*
 *.log

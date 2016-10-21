@@ -29,7 +29,7 @@ export default () => {
       status: String,
       u1Black: Boolean,
       u2Black: Boolean, // !u1Black
-      mapId: String,
+      openingId: String,
       beginJudgeAt: Date,
       endJudgeAt: Date,
       logBlob: mongoose.Schema.Types.ObjectId,  // grid fs
@@ -164,14 +164,14 @@ export default () => {
   };
 
   /**
-   * Get initial map content from map id
-   * @param  {String} mapId
+   * Get opening data from opening id
+   * @param  {String} openingId
    * @return {String}
    */
-  MatchSchema.statics.getMapFromIdAsync = async function (mapId) {
-    const filePath = `./maps/${mapId}.json`;
-    const mapContent = await fsp.readFile(filePath);
-    return mapContent.toString();
+  MatchSchema.statics.getOpeningFromIdAsync = async function (openingId) {
+    const filePath = `./openings/${openingId}.json`;
+    const content = await fsp.readFile(filePath);
+    return content.toString();
   };
 
   /**
@@ -180,14 +180,14 @@ export default () => {
    */
   function generateRoundDocs() {
     const rounds = [];
-    for (const mapId of DI.config.match.maps) {
+    for (const openingId of DI.config.match.openings) {
       for (const u1Black of [true, false]) {
         rounds.push({
           _id: mongoose.Types.ObjectId(),
           status: Match.STATUS_PENDING,
           u1Black,
           u2Black: !u1Black,
-          mapId: String(mapId),
+          openingId: String(openingId),
         });
       }
     }
@@ -224,7 +224,7 @@ export default () => {
           s2docid: String(match.u2Submission),
           rid: round._id,
           u1field: round.u1Black ? 'black' : 'white',
-          map: await Match.getMapFromIdAsync(round.mapId),
+          opening: await Match.getOpeningFromIdAsync(round.openingId),
           rules: DI.config.match.rules,
         });
       }
