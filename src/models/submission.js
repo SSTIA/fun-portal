@@ -5,8 +5,6 @@ import async from 'async';
 import objectId from 'libs/objectId';
 import errors from 'libs/errors';
 
-const SUBMISSIONS_PER_PAGE = 50;
-
 export default () => {
   const SubmissionSchema = new mongoose.Schema({
     user: { type: mongoose.Schema.Types.ObjectId, ref: 'User' },
