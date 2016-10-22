@@ -259,13 +259,6 @@ export default () => {
   };
 
   /**
-   * Get score according to wins and draws
-   */
-  function getScore(win, draw) {
-    return win * 3 + draw * 1;
-  }
-
-  /**
    * Update match status according to round status
    */
   MatchSchema.methods.updateMatchStatus = function () {
@@ -293,26 +286,30 @@ export default () => {
       this.status = Match.STATUS_RUNNING;
       return;
     }
-    if (statusStat[Match.STATUS_U1WIN] > statusStat[Match.STATUS_U2WIN]) {
-      this.status = Match.STATUS_U1WIN;
-    } else if (statusStat[Match.STATUS_U1WIN] < statusStat[Match.STATUS_U2WIN]) {
-      this.status = Match.STATUS_U2WIN;
-    } else {
-      this.status = Match.STATUS_DRAW;
-    }
     // Update u1Stat and u2Stat
     this.u1Stat = {
       win: statusStat[Match.STATUS_U1WIN],
       lose: statusStat[Match.STATUS_U2WIN],
       draw: statusStat[Match.STATUS_DRAW],
+      score: 0,
     };
-    this.u1Stat.score = getScore(this.u1Stat.win, this.u1Stat.draw);
     this.u2Stat = {
       win: statusStat[Match.STATUS_U2WIN],
       lose: statusStat[Match.STATUS_U1WIN],
       draw: statusStat[Match.STATUS_DRAW],
+      score: 0,
     };
-    this.u2Stat.score = getScore(this.u2Stat.win, this.u2Stat.draw);
+    if (statusStat[Match.STATUS_U1WIN] > statusStat[Match.STATUS_U2WIN]) {
+      this.status = Match.STATUS_U1WIN;
+      this.u1Stat.score = 3;
+    } else if (statusStat[Match.STATUS_U1WIN] < statusStat[Match.STATUS_U2WIN]) {
+      this.status = Match.STATUS_U2WIN;
+      this.u2Stat.score = 3;
+    } else {
+      this.status = Match.STATUS_DRAW;
+      this.u1Stat.score = 1;
+      this.u2Stat.score = 1;
+    }
   };
 
   /**
