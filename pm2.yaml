@@ -1,0 +1,4 @@
+# for PM2
+apps:
+  - script: .dist/server.js
+    name: portal
