@@ -18,5 +18,4 @@ export default class Handler {
       page_title: 'Scoreboard',
     });
   }
-
 }
