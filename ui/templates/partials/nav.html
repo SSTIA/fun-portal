@@ -6,7 +6,7 @@
       <li><a href="{{ url('/submission') }}" class="nav__item{% if nav_type == 'submission' %} active{% endif %}">Submission</a></li>
     </ol>
     <ol layout="row center-right">
-    {% if req.credential %}
+    {% if req.credential.hasPermission(permissions.PROFILE) %}
       <li><a href="{{ url('/user/profile') }}" class="nav__item{% if nav_type == 'user' %} active{% endif %}">
       {% if req.credential.profile.studentId %}
         {{ req.credential.profile.studentId }}

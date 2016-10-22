@@ -2,6 +2,7 @@ import _ from 'lodash';
 import validator from 'validator';
 import auth from 'basic-auth';
 import errors from 'libs/errors';
+import permissions from 'libs/permissions';
 
 const utils = {};
 
@@ -29,15 +30,8 @@ utils.static_url = (s) => {
   return `${DI.config.cdnPrefix}${s}`;
 };
 
-utils.checkLogin = () => (req, res, next) => {
-  if (!req.credential) {
-    throw new errors.PermissionError();
-  }
-  next();
-};
-
-utils.checkProfile = () => (req, res, next) => {
-  if (!req.credential) {
+utils.checkCompleteProfile = () => (req, res, next) => {
+  if (!req.credential.hasPermission(permissions.PROFILE)) {
     next();
     return;
   }
@@ -60,12 +54,9 @@ utils.checkAPI = () => (req, res, next) => {
 };
 
 utils.checkPermission = (...permissions) => (req, res, next) => {
-  if (!req.credential) {
-    throw new errors.PermissionError();
-  }
   permissions.forEach(perm => {
     if (!req.credential.hasPermission(perm)) {
-      throw new errors.PermissionError();
+      throw new errors.PermissionError(perm);
     }
   });
   next();
@@ -75,12 +66,17 @@ const sanitize = (source, patterns) => {
   const ret = {};
   for (var key in patterns) {
     if (source[key] === undefined) {
-      throw new errors.ValidationError(`Missing required parameter '${key}'`);
-    }
-    try {
-      ret[key] = patterns[key](source[key]);
-    } catch (err) {
-      throw new errors.ValidationError(`Parameter '${key}' is expected to be a(n) ${err.message}`);
+      if (patterns[key].optional === true) {
+        ret[key] = patterns[key].optionalValue;
+      } else {
+        throw new errors.ValidationError(`Missing required parameter '${key}'`);
+      }
+    } else {
+      try {
+        ret[key] = patterns[key].test(source[key]);
+      } catch (err) {
+        throw new errors.ValidationError(`Parameter '${key}' is expected to be a(n) ${err.message}`);
+      }
     }
   }
   return ret;
@@ -102,7 +98,20 @@ utils.sanitizeBody = (patterns) => sanitizeExpress('body', patterns);
 
 utils.sanitizeQuery = (patterns) => sanitizeExpress('query', patterns);
 
-utils.checkInt = () => (any) => {
+utils.sanitizeParam = (patterns) => sanitizeExpress('params', patterns);
+
+class Checker {
+  constructor(testFunc) {
+    this.test = testFunc;
+  }
+  optional(val) {
+    this.optional = true;
+    this.optionalValue = val;
+    return this;
+  }
+}
+
+utils.checkInt = () => new Checker((any) => {
   if (typeof any === 'number') {
     return Math.floor(any);
   }
@@ -111,16 +120,16 @@ utils.checkInt = () => (any) => {
     throw new Error('integer number');
   }
   return validator.toInt(str);
-};
+});
 
-utils.checkString = () => (any) => {
+utils.checkString = () => new Checker((any) => {
   if (typeof any === 'string') {
     return any;
   }
   throw new Error('string');
-};
+});
 
-utils.checkNonEmptyString = () => (any) => {
+utils.checkNonEmptyString = () => new Checker((any) => {
   if (typeof any === 'string') {
     if (any.trim().length === 0) {
       throw new Error('non empty string');
@@ -128,9 +137,9 @@ utils.checkNonEmptyString = () => (any) => {
     return any.trim();
   }
   throw new Error('non empty string');
-};
+});
 
-utils.checkBool = () => (any) => {
+utils.checkBool = () => new Checker((any) => {
   if (typeof any === 'boolean') {
     return any;
   }
@@ -140,6 +149,25 @@ utils.checkBool = () => (any) => {
     return false;
   }
   throw new Error('boolean');
+});
+
+utils.checkPageNumber = () => new Checker((any) => {
+  const str = String(any);
+  if (!validator.isInt(str)) {
+    throw new Error('page number');
+  }
+  const num = validator.toInt(str);
+  if (num < 1) {
+    throw new Error('page number');
+  }
+  return num;
+});
+
+utils.pagination = async (query, page, pageSize) => {
+  const count = await query.model.count(query._conditions);
+  const docs = await query.skip((page - 1) * pageSize).limit(pageSize).exec();
+  const pages = Math.ceil(count / pageSize);
+  return [ docs, pages, count ];
 };
 
 export default utils;

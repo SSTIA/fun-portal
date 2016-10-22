@@ -5,6 +5,8 @@ import async from 'async';
 import objectId from 'libs/objectId';
 import errors from 'libs/errors';
 
+const SUBMISSIONS_PER_PAGE = 50;
+
 export default () => {
   const SubmissionSchema = new mongoose.Schema({
     user: { type: mongoose.Schema.Types.ObjectId, ref: 'User' },
@@ -110,19 +112,21 @@ export default () => {
   };
 
   /**
-   * Get all submissions of a user
-   *
-   * @return {[Submission]}
+   * Get all submissions
    */
-  SubmissionSchema.statics.getUserSubmissionsAsync = async function (uid, limit = null) {
-    let query = this
+  SubmissionSchema.statics.getAllSubmissionsCursor = function () {
+    return Submission
+      .find({})
+      .sort({ _id: -1 });
+  };
+
+  /**
+   * Get all submissions of a user
+   */
+  SubmissionSchema.statics.getUserSubmissionsCursor = function (uid) {
+    return Submission
       .find({ user: uid })
-      .sort({ createdAt: -1 });
-    if (limit) {
-      query = query.limit(limit);
-    }
-    const submissions = await query.exec();
-    return submissions;
+      .sort({ _id: -1 });
   };
 
   /**
@@ -131,7 +135,7 @@ export default () => {
    * @return {Boolean}
    */
   SubmissionSchema.statics.isUserAllowedToSubmitAsync = async function (uid) {
-    const sdocs = await Submission.getUserSubmissionsAsync(uid, 1);
+    const sdocs = await Submission.getUserSubmissionsCursor(uid).limit(1).exec();
     if (sdocs.length === 0) {
       return true;
     }
@@ -158,14 +162,36 @@ export default () => {
       throw new errors.ValidationError('Your source code is too large.');
     }
     const version = await DI.models.User.incAndGetSubmissionNumberAsync(uid);
-    const sdoc = new this({
+    const sdoc = new Submission({
       user: uid,
       version,
       code,
       status: Submission.STATUS_PENDING,
       text: '',
     });
-    await sdoc.save();
+    await Submission._compileForMatchAsync(sdoc);
+    return sdoc;
+  };
+
+  /**
+   * Recompile a submission
+   */
+  SubmissionSchema.statics.recompileAsync = async function (sid) {
+    const sdoc = await Submission.getSubmissionObjectByIdAsync(sid);
+    const csdocs = await Submission.find(
+      {
+        status: Submission.STATUS_COMPILING,
+        _id: { $lte: objectId.fromTimestamp(sdoc._id.getTimestamp()) },
+      },
+      { _id: 1 }
+    );
+    if (csdocs.length !== 0) {
+      const csids = _.map(csdocs, csdoc => csdoc._id.toString());
+      throw new Error(`Those submissions should be recompiled first: ${csids.join(', ')}`);
+    }
+    sdoc.text = '';
+    sdoc.taskToken = null;
+    sdoc.matches = null;
     await Submission._compileForMatchAsync(sdoc);
     return sdoc;
   };
@@ -180,7 +206,6 @@ export default () => {
     if (sdoc.taskToken) {
       const error = new Error('_compileForMatchAsync: Expect taskToken is undefined');
       DI.logger.error(error);
-      throw error;
     }
     sdoc.exeBlob = null;
     sdoc.status = Submission.STATUS_PENDING;
@@ -201,16 +226,19 @@ export default () => {
    * @param  {Boolean} onlyEffective
    * @return {[{_id, sdocid}]}
    */
-  SubmissionSchema.statics.getLastSubmissionsByUserAsync = async function (onlyEffective = true) {
-    let statusMatchExp;
+  SubmissionSchema.statics.getLastSubmissionsByUserAsync = async function (onlyEffective = true, maxTimestamp = null) {
+    const matchExp = {};
     if (onlyEffective) {
-      statusMatchExp = Submission.STATUS_EFFECTIVE;
+      matchExp.status = Submission.STATUS_EFFECTIVE;
     } else {
-      statusMatchExp = { $in: [ Submission.STATUS_RUNNING, Submission.STATUS_EFFECTIVE ] };
+      matchExp.status = { $in: [ Submission.STATUS_RUNNING, Submission.STATUS_EFFECTIVE ] };
+    }
+    if (maxTimestamp) {
+      matchExp._id = { $lte: objectId.fromTimestamp(maxTimestamp) };
     }
     return await Submission.aggregate([
-      { $match: { status: statusMatchExp } },
-      { $sort: { createdAt: -1 } },
+      { $match: matchExp },
+      { $sort: { _id: -1 } },
       { $project: { user: 1, createdAt : 1, status: 1 } },
       { $group: { _id: '$user', sdocid: { $first: '$_id' } } },
     ]).allowDiskUse(true).exec();
@@ -295,13 +323,7 @@ export default () => {
    * Create related matches for specified submission
    */
   SubmissionSchema.statics._createMatchAsync = async function (sdoc) {
-    const ncsdocs = await Submission.find({ status: Submission.STATUS_COMPILING }).count();
-    if (ncsdocs !== 0) {
-      const error = new Error(`_createMatchAsync: Expect ncsdocs is 0, got ${ncsdocs}`);
-      DI.logger.error(error);
-      // don't throw any errors
-    }
-    const lsdocs = await Submission.getLastSubmissionsByUserAsync(false);
+    const lsdocs = await Submission.getLastSubmissionsByUserAsync(false, sdoc._id.getTimestamp());
     const mdocs = await DI.models.Match.addMatchesForSubmissionAsync(
       sdoc._id,
       sdoc.user,
@@ -344,8 +366,8 @@ export default () => {
     ).catch(err => DI.logger.error(err));
   });
 
-  SubmissionSchema.index({ user: 1, createdAt: -1 });
-  SubmissionSchema.index({ status: 1, createdAt: -1 });
+  SubmissionSchema.index({ user: 1, _id: -1 });
+  SubmissionSchema.index({ status: 1, _id: -1 });
 
   Submission = mongoose.model('Submission', SubmissionSchema);
   return Submission;

@@ -45,6 +45,7 @@
       {% endfor %}
       </tbody>
     </table>
+    {{ paginator.render(req.data.page, pages, url('/submission/my/{page}')) }}
   </div>
 {% endif %}
 </div>

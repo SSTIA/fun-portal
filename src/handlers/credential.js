@@ -2,6 +2,7 @@ import * as web from 'express-decorators';
 import utils from 'libs/utils';
 import errors from 'libs/errors';
 import credential from 'libs/credential';
+import permissions from 'libs/permissions';
 
 const DIRECTORY_COOKIE = 'iPlanetDirectoryPro';
 
@@ -12,7 +13,7 @@ export default class Handler {
   async getLoginAction(req, res) {
     const errors = {};
     const directory = req.cookies[DIRECTORY_COOKIE];
-    if (directory !== undefined) {
+    if (req.query.success !== undefined && directory !== undefined) {
       try {
         const user = await DI.models.User.authenticateSsoAsync(directory);
         await credential.setCredential(req, user._id);
@@ -47,7 +48,7 @@ export default class Handler {
   }
 
   @web.post('/logout')
-  @web.middleware(utils.checkLogin())
+  @web.middleware(utils.checkPermission(permissions.PROFILE))
   async postLogoutAction(req, res) {
     req.session.destroy();
     res.clearCookie(DIRECTORY_COOKIE, { domain: '.tongji.edu.cn' });

@@ -3,6 +3,7 @@ import multer from 'multer';
 import fsp from 'fs-promise';
 import utils from 'libs/utils';
 import errors from 'libs/errors';
+import permissions from 'libs/permissions';
 
 const binUpload = multer({
   storage: multer.diskStorage({}),
@@ -16,6 +17,8 @@ const binUpload = multer({
   },
 });
 
+const SUBMISSIONS_PER_PAGE = 50;
+
 @web.controller('/submission')
 export default class Handler {
 
@@ -23,16 +26,6 @@ export default class Handler {
   async navType(req, res, next) {
     res.locals.nav_type = 'submission';
     next();
-  }
-
-  @web.get('/')
-  @web.middleware(utils.checkLogin())
-  async getSubmissionAction(req, res) {
-    const sdocs = await DI.models.Submission.getUserSubmissionsAsync(req.credential._id);
-    res.render('submission_main', {
-      page_title: 'My Submissions',
-      sdocs,
-    });
   }
 
   @web.post('/api/compileBegin')
@@ -119,9 +112,57 @@ export default class Handler {
     await DI.gridfs.getBlobAsync(sdoc.exeBlob, res);
   }
 
+  @web.get('/')
+  async getSubmissionsAction(req, res) {
+    if (req.credential.hasPermission(permissions.VIEW_OWN_SUBMISSIONS)) {
+      res.redirect(utils.url('/submission/my'));
+    } else if (req.credential.hasPermission(permissions.VIEW_ALL_SUBMISSIONS)) {
+      res.redirect(utils.url('/submission/all'));
+    } else {
+      throw new errors.PermissionError();
+    }
+  }
+
+  @web.get('/all/:page?')
+  @web.middleware(utils.sanitizeParam({
+    page: utils.checkPageNumber().optional(1),
+  }))
+  @web.middleware(utils.checkPermission(permissions.VIEW_ALL_SUBMISSIONS))
+  async getAllSubmissionsAction(req, res) {
+    const [ sdocs, pages ] = await utils.pagination(
+      DI.models.Submission.getAllSubmissionsCursor(),
+      req.data.page,
+      SUBMISSIONS_PER_PAGE
+    );
+    await DI.models.User.populate(sdocs, 'user');
+    res.render('submission_all', {
+      page_title: 'All Submissions',
+      sdocs,
+      pages,
+    });
+  }
+
+  @web.get('/my/:page?')
+  @web.middleware(utils.sanitizeParam({
+    page: utils.checkPageNumber().optional(1),
+  }))
+  @web.middleware(utils.checkPermission(permissions.VIEW_OWN_SUBMISSIONS))
+  async getMySubmissionsAction(req, res) {
+    const [ sdocs, pages ] = await utils.pagination(
+      DI.models.Submission.getUserSubmissionsCursor(req.credential._id),
+      req.data.page,
+      SUBMISSIONS_PER_PAGE
+    );
+    res.render('submission_my', {
+      page_title: 'My Submissions',
+      sdocs,
+      pages,
+    });
+  }
+
   @web.get('/create')
-  @web.middleware(utils.checkProfile())
-  @web.middleware(utils.checkLogin())
+  @web.middleware(utils.checkCompleteProfile())
+  @web.middleware(utils.checkPermission(permissions.CREATE_SUBMISSION))
   async getSubmissionCreateAction(req, res) {
     res.render('submission_create', {
       page_title: 'Submit My Brain',
@@ -133,8 +174,8 @@ export default class Handler {
   @web.middleware(utils.sanitizeBody({
     code: utils.checkNonEmptyString(),
   }))
-  @web.middleware(utils.checkProfile())
-  @web.middleware(utils.checkLogin())
+  @web.middleware(utils.checkCompleteProfile())
+  @web.middleware(utils.checkPermission(permissions.CREATE_SUBMISSION))
   async postSubmissionCreateAction(req, res) {
     await DI.models.Submission.createSubmissionAsync(
       req.credential._id,
@@ -144,6 +185,7 @@ export default class Handler {
   }
 
   @web.get('/:id')
+  @web.middleware(utils.checkPermission(permissions.VIEW_ANY_SUBMISSION))
   async getSubmissionDetailAction(req, res) {
     const sdoc = await DI.models.Submission.getSubmissionObjectByIdAsync(req.params.id);
     await sdoc.populate('user').execPopulate();

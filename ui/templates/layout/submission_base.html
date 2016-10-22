@@ -12,7 +12,13 @@
       </div>
       <ol class="menu">
         <li class="menu__item">
-          <a href="{{ url('/submission') }}" class="menu__link{% if page_name == 'submission_main' %} active{% endif %}">
+          <a href="{{ url('/submission/all') }}" class="menu__link{% if page_name == 'submission_all' %} active{% endif %}">
+            <span class="icon icon-flag"></span>
+            All Submissions
+          </a>
+        </li>
+        <li class="menu__item">
+          <a href="{{ url('/submission/my') }}" class="menu__link{% if page_name == 'submission_my' %} active{% endif %}">
             <span class="icon icon-flag"></span>
             My Submissions
           </a>

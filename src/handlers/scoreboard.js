@@ -1,5 +1,6 @@
 import * as web from 'express-decorators';
 import utils from 'libs/utils';
+import permissions from 'libs/permissions';
 
 @web.controller('/')
 export default class Handler {
@@ -11,7 +12,7 @@ export default class Handler {
   }
 
   @web.get('/')
-  @web.middleware(utils.checkProfile())
+  @web.middleware(utils.checkPermission(permissions.VIEW_SCOREBOARD))
   async getScoreboardAction(req, res) {
     res.render('scoreboard', {
       page_title: 'Scoreboard',

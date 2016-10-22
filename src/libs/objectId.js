@@ -28,6 +28,10 @@ const objectId = {
     }
   },
 
+  fromTimestamp: (timestamp) => {
+    return Math.floor(timestamp).toString(16) + '0000000000000000';
+  },
+
 };
 
 export default objectId;

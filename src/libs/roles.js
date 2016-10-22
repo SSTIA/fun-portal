@@ -1,7 +1,16 @@
 import permissions from './permissions';
 
 const roles = {
-  student: permissions.VIEW_OWN_SUBMISSION,
+  guest:    permissions.VIEW_ALL_SUBMISSIONS  |
+            permissions.VIEW_ANY_SUBMISSION   |
+            permissions.VIEW_SCOREBOARD       ,
+
+  student:  permissions.PROFILE               |
+            permissions.VIEW_OWN_SUBMISSIONS  |
+            permissions.VIEW_ALL_SUBMISSIONS  |
+            permissions.VIEW_ANY_SUBMISSION   |
+            permissions.CREATE_SUBMISSION     |
+            permissions.VIEW_SCOREBOARD       ,
 };
 
 export default roles;

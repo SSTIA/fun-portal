@@ -1,6 +1,7 @@
 import * as web from 'express-decorators';
 import _ from 'lodash';
 import utils from 'libs/utils';
+import permissions from 'libs/permissions';
 
 @web.controller('/user')
 export default class Handler {
@@ -12,7 +13,7 @@ export default class Handler {
   }
 
   @web.get('/profile')
-  @web.middleware(utils.checkLogin())
+  @web.middleware(utils.checkPermission(permissions.PROFILE))
   async getUserProfileAction(req, res) {
     const udoc = req.credential;
     res.render('user_profile', {
@@ -27,7 +28,7 @@ export default class Handler {
     displayName: utils.checkNonEmptyString(),
     teacher: utils.checkNonEmptyString(),
   }))
-  @web.middleware(utils.checkLogin())
+  @web.middleware(utils.checkPermission(permissions.PROFILE))
   async postUserProfileAction(req, res) {
     const udoc = req.credential;
     _.assign(udoc.profile, req.data);

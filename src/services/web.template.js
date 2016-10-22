@@ -35,9 +35,11 @@ export default (app) => {
       </span>
     `);
   });
+  njenv.addFilter('substitute', (str, obj) => utils.substitute(str, obj));
 
   njenv.addGlobal('static_url', utils.static_url);
   njenv.addGlobal('url', utils.url);
+  njenv.addGlobal('paginate', (...any) => Array.from(paginate(...any)));
 
   // https://github.com/mozilla/nunjucks/issues/884
   njenv.addGlobal('DI', path => _.get(DI, path));
@@ -68,3 +70,36 @@ export default (app) => {
   return njenv;
 
 };
+
+function* paginate(page, num_pages) {
+  const radius = 2;
+  if (page > 1) {
+    yield ['first', 1];
+    yield ['previous', page - 1];
+  }
+  let first, last;
+  if (page <= radius) {
+    [first, last] = [1, Math.min(1 + radius * 2, num_pages)];
+  } else if (page >= num_pages - radius) {
+    [first, last] = [Math.max(1, num_pages - radius * 2), num_pages];
+  } else {
+    [first, last] = [page - radius, page + radius];
+  }
+  if (first > 1) {
+    yield ['ellipsis', 0];
+  }
+  for (let page0 = first; page0 <= last; page0++) {
+    if (page0 !== page) {
+      yield ['page', page0];
+    } else {
+      yield ['current', page];
+    }
+  }
+  if (last < num_pages) {
+    yield ['ellipsis', 0];
+  }
+  if (page < num_pages) {
+    yield ['next', page + 1];
+    yield ['last', num_pages];
+  }
+}

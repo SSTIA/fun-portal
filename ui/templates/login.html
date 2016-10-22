@@ -27,7 +27,7 @@
           <input type="password" class="textbox" name="Login.Token2">
         </div></div>
         <div class="row columns"><div class="text-center">
-          <input type="hidden" name="goto" value="{{ url('/login', true) }}">
+          <input type="hidden" name="goto" value="{{ url('/login?success', true) }}">
           <input type="hidden" name="gotoOnFail" value="{{ url('/login?failure', true) }}">
           <button class="expanded rounded primary button" type="submit">Sign In</button>
         </div></div>
