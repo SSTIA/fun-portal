@@ -64,3 +64,6 @@ sftp-config.json
 
 # keep
 !.gitkeep
+
+# Webstorm
+.idea
