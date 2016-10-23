@@ -179,7 +179,7 @@ export default () => {
     const csdocs = await Submission.find(
       {
         status: Submission.STATUS_COMPILING,
-        _id: { $lte: objectId.fromTimestamp(sdoc._id.getTimestamp()) },
+        _id: { $lte: objectId.fromDatetime(sdoc._id.getTimestamp()) },
       },
       { _id: 1 }
     );
@@ -224,15 +224,15 @@ export default () => {
    * @param  {Boolean} onlyEffective
    * @return {[{_id, sdocid}]}
    */
-  SubmissionSchema.statics.getLastSubmissionsByUserAsync = async function (onlyEffective = true, maxTimestamp = null) {
+  SubmissionSchema.statics.getLastSubmissionsByUserAsync = async function (onlyEffective = true, maxDatetime = null) {
     const matchExp = {};
     if (onlyEffective) {
       matchExp.status = Submission.STATUS_EFFECTIVE;
     } else {
       matchExp.status = { $in: [ Submission.STATUS_RUNNING, Submission.STATUS_EFFECTIVE ] };
     }
-    if (maxTimestamp) {
-      matchExp._id = { $lte: objectId.fromTimestamp(maxTimestamp) };
+    if (maxDatetime) {
+      matchExp._id = { $lte: objectId.fromDatetime(maxDatetime) };
     }
     return await Submission.aggregate([
       { $match: matchExp },

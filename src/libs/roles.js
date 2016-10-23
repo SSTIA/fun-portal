@@ -11,6 +11,8 @@ const roles = {
             permissions.VIEW_ANY_SUBMISSION   |
             permissions.CREATE_SUBMISSION     |
             permissions.VIEW_SCOREBOARD       ,
+
+  admin:    -1                                ,
 };
 
 export default roles;

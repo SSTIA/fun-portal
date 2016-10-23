@@ -28,8 +28,9 @@ const objectId = {
     }
   },
 
-  fromTimestamp: (timestamp) => {
-    return Math.floor(timestamp).toString(16) + '0000000000000000';
+  fromDatetime: (datetime) => {
+    const id = Math.floor(datetime.getTime() / 1000).toString(16) + '0000000000000000';
+    return objectId.create(id);
   },
 
 };

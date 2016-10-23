@@ -200,4 +200,11 @@ export default class Handler {
     });
   }
 
+  @web.post('/:id/rejudge')
+  @web.middleware(utils.checkPermission(permissions.REJUDGE_SUBMISSION))
+  async postSubmissionRejudgeAction(req, res) {
+    const sdoc = await DI.models.Submission.recompileAsync(req.params.id);
+    res.redirect(utils.url('/submission/{0}', false, [sdoc._id]));
+  }
+
 }

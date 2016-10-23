@@ -9,6 +9,7 @@ permissions.VIEW_OWN_SUBMISSIONS        = 1 << (bit++);
 permissions.VIEW_ANY_SUBMISSION         = 1 << (bit++);
 permissions.VIEW_ANY_SUBMISSION_CODE    = 1 << (bit++);
 permissions.CREATE_SUBMISSION           = 1 << (bit++);
+permissions.REJUDGE_SUBMISSION          = 1 << (bit++);
 
 permissions.VIEW_SCOREBOARD             = 1 << (bit++);
 

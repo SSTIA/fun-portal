@@ -109,6 +109,19 @@
     <div class="section__header">
       <h1 class="section__title">Submission Info</h1>
     </div>
+  {% if req.credential.hasPermission(permissions.REJUDGE_SUBMISSION) %}
+    <ol class="menu">
+      <li class="menu__item">
+        <form method="POST" action="{{ url('/submission/{0}/rejudge', false, [sdoc._id]) }}">
+          <input type="hidden" name="_csrf" value="{{ ui_context.csrfToken }}">
+          <button class="menu__link" type="submit">
+            <span class="icon icon-refresh"></span>
+            Rejudge
+          </button>
+        </form>
+      </li>
+    </ol>
+  {% endif %}
     <div class="section__body typo">
       <dl class="large horizontal">
         <dt>Status</dt>
