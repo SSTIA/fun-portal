@@ -16,13 +16,15 @@ export default class GomokuBoard {
         if (isHeadingRow || isHeadingCol) {
           tBody += '<td class="heading">';
         } else {
-          tBody += `<td class="cell pos-${col - 1}-${row - 1}" field="0">`;
+          tBody += '<td class="cell">';
         }
-        tBody += '<div class="content" layout="row center-center">';
+        tBody += '<div class="content" layout="row center-center">'
         if (isHeadingRow && !isHeadingCol) {
           tBody += String(col - 1);
         } else if (!isHeadingRow && isHeadingCol) {
           tBody += String(row - 1);
+        } else {
+          tBody += `<div class="stone pos-${col - 1}-${row - 1}" data-field="0" data-order="" layout="row center-center"></div>`
         }
         tBody += '</div></td>';
       }
@@ -31,10 +33,16 @@ export default class GomokuBoard {
     this.$dom.html(`<table class="board-table"><tbody>${tBody}</tbody></table>`);
   }
 
-  place(boardMap) {
+  setBoard(boardMap, orderMap) {
     boardMap.forEach((row, y) => {
       row.forEach((v, x) => {
-        this.$dom.find(`.pos-${x}-${y}`).attr('field', v);
+        const $cell = this.$dom.find(`.pos-${x}-${y}`);
+        if ($cell.length > 0) {
+          $cell.attr('data-field', v);
+          if (orderMap) {
+            $cell.attr('data-order', v === 0 ? '' : orderMap[y][x]);
+          }
+        }
       });
     });
   }

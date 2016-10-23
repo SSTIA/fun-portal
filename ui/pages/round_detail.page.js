@@ -6,8 +6,10 @@ const page = new NamedPage('round_detail', () => {
   if ($roundSummary.length > 0) {
     const data = JSON.parse($roundSummary.text());
     $('#roundText').text(`Exit caused by: ${data.exitCausedBy}`);
-    const board = new Board($('#roundBoard'), data.roundConfig);
-    board.place(data.currentBoard);
+    if (data.currentBoard) {
+      const board = new Board($('#roundBoard'), data.roundConfig);
+      board.setBoard(data.currentBoard, data.boardOrder);
+    }
   }
 });
 

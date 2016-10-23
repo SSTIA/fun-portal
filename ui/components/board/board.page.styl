@@ -29,15 +29,19 @@
     width: 100%
     height: 100%
 
-  &[field="1"], &[field="2"]
-    .content:before
-      content: ''
-      width: 60%
-      height: 60%
-      border-radius: 50%
+  .stone
+    width: 80%
+    height: 80%
+    border-radius: 50%
 
-  &[field="1"] .content:before
-    background: #444
+    &:before
+      font-size: rem(10px)
+      content: attr(data-order)
 
-  &[field="2"] .content:before
-    background: #DDD
+    &[data-field="1"]
+      background: #444
+      color: #FFF
+
+    &[data-field="2"]
+      background: #DDD
+      color: #222
