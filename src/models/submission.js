@@ -349,6 +349,9 @@ export default () => {
       return;
     }
     const mdoc = sdoc.matches.find(mdoc => mdoc._id.equals(mdocid));
+    if (mdoc === undefined) {
+      return;
+    }
     mdoc.status = status;
     await sdoc.save();
   };
