@@ -14,17 +14,9 @@
         <li>Do not abuse our cloud execution service, such as intentionally trying to shutdown our judge machine.</li>
       </ul>
     </blockquote>
-    <blockquote class="note">
-      <ul>
-        <li>Official recommended IDE: <a href="https://sourceforge.net/projects/orwelldevcpp/" target="_blank">Dev-C++</a>.</li>
-        <li>You can only submit your code once every {{ DI('config.compile.limits.submitInterval')|duration }}.</li>
-        <li>However, if your code can't be compiled, you will get another chance to submit your code.</li>
-        <li>The code should not exceed {{ DI('config.compile.limits.sizeOfCode')|filesize }} </li>
-        <li>The compiled executable file should not exceed {{ DI('config.compile.limits.sizeOfBin')|filesize }}.</li>
-      </ul>
-    </blockquote>
-  {% if not canSubmit %}
-    <p>Sorry, you cannot submit code currently due to the submission frequency limitation. Please try again later.</p>
+  {% if not submitAllowed %}
+    <p>Sorry, you cannot submit code now because of exceeding the submission frequency limit.</p>
+    <p>Please try again after {{ nextSubmitRemaining|duration }} ({{ (nextSubmitRemaining / 1000)|round }} seconds).</p>
   {% else %}
     <p>Please paste your C source code of your brain in the text box below. Your code will be automatically compiled and judged by the system.</p>
     <form method="post">
@@ -44,4 +36,18 @@
   {% endif %}
   </div>
 </div>
+{% endblock %}
+{% block submission_sidebar %}
+  <div class="side section">
+    <div class="section__header">
+      <h1 class="section__title">Current Limits</h1>
+    </div>
+    <div class="section__body typo">
+      <ul>
+        <li><p>Min interval between submissions: {{ DI('config.compile.limits.submitInterval')|duration }}</p></li>
+        <li><p>Max size of Source code: {{ DI('config.compile.limits.sizeOfCode')|filesize }}</p></li>
+        <li><p>Max size of compiled exe: {{ DI('config.compile.limits.sizeOfBin')|filesize }}</p></li>
+      </ul>
+    </div>
+  </div>
 {% endblock %}

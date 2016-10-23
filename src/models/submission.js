@@ -135,16 +135,18 @@ export default () => {
   SubmissionSchema.statics.isUserAllowedToSubmitAsync = async function (uid) {
     const sdocs = await Submission.getUserSubmissionsCursor(uid).limit(1).exec();
     if (sdocs.length === 0) {
-      return true;
+      return [true];
     }
     const last = sdocs[0];
     if (last.status === Submission.STATUS_COMPILE_ERROR) {
-      return true;
+      return [true];
     }
-    if (Date.now() - last.createdAt.getTime() > DI.config.compile.limits.submitInterval) {
-      return true;
+    const interval = Date.now() - last.createdAt.getTime();
+    const remaining = DI.config.compile.limits.submitInterval - interval;
+    if (remaining <= 0) {
+      return [true];
     }
-    return false;
+    return [false, remaining];
   };
 
   /**
@@ -153,7 +155,8 @@ export default () => {
    * @return {Submission}
    */
   SubmissionSchema.statics.createSubmissionAsync = async function (uid, code) {
-    if (!await Submission.isUserAllowedToSubmitAsync(uid)) {
+    const [submitAllowed] = await Submission.isUserAllowedToSubmitAsync(uid);
+    if (!submitAllowed) {
       throw new errors.UserError('You are not allowed to submit new code currently');
     }
     if (code.length > DI.config.compile.limits.sizeOfCode) {
