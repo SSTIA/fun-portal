@@ -18,13 +18,13 @@ export default class GomokuBoard {
         } else {
           tBody += '<td class="cell">';
         }
-        tBody += '<div class="content" layout="row center-center">'
+        tBody += '<div class="content" layout="row center-center">';
         if (isHeadingRow && !isHeadingCol) {
           tBody += String(col - 1);
         } else if (!isHeadingRow && isHeadingCol) {
           tBody += String(row - 1);
         } else {
-          tBody += `<div class="stone pos-${col - 1}-${row - 1}" data-field="0" data-order="" layout="row center-center"></div>`
+          tBody += `<div class="stone pos-${col - 1}-${row - 1}" data-field="0" data-order="" layout="row center-center"></div>`;
         }
         tBody += '</div></td>';
       }
