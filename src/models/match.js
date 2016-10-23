@@ -12,18 +12,6 @@ export default () => {
     u2: { type: mongoose.Schema.Types.ObjectId, ref: 'User' },
     u1Submission: { type: mongoose.Schema.Types.ObjectId, ref: 'Submission' },
     u2Submission: { type: mongoose.Schema.Types.ObjectId, ref: 'Submission' },
-    u1Stat: { // only exists after match is completed
-      score: Number,
-      win: Number,
-      lose: Number,
-      draw: Number,
-    },
-    u2Stat: { // only exists after match is completed
-      score: Number,
-      win: Number,
-      lose: Number,
-      draw: Number,
-    },
     rounds: [{
       _id: mongoose.Schema.Types.ObjectId,
       status: String,
@@ -286,29 +274,12 @@ export default () => {
       this.status = Match.STATUS_RUNNING;
       return;
     }
-    // Update u1Stat and u2Stat
-    this.u1Stat = {
-      win: statusStat[Match.STATUS_U1WIN],
-      lose: statusStat[Match.STATUS_U2WIN],
-      draw: statusStat[Match.STATUS_DRAW],
-      score: 0,
-    };
-    this.u2Stat = {
-      win: statusStat[Match.STATUS_U2WIN],
-      lose: statusStat[Match.STATUS_U1WIN],
-      draw: statusStat[Match.STATUS_DRAW],
-      score: 0,
-    };
     if (statusStat[Match.STATUS_U1WIN] > statusStat[Match.STATUS_U2WIN]) {
       this.status = Match.STATUS_U1WIN;
-      this.u1Stat.score = 3;
     } else if (statusStat[Match.STATUS_U1WIN] < statusStat[Match.STATUS_U2WIN]) {
       this.status = Match.STATUS_U2WIN;
-      this.u2Stat.score = 3;
     } else {
       this.status = Match.STATUS_DRAW;
-      this.u1Stat.score = 1;
-      this.u2Stat.score = 1;
     }
   };
 
@@ -398,24 +369,20 @@ export default () => {
   };
 
   /**
-   * Given a list of allowed submissions _id, return all useable matches.
-   * @return { [MatchModel] }
-   * @param allowedSubmissionIds { [ObjectId] }
+   * Get pairwise matches for the given submissions
    */
-  MatchSchema.statics.getPairwiseMatchesForSubmissionsAsync = async function(allowedSubmissionIds) {
-    return await this
+  MatchSchema.statics.getPairwiseMatchesAsync = async function (sids) {
+    return await Match
       .find({
-        u1Submission: {
-          $in: allowedSubmissionIds,
-        },
-        u2Submission: {
-          $in: allowedSubmissionIds,
-        },
+        u1Submission: { $in: sids },
+        u2Submission: { $in: sids },
+        status: { $in: [Match.STATUS_U1WIN, Match.STATUS_U2WIN, Match.STATUS_DRAW] },
       })
+      .sort({ _id: -1 })
       .exec();
   };
 
-  MatchSchema.index({ u1Submission: 1, u2Submission: -1 }, { unique: true });
+  MatchSchema.index({ u1Submission: 1, u2Submission: -1, status: 1, _id: -1 }, { unique: true });
   MatchSchema.index({ u2Submission: 1 });
 
   Match = mongoose.model('Match', MatchSchema);

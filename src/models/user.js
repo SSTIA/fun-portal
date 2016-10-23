@@ -6,8 +6,7 @@ import roles from 'libs/roles';
 import sso from 'libs/sso';
 
 export default () => {
-
-  const schema = {
+  const UserSchema = new mongoose.Schema({
     userName: String,
     userName_std: String,
     isSsoAccount: Boolean,
@@ -21,9 +20,9 @@ export default () => {
       initial: Boolean,
     },
     submissionNumber: Number,
-  };
-
-  const UserSchema = new mongoose.Schema(schema, { timestamps: true });
+  }, {
+    timestamps: true,
+  });
 
   // User Model
   let User;
@@ -74,6 +73,14 @@ export default () => {
       throw new errors.UserError('User not found');
     }
     return user;
+  };
+
+  /**
+   * Get all users, order by _id
+   * @return {[User]}
+   */
+  UserSchema.statics.getAllUsersAsync = async function () {
+    return await User.find().sort({ _id: 1 });
   };
 
   /**

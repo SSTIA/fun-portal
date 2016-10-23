@@ -4,10 +4,61 @@
   <div class="columns">
     <div class="section">
       <div class="section__header">
-        <h1 class="section__title">Hello World!</h1>
+        <h1 class="section__title">Current Scoreboard</h1>
       </div>
-      <div class="section__body">
-        <p>Scoreboard Coming Soon!</p>
+      <div class="section__body no-padding">
+        <table class="data-table">
+          <colgroup>
+            <col class="col--rank">
+            <col class="col--user">
+            <col class="col--score">
+            <col class="col--wins">
+            <col class="col--loses">
+            <col class="col--draws">
+            <col class="col--submission">
+            <col class="col--submit-at">
+          </colgroup>
+          <thead>
+            <tr>
+              <th class="col--rank">Rank</th>
+              <th class="col--user">User</th>
+              <th class="col--score">Score</th>
+              <th class="col--wins">Win</th>
+              <th class="col--loses">Lose</th>
+              <th class="col--draws">Draw</th>
+              <th class="col--submission">Submission</th>
+              <th class="col--submit-at">Submitted At</th>
+            </tr>
+          </thead>
+          <tbody>
+          {% for rdoc in sbdoc %}
+            <tr>
+              <td class="col--rank">#{{ rdoc.rank }}</td>
+              <td class="col--user">{{ rdoc.udoc.profile.displayName }}</td>
+              <td class="col--score">{{ rdoc.score }}</td>
+              <td class="col--wins">{{ rdoc.win }}</td>
+              <td class="col--loses">{{ rdoc.lose }}</td>
+              <td class="col--draws">{{ rdoc.draw }}</td>
+              <td class="col--submission">
+              {% if rdoc.lsdoc %}
+                <a class="typo-a" href="{{ url('/submission/{0}', false, [rdoc.lsdoc._id]) }}">
+                  #{{ rdoc.lsdoc.version }}: View
+                </a>
+              {% else %}
+                --
+              {% endif %}
+              </td>
+              <td class="col--submit-at">
+              {% if rdoc.lsdoc %}
+                {{ rdoc.lsdoc.createdAt|datetime }}
+              {% else %}
+                --
+              {% endif %}
+              </td>
+            </tr>
+          {% endfor %}
+          </tbody>
+        </table>
       </div>
     </div>
   </div>
