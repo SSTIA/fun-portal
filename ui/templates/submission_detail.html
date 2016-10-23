@@ -33,7 +33,7 @@
             <th class="col--status match-status--border">Status</th>
             <th class="col--at">At</th>
             <th class="col--challenger">Challenger</th>
-            <th class="col--challengee">Challengee</th>
+            <th class="col--challengee">Opponent</th>
             <th class="col--rounds">Round Statistics</th>
           </tr>
         </thead>
@@ -132,9 +132,9 @@
             {{ DI('models.Submission.STATUS_TEXT')[sdoc.status] }}
           </span>
         </dd>
-        <dt>Submit By</dt>
+        <dt>Submitted By</dt>
         <dd>{{ sdoc.user.profile.displayName }}</dd>
-        <dt>Submit At</dt>
+        <dt>Submitted At</dt>
         <dd>{{ sdoc.createdAt|datetime }}</dd>
       </dl>
     </div>
