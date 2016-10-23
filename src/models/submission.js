@@ -253,7 +253,7 @@ export default () => {
   SubmissionSchema.statics.judgeStartCompileAsync = async function (sid, taskToken) {
     const sdoc = await Submission.getSubmissionObjectByIdAsync(sid);
     if (sdoc.taskToken !== taskToken) {
-      throw new Error('judgeStartCompileAsync: Task token does not match');
+      throw new errors.UserError('judgeStartCompileAsync: Task token does not match');
     }
     sdoc.status = Submission.STATUS_COMPILING;
     await sdoc.save();
@@ -271,7 +271,7 @@ export default () => {
   SubmissionSchema.statics.judgeSetSystemErrorAsync = async function (sid, taskToken, text) {
     const sdoc = await Submission.getSubmissionObjectByIdAsync(sid);
     if (sdoc.taskToken !== taskToken) {
-      throw new Error('judgeSetSystemErrorAsync: Task token does not match');
+      throw new errors.UserError('judgeSetSystemErrorAsync: Task token does not match');
     }
     sdoc.text = text;
     sdoc.status = Submission.STATUS_SYSTEM_ERROR;
@@ -298,7 +298,7 @@ export default () => {
     }
     const sdoc = await Submission.getSubmissionObjectByIdAsync(sid);
     if (sdoc.taskToken !== taskToken) {
-      throw new Error('judgeCompleteCompileAsync: Task token does not match');
+      throw new errors.UserError('judgeCompleteCompileAsync: Task token does not match');
     }
     sdoc.text = text;
     sdoc.status = success ? Submission.STATUS_RUNNING : Submission.STATUS_COMPILE_ERROR;
