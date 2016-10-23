@@ -35,9 +35,15 @@
         <pre>{{ rdoc.text }}</pre>
       </div>
     {% endif %}
-      <div class="section__body">
-        Board Visualization Coming Soon
+    {% if rdoc.summary %}
+      <script id="roundSummary" type="text/x-board-summary">{{ rdoc.summary|safe }}</script>
+      <div class="section__body typo">
+        <p id="roundText"></p>
       </div>
+      <div class="section__body">
+        <div id="roundBoard" class="board-container"></div>
+      </div>
+    {% endif %}
     </div>
   </div>
   <div class="medium-3 columns"><div data-sticky="medium">
@@ -56,10 +62,14 @@
             Download Round Logs
           </a>
         </li>
+        <li class="menu__item">
+          <a href="https://github.com/sse2016-gomoku-fun/about/wiki/Format-of-Round-Logs" target="_blank" class="menu__link">
+            <span class="icon icon-help"></span>
+            Round Logs Help
+          </a>
+        </li>
       {% endif %}
       </ol>
-    </div>
-    <div class="side section">
       <div class="section__body typo">
         <dl class="large horizontal">
           <dt>Match</dt>

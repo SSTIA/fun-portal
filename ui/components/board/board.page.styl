@@ -1,0 +1,43 @@
+.board-table
+  width: 100%
+  table-layout: fixed
+  border-collapse: collapse
+  border-spacing: 0
+  white-space: nowrap
+
+.board-table td
+  position: relative
+  padding: 0
+  overflow: hidden
+  border: 1px solid #EEE
+
+  // squre
+  &:before
+    content: ''
+    float: left
+    padding-top: 100%
+
+  // heading
+  &.heading
+    font-size: rem(12px)
+    color: #AAA
+
+  .content
+    position: absolute
+    left: 0
+    top: 0
+    width: 100%
+    height: 100%
+
+  &[field="1"], &[field="2"]
+    .content:before
+      content: ''
+      width: 60%
+      height: 60%
+      border-radius: 50%
+
+  &[field="1"] .content:before
+    background: #444
+
+  &[field="2"] .content:before
+    background: #DDD
