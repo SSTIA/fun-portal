@@ -17,7 +17,11 @@ export default class Handler {
       try {
         const user = await DI.models.User.authenticateSsoAsync(directory);
         await credential.setCredential(req, user._id);
-        res.redirect(utils.url('/'));
+        if (user.profile.initial) {
+          res.redirect(utils.url('/user/profile'));
+        } else {
+          res.redirect(utils.url('/'));
+        }
         return;
       } catch (e) {
         errors.error = e.message;
