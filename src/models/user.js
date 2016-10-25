@@ -116,7 +116,7 @@ export default () => {
       profile: {
         realName,
         studentId,
-        displayName: realName,
+        displayName: studentId,
         teacher: '',
         initial: true,
       },
@@ -235,7 +235,7 @@ export default () => {
       initial: false,
     };
     if (user.profile.displayName) {
-      user.profile.displayName = user.profile.displayName.substr(0, 15);
+      user.profile.displayName = user.profile.displayName.substr(0, 100);
     }
     await user.save();
     return user;

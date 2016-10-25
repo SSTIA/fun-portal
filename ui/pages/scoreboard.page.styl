@@ -1,0 +1,18 @@
+.page--scoreboard
+  .col--rank
+    width: rem(80px)
+
+  .col--score, .col--wins, .col--loses, .col--draws
+    width: rem(80px)
+
+  .col--submission
+    width: rem(120px)
+
+  .col--submit-at
+    width: rem(150px)
+
+  +mobile()
+    .col--rank, .col--score, .col--wins
+      width: auto
+    .col--loses, .col--draws, .col--submission, .col--submit-at
+      display: none
