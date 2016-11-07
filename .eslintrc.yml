@@ -18,10 +18,13 @@ globals:
   __codeRoot: true
   __projectRoot: true
   UiContext: true
+  Context: true
   $: true
   DI: true
+  application: true
 rules:
   babel/object-shorthand: 1
+  no-cond-assign: 1
   indent:
     - 2
     - 2

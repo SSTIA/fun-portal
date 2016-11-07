@@ -1,0 +1,53 @@
+<table class="data-table submissions-table">
+  <colgroup>
+    <col class="col--status submission-status--border">
+    <col class="col--time">
+    <col class="col--by">
+    <col class="col--wins">
+    <col class="col--loses">
+    <col class="col--draws">
+  </colgroup>
+  <thead>
+    <tr>
+      <th class="col--status submission-status--border">Status</th>
+      <th class="col--time">Submitted At</th>
+      <th class="col--by">Submitted By</th>
+      <th class="col--wins">Win</th>
+      <th class="col--loses">Lose</th>
+      <th class="col--draws">Draw</th>
+    </tr>
+  </thead>
+  <tbody>
+  {%- for sdoc in sdocs %}
+    <tr>
+      <td class="col--status submission-status--border {{ sdoc.status }}">
+        <span class="icon submission-status--icon {{ sdoc.status }}"></span>
+        <a href="{{ url('/submission/{0}', false, [sdoc._id]) }}" class="submission-status--text {{ sdoc.status }}">
+          {{ DI('models.Submission.STATUS_TEXT')[sdoc.status] }}
+        </a>
+      </td>
+      <td class="col--time">{{ sdoc.createdAt|datetime }}</td>
+      <td class="col--by">
+        #{{ sdoc.version }}:
+        <a href="{{ url('/submission/user/{0}', false, [sdoc.user._id]) }}">{{ sdoc.user.profile.displayName }}</a>
+      </td>
+    {% if sdoc.matches %}
+      {%- set match_status = sdoc.matches | groupby('status') -%}
+      <td class="col--wins">
+        {{ match_status.u1win | length | default(0) }}
+      </td>
+      <td class="col--loses">
+        {{ match_status.u2win | length | default(0) }}
+      </td>
+      <td class="col--draws">
+        {{ match_status.draw | length | default(0) }}
+      </td>
+    {% else %}
+      <td class="col--wins">--</td>
+      <td class="col--loses">--</td>
+      <td class="col--draws">--</td>
+    {% endif %}
+    </tr>
+  {%- endfor %}
+  </tbody>
+</table>

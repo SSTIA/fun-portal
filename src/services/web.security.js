@@ -5,6 +5,7 @@ export default (app) => {
 
   app.use(helmet.contentSecurityPolicy({
     directives: {
+      connectSrc: ["'self'", `ws://${DI.config.host}`],
       defaultSrc: ["'self'"],
       scriptSrc: ["'self'", "'unsafe-inline'", "'unsafe-eval'"],
       styleSrc: ["'self'", "'unsafe-inline'"],

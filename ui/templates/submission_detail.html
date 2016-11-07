@@ -1,100 +1,48 @@
 {% extends "layout/submission_base.html" %}
 {% block submission_content %}
   <div class="section">
-    <div class="section__header">
-      <h1 class="section__title">
-        {{ sdoc.user.profile.displayName }}'s #{{ sdoc.version }} Submission:
-        <span class="icon submission-status--icon {{ sdoc.status }}"></span>
-        <span class="submission-status--text {{ sdoc.status }}">
-          {{ DI('models.Submission.STATUS_TEXT')[sdoc.status] }}
-        </span>
-      </h1>
-    </div>
-  {% if sdoc.text %}
-    <div class="section__body typo">
-      <pre>{{ sdoc.text }}</pre>
-    </div>
-  {% endif %}
-  {% if mdocs.length > 0 %}
-    <div class="section__body">
-      <div class="supplementary">Showing last 50 matches related to this submission.</div>
-    </div>
-    <div class="section__body no-padding">
-      <table class="data-table">
-        <colgroup>
-          <col class="col--status match-status--border">
-          <col class="col--at">
-          <col class="col--challenger">
-          <col class="col--challengee">
-          <col class="col--rounds">
-        </colgroup>
-        <thead>
-          <tr>
-            <th class="col--status match-status--border">Status</th>
-            <th class="col--at">At</th>
-            <th class="col--challenger">Challenger</th>
-            <th class="col--challengee">Opponent</th>
-            <th class="col--rounds">Round Statistics</th>
-          </tr>
-        </thead>
-        <tbody>
-        {% for mdoc in mdocs %}
-          <tr>
-            {% set status = getRelativeStatus(mdoc.status, mdoc) %}
-            <td class="col--status match-status--border {{ status }}">
-              <span class="icon match-status--icon {{ status }}"></span>
-              <a href="{{ url('/match/{0}', false, [mdoc._id]) }}">
-                <span class="match-status--text {{ status }}">
-                  {{ DI('models.Match.STATUS_TEXT')[status] }}
-                </span>
-              </a>
-            </td>
-            <td class="col--at">
-              {{ mdoc.createdAt|datetime }}
-            </td>
-            <td class="col--challenger">
-            #{{ mdoc.u1Submission.version }}:
-            {% if mdoc.u1.equals(sdoc.user) %}
-              <span class="text-aqua">(Submitter)</span>
-            {% else %}
-              <a href="{{ url('/submission/{0}', false, [mdoc.u1Submission._id]) }}">
-                {{ mdoc.u1.profile.displayName }}
-              </a>
-            {% endif %}
-            </td>
-            <td class="col--challengee">
-            #{{ mdoc.u2Submission.version }}:
-            {% if mdoc.u2.equals(sdoc.user) %}
-              <span class="text-aqua">(Submitter)</span>
-            {% else %}
-              <a href="{{ url('/submission/{0}', false, [mdoc.u2Submission._id]) }}">
-                {{ mdoc.u2.profile.displayName }}
-              </a>
-            {% endif %}
-            </td>
-            <td class="col--rounds" layout="row stretch-left">
-            {% for status, rounds in mdoc.rounds | groupby('status') | dictsort %}
-              {% set status = getRelativeStatus(status, mdoc) %}
-              <a href="{{ url('/match/{0}', false, [mdoc._id]) }}" class="round-status--cell {{ status }}" style="width: {{ (rounds.length / mdoc.rounds.length * 100) }}%">
-                <span>{{ rounds.length }} {{ DI('models.Match.ROUND_STATUS_TEXT')[status] }}</span>
-              </a>
-            {% endfor %}
-            </td>
-          </tr>
-        {% endfor %}
-        </tbody>
-      </table>
+    {% include "partials/submission_detail_body.html" %}
+    <div data-hide-when="no_match"{% if mdocs.length == 0 %} style="display:none"{% endif %}>
+      <div class="section__body">
+        <div class="supplementary">Showing matches related to this submission.</div>
+      </div>
+      <div class="section__body no-padding">
+        <table class="data-table">
+          <colgroup>
+            <col class="col--status match-status--border">
+            <col class="col--at">
+            <col class="col--challenger">
+            <col class="col--challengee">
+            <col class="col--rounds">
+          </colgroup>
+          <thead>
+            <tr>
+              <th class="col--status match-status--border">Status</th>
+              <th class="col--at">At</th>
+              <th class="col--challenger">Challenger</th>
+              <th class="col--challengee">Opponent</th>
+              <th class="col--rounds">Round Statistics</th>
+            </tr>
+          </thead>
+          <tbody id="match_row_container">
+          {%- for mdoc in mdocs %}
+            {%- include "partials/submission_detail_match_row.html" -%}
+          {%- endfor %}
+          </tbody>
+        </table>
+        {{ paginator.render(page, pages, url('/submission/{0}/{page}', false, [sdoc._id])) }}
+      </div>
     </div>
     <div class="section__body">
-      <div class="supplementary">Note: Win or lose is relative to the submitter.</div>
+      <div data-hide-when="no_match" class="supplementary"{% if mdocs.length == 0 %} style="display:none"{% endif %}>
+        Note: Win or lose is relative to the submitter.
+      </div>
+      <div data-hide-when="match" class="supplementary"{% if mdocs.length > 0 %} style="display:none"{% endif %}>
+        This submission doesn't have related matches.
+      </div>
     </div>
-  {% else %}
-    <div class="section__body">
-      <div class="supplementary">This submission doesn't have related matches.</div>
-    </div>
-  {% endif %}
   </div>
-{% if sdoc.user.equals(req.credential._id) or req.credential.hasPermission(permissions.VIEW_ANY_SUBMISSION_CODE) %}
+{%- if sdoc.user.equals(req.credential._id) or req.credential.hasPermission(permissions.VIEW_ANY_SUBMISSION_CODE) %}
   <div class="section">
     <div class="section__header">
       <h1 class="section__title">Source Code</h1>
@@ -103,14 +51,14 @@
       <pre><code class="cpp">{{ sdoc.code }}</code></pre>
     </div>
   </div>
-{% endif %}
+{%- endif %}
 {% endblock %}
 {% block submission_sidebar %}
   <div class="side section">
     <div class="section__header">
       <h1 class="section__title">Submission Info</h1>
     </div>
-  {% if req.credential.hasPermission(permissions.REJUDGE_SUBMISSION) %}
+  {%- if req.credential.hasPermission(permissions.REJUDGE_SUBMISSION) %}
     <ol class="menu">
       <li class="menu__item">
         <form method="POST" action="{{ url('/submission/{0}/rejudge', false, [sdoc._id]) }}">
@@ -122,19 +70,24 @@
         </form>
       </li>
     </ol>
-  {% endif %}
+  {%- endif %}
     <div class="section__body typo">
       <dl class="large horizontal">
         <dt>Status</dt>
+        {%- include "partials/submission_detail_status.html" -%}
+        <dt>Submit By</dt>
         <dd>
-          <span class="icon submission-status--icon {{ sdoc.status }}"></span>
-          <span class="submission-status--text {{ sdoc.status }}">
-            {{ DI('models.Submission.STATUS_TEXT')[sdoc.status] }}
-          </span>
+          <a href="{{ url('/submission/user/{0}', false, [sdoc.user._id]) }}">
+            {{ sdoc.user.profile.displayName }}
+          </a>
         </dd>
-        <dt>Submitted By</dt>
-        <dd>{{ sdoc.user.profile.displayName }}</dd>
-        <dt>Submitted At</dt>
+      {%- if req.credential.hasPermission(permissions.VIEW_ANY_PROFILE) %}
+        <dt>Std Id</dt>
+        <dd>{{ sdoc.user.profile.studentId }}</dd>
+        <dt>Real Name</dt>
+        <dd>{{ sdoc.user.profile.realName }}</dd>
+      {%- endif %}
+        <dt>Submit At</dt>
         <dd>{{ sdoc.createdAt|datetime }}</dd>
       </dl>
     </div>

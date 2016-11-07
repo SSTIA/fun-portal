@@ -1,0 +1,16 @@
+<div data-id="submission_body">
+  <div class="section__header">
+    <h1 class="section__title">
+      {{ sdoc.user.profile.displayName }}'s #{{ sdoc.version }} Submission:
+      <span class="icon submission-status--icon {{ sdoc.status }}"></span>
+      <span class="submission-status--text {{ sdoc.status }}">
+        {{ DI('models.Submission.STATUS_TEXT')[sdoc.status] }}
+      </span>
+    </h1>
+  </div>
+{%- if sdoc.text %}
+  <div class="section__body typo">
+    <pre>{{ sdoc.text }}</pre>
+  </div>
+{%- endif %}
+</div>

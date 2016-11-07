@@ -42,39 +42,61 @@ export default () => {
     'effective': 'Effective',
   };
 
-  async function updateSingleSubmissionStatus(submissionId) {
-    try {
-      const submission = await Submission.getSubmissionObjectByIdAsync(submissionId);
-      submission.updateSubmissionStatus();
-      await submission.save();
-    } catch (ignored) {
-      // ignore errors
-    }
-  }
+  SubmissionSchema.pre('save', function (next) {
+    this.__lastIsNew = this.isNew;
+    this.__lastModifiedPaths = this.modifiedPaths();
+    next();
+  });
+
+  SubmissionSchema.post('save', function () {
+    const sdoc = this.toObject();
+    Promise.all([
+      (async () => {
+        if (this.__lastIsNew) {
+          await DI.eventBus.emitAsyncWithProfiling('submission:created::**', sdoc);
+        }
+      })(),
+      ...this.__lastModifiedPaths.map(async (path) => {
+        let m;
+        if (path === 'status') {
+          await DI.eventBus.emitAsyncWithProfiling('submission.status:updated::**', sdoc);
+        } else if (m = path.match(/^matches\.(\d+)\.status$/)) {
+          const smdoc = sdoc.matches[m[1]];
+          await DI.eventBus.emitAsyncWithProfiling('submission.matches.status:updated::**', sdoc, smdoc);
+        }
+      }),
+    ]);
+  });
 
   /**
-   * Single worker queue to deal with submission status updates to avoid race conditions
+   * Update the submission status one by one when match status is updated
    */
-  const submissionStatusUpdateQueue = async.queue((submissionId, callback) => {
-    updateSingleSubmissionStatus(submissionId).then(() => callback());
+  const updateStatusQueue = async.queue((sdocid, callback) => {
+    Submission.updateSubmissionStatusAsync(sdocid)
+      .then(callback)
+      .catch(() => callback());
   }, 1);
 
+  DI.eventBus.on('submission.matches.status:updated', sdoc => {
+    updateStatusQueue.push(sdoc._id);
+  });
+
   /**
-   * Update the submission status when match status is updated
+   * Update corresponding smdoc status when a match status is updated
    */
-  SubmissionSchema.pre('save', function (next) {
-    const modifiedPaths = this.modifiedPaths();
-    if (_.some(modifiedPaths, path => path.match(/^matches\.\d+\.status$/))) {
-      submissionStatusUpdateQueue.push(this._id);
+  DI.eventBus.on('match.status:updated', async mdoc => {
+    try {
+      await Submission.updateSubmissionMatchAsync(mdoc._id);
+    } catch (err) {
+      DI.logger.error(err.stack);
     }
-    next();
   });
 
   /**
    * Update the status of the submission based on status of matches.
    * Status will be changed only from `running` to `effective`, or reversed.
    */
-  SubmissionSchema.methods.updateSubmissionStatus = function () {
+  SubmissionSchema.methods.updateStatus = function () {
     if (this.status !== Submission.STATUS_RUNNING && this.status !== Submission.STATUS_EFFECTIVE) {
       return;
     }
@@ -87,6 +109,12 @@ export default () => {
     } else {
       this.status = Submission.STATUS_EFFECTIVE;
     }
+  };
+
+  SubmissionSchema.statics.updateSubmissionStatusAsync = async function (sdocid) {
+    const sdoc = await Submission.getSubmissionObjectByIdAsync(sdocid);
+    sdoc.updateStatus();
+    await sdoc.save();
   };
 
   /**
@@ -206,7 +234,7 @@ export default () => {
   SubmissionSchema.statics._compileForMatchAsync = async function (sdoc) {
     if (sdoc.taskToken) {
       const error = new Error('_compileForMatchAsync: Expect taskToken is undefined');
-      DI.logger.error(error);
+      DI.logger.error(error.stack);
     }
     sdoc.exeBlob = null;
     sdoc.status = Submission.STATUS_PENDING;
@@ -339,36 +367,24 @@ export default () => {
   };
 
   /**
-   * Update the status of a mdoc in the submission and determine the submission status
+   * Update the status of a smdoc according to the status of mdoc
    *
-   * @param  {ObjectId} sid
    * @param  {ObjectId} mdocid
-   * @param  {String} status Match Status
    */
-  SubmissionSchema.statics._updateSubMatchStatusAsync = async function (sid, mdocid, status) {
-    const sdoc = await Submission.getSubmissionObjectByIdAsync(sid);
+  SubmissionSchema.statics.updateSubmissionMatchAsync = async function (mdocid) {
+    const mdoc = await DI.models.Match.getMatchObjectByIdAsync(mdocid);
+    const sdoc = await Submission.getSubmissionObjectByIdAsync(mdoc.u1Submission);
     if (!sdoc.matches) {
       // Only compiled submission contains `matches`
       return;
     }
-    const mdoc = sdoc.matches.find(mdoc => mdoc._id.equals(mdocid));
-    if (mdoc === undefined) {
+    const smdoc = sdoc.matches.find(smdoc => smdoc._id.equals(mdocid));
+    if (smdoc === undefined) {
       return;
     }
-    mdoc.status = status;
+    smdoc.status = mdoc.status;
     await sdoc.save();
   };
-
-  /**
-   * Update corresponding sub-match status when a match status is updated
-   */
-  DI.eventBus.on('match.statusChanged', (match) => {
-    Submission._updateSubMatchStatusAsync(
-      objectId.getFromIdOrDoc(match.u1Submission),
-      match._id,
-      match.status
-    ).catch(err => DI.logger.error(err));
-  });
 
   SubmissionSchema.index({ user: 1, _id: -1 });
   SubmissionSchema.index({ status: 1, _id: -1 });

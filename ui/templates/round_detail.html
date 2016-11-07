@@ -9,7 +9,7 @@
       <div class="section__body">
         <ol class="supplementary dot list">
           <li>
-            {% set status = DI('models.Match.getRelativeStatus')(rdoc.status, true) %}
+            {%- set status = DI('models.Match.getRelativeStatus')(rdoc.status, true) -%}
             <span class="round-status--text {{ status }}">
               <span class="icon round-status--icon {{ status }}"></span>
               {{ DI('models.Match.ROUND_STATUS_TEXT')[status] }}
@@ -19,7 +19,7 @@
             </span>
           </li>
           <li>
-            {% set status = DI('models.Match.getRelativeStatus')(rdoc.status, false) %}
+            {%- set status = DI('models.Match.getRelativeStatus')(rdoc.status, false) -%}
             <span class="round-status--text {{ status }}">
               <span class="icon round-status--icon {{ status }}"></span>
               {{ DI('models.Match.ROUND_STATUS_TEXT')[status] }}
@@ -30,12 +30,12 @@
           </li>
         </ol>
       </div>
-    {% if rdoc.text %}
+    {%- if rdoc.text %}
       <div class="section__body typo">
         <pre>{{ rdoc.text }}</pre>
       </div>
-    {% endif %}
-    {% if rdoc.summary %}
+    {%- endif %}
+    {%- if rdoc.summary %}
       <script id="roundSummary" type="text/x-board-summary">{{ rdoc.summary|safe }}</script>
       <div class="section__body typo">
         <p id="roundText"></p>
@@ -43,7 +43,7 @@
       <div class="section__body">
         <div id="roundBoard" class="board-container"></div>
       </div>
-    {% endif %}
+    {%- endif %}
     </div>
   </div>
   <div class="medium-3 columns"><div data-sticky="medium">
@@ -55,7 +55,7 @@
             Return to Match
           </a>
         </li>
-      {% if rdoc.logBlob %}
+      {%- if rdoc.logBlob %}
         <li class="menu__item">
           <a href="{{ url('/match/{0}/round/{1}/logs', false, [mdoc._id, rdoc._id]) }}" class="menu__link">
             <span class="icon icon-download"></span>
@@ -68,7 +68,7 @@
             Round Logs Help
           </a>
         </li>
-      {% endif %}
+      {%- endif %}
       </ol>
       <div class="section__body typo">
         <dl class="large horizontal">

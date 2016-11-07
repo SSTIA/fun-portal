@@ -2,43 +2,19 @@
 {% block submission_content %}
 <div class="section">
   <div class="section__header">
+  {%- if udoc %}
+    <h1 class="section__title">Submissions by {{ udoc.profile.displayName }}</h1>
+  {%- else %}
     <h1 class="section__title">All Submissions</h1>
+  {%- endif %}
   </div>
   <div class="section__body no-padding">
-    <table class="data-table">
-      <colgroup>
-        <col class="col--status submission-status--border">
-        <col class="col--time">
-        <col class="col--by">
-        <col class="col--action">
-      </colgroup>
-      <thead>
-        <tr>
-          <th class="col--status submission-status--border">Status</th>
-          <th class="col--time">Submitted At</th>
-          <th class="col--by">Submitted By</th>
-          <th class="col--action">Actions</th>
-        </tr>
-      </thead>
-      <tbody>
-      {% for sdoc in sdocs %}
-        <tr>
-          <td class="col--status submission-status--border {{ sdoc.status }}">
-            <span class="icon submission-status--icon {{ sdoc.status }}"></span>
-            <span class="submission-status--text {{ sdoc.status }}">
-              {{ DI('models.Submission.STATUS_TEXT')[sdoc.status] }}
-            </span>
-          </td>
-          <td class="col--time">{{ sdoc.createdAt|datetime }}</td>
-          <td class="col--by">#{{ sdoc.version }}: {{ sdoc.user.profile.displayName }}</td>
-          <td class="col--action">
-            <a href="{{ url('/submission/{0}', false, [sdoc._id]) }}" class="typo-a">Detail</a>
-          </td>
-        </tr>
-      {% endfor %}
-      </tbody>
-    </table>
-    {{ paginator.render(req.data.page, pages, url('/submission/all/{page}')) }}
+    {%- include "partials/submissions_table.html" -%}
+  {%- if udoc %}
+    {{ paginator.render(page, pages, url('/submission/user/{0}/{page}', false, [udoc._id])) }}
+  {%- else %}
+    {{ paginator.render(page, pages, url('/submission/all/{page}')) }}
+  {%- endif %}
   </div>
 </div>
 {% endblock %}

@@ -16,3 +16,16 @@
   for key, value in $submission-status-color
     &.{key}
       border-left: rem(3px) solid lighten(value, 10%)
+
+.submissions-table
+  .col--status
+    width: rem(150px)
+
+  .col--time
+    width: rem(120px)
+
+  .col--wins, .col--loses, .col--draws
+    width: rem(70px)
+
+  .col--time, .col--wins
+    border-left: 1px solid $table-border-color

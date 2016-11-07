@@ -20,14 +20,6 @@ const objectId = {
     }
   },
 
-  getFromIdOrDoc: (idOrDoc, field = '_id') => {
-    if (idOrDoc instanceof mongoose.Types.ObjectId) {
-      return idOrDoc;
-    } else {
-      return idOrDoc[field];
-    }
-  },
-
   fromDatetime: (datetime) => {
     const id = Math.floor(datetime.getTime() / 1000).toString(16) + '0000000000000000';
     return objectId.create(id);

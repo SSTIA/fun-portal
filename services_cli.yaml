@@ -1,0 +1,26 @@
+logger:
+  path: logger
+
+eventBus:
+  path: eventBus
+
+mq:
+  path: mq
+  inject:
+    - logger
+
+mongodbConnection:
+  path: mongodb.connection
+  inject:
+    - logger
+
+gridfs:
+  path: mongodb.gridfs
+  inject:
+    - mongodbConnection
+
+models:
+  path: models
+
+cli:
+  path: cli

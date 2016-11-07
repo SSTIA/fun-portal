@@ -2,8 +2,10 @@ import * as web from 'express-decorators';
 import multer from 'multer';
 import fsp from 'fs-promise';
 import utils from 'libs/utils';
+import sanitizers from 'libs/sanitizers';
 import errors from 'libs/errors';
 import permissions from 'libs/permissions';
+import socket from 'libs/socket';
 
 const binUpload = multer({
   storage: multer.diskStorage({}),
@@ -19,6 +21,7 @@ const binUpload = multer({
 
 const SUBMISSIONS_PER_PAGE = 50;
 
+@socket.enable()
 @web.controller('/submission')
 export default class Handler {
 
@@ -30,8 +33,8 @@ export default class Handler {
 
   @web.post('/api/compileBegin')
   @web.middleware(utils.sanitizeBody({
-    id: utils.checkNonEmptyString(),
-    token: utils.checkNonEmptyString(),
+    id: sanitizers.nonEmptyString(),
+    token: sanitizers.nonEmptyString(),
   }))
   @web.middleware(utils.checkAPI())
   async apiCompileBegin(req, res) {
@@ -45,9 +48,9 @@ export default class Handler {
 
   @web.post('/api/compileError')
   @web.middleware(utils.sanitizeBody({
-    id: utils.checkNonEmptyString(),
-    token: utils.checkNonEmptyString(),
-    text: utils.checkString(),
+    id: sanitizers.nonEmptyString(),
+    token: sanitizers.nonEmptyString(),
+    text: sanitizers.string(),
   }))
   @web.middleware(utils.checkAPI())
   async apiCompileError(req, res) {
@@ -61,10 +64,10 @@ export default class Handler {
 
   @web.post('/api/compileEnd')
   @web.middleware(utils.sanitizeBody({
-    id: utils.checkNonEmptyString(),
-    token: utils.checkNonEmptyString(),
-    text: utils.checkString(),
-    success: utils.checkBool(),
+    id: sanitizers.nonEmptyString(),
+    token: sanitizers.nonEmptyString(),
+    text: sanitizers.string(),
+    success: sanitizers.bool(),
   }))
   @web.middleware(binUpload.single('binary'))
   @web.middleware(utils.checkAPI())
@@ -81,7 +84,7 @@ export default class Handler {
       try {
         await fsp.remove(req.file.path);
       } catch (err) {
-        DI.logger.error(err);
+        DI.logger.error(err.stack);
       }
     }
     const sdoc = await DI.models.Submission.judgeCompleteCompileAsync(
@@ -96,7 +99,7 @@ export default class Handler {
 
   @web.get('/api/binary')
   @web.middleware(utils.sanitizeQuery({
-    id: utils.checkNonEmptyString(),
+    id: sanitizers.nonEmptyString(),
   }))
   @web.middleware(utils.checkAPI())
   async apiGetBinary(req, res) {
@@ -125,7 +128,7 @@ export default class Handler {
 
   @web.get('/all/:page?')
   @web.middleware(utils.sanitizeParam({
-    page: utils.checkPageNumber().optional(1),
+    page: sanitizers.pageNumber().optional(1),
   }))
   @web.middleware(utils.checkPermission(permissions.VIEW_ALL_SUBMISSIONS))
   async getAllSubmissionsAction(req, res) {
@@ -138,13 +141,14 @@ export default class Handler {
     res.render('submission_all', {
       page_title: 'All Submissions',
       sdocs,
+      page: req.data.page,
       pages,
     });
   }
 
   @web.get('/my/:page?')
   @web.middleware(utils.sanitizeParam({
-    page: utils.checkPageNumber().optional(1),
+    page: sanitizers.pageNumber().optional(1),
   }))
   @web.middleware(utils.checkPermission(permissions.VIEW_OWN_SUBMISSIONS))
   async getMySubmissionsAction(req, res) {
@@ -153,9 +157,34 @@ export default class Handler {
       req.data.page,
       SUBMISSIONS_PER_PAGE
     );
+    await DI.models.User.populate(sdocs, 'user');
     res.render('submission_my', {
       page_title: 'My Submissions',
       sdocs,
+      page: req.data.page,
+      pages,
+    });
+  }
+
+  @web.get('/user/:uid/:page?')
+  @web.middleware(utils.sanitizeParam({
+    uid: sanitizers.objectId(),
+    page: sanitizers.pageNumber().optional(1),
+  }))
+  @web.middleware(utils.checkPermission(permissions.VIEW_OWN_SUBMISSIONS))
+  async getUserSubmissionsAction(req, res) {
+    const udoc = await DI.models.User.getUserObjectByIdAsync(req.data.uid);
+    const [ sdocs, pages ] = await utils.pagination(
+      DI.models.Submission.getUserSubmissionsCursor(req.data.uid),
+      req.data.page,
+      SUBMISSIONS_PER_PAGE
+    );
+    await DI.models.User.populate(sdocs, 'user');
+    res.render('submission_all', {
+      page_title: 'User Submissions',
+      udoc,
+      sdocs,
+      page: req.data.page,
       pages,
     });
   }
@@ -174,38 +203,118 @@ export default class Handler {
 
   @web.post('/create')
   @web.middleware(utils.sanitizeBody({
-    code: utils.checkNonEmptyString(),
+    code: sanitizers.nonEmptyString(),
   }))
   @web.middleware(utils.checkCompleteProfile())
   @web.middleware(utils.checkPermission(permissions.CREATE_SUBMISSION))
   async postSubmissionCreateAction(req, res) {
-    await DI.models.Submission.createSubmissionAsync(
+    const sdoc = await DI.models.Submission.createSubmissionAsync(
       req.credential._id,
       req.data.code
     );
-    res.redirect(utils.url('/submission'));
+    res.redirect(utils.url('/submission/{0}', false, [sdoc._id]));
   }
 
-  @web.get('/:id')
+  @web.get('/:id/:page?')
+  @web.middleware(utils.sanitizeParam({
+    id: sanitizers.objectId(),
+    page: sanitizers.pageNumber().optional(1),
+  }))
   @web.middleware(utils.checkPermission(permissions.VIEW_ANY_SUBMISSION))
   async getSubmissionDetailAction(req, res) {
-    const sdoc = await DI.models.Submission.getSubmissionObjectByIdAsync(req.params.id);
+    const sdoc = await DI.models.Submission.getSubmissionObjectByIdAsync(req.data.id);
     await sdoc.populate('user').execPopulate();
-    const mdocs = await DI.models.Match.getMatchesForSubmissionAsync(sdoc._id);
+    const [ mdocs, pages ] = await utils.pagination(
+      DI.models.Match.getMatchesForSubmissionCursor(sdoc._id),
+      req.data.page,
+      SUBMISSIONS_PER_PAGE
+    );
     await DI.models.User.populate(mdocs, 'u1 u2');
     await DI.models.Submission.populate(mdocs, 'u1Submission u2Submission');
     res.render('submission_detail', {
       page_title: 'Submission Detail',
       sdoc,
       mdocs,
+      pages,
+      page: req.data.page,
       getRelativeStatus: (status, mdoc) => DI.models.Match.getRelativeStatus(status, mdoc.u1.equals(sdoc.user)),
+      context: {
+        id: sdoc._id,
+        page: req.data.page,
+      },
     });
   }
 
+  static async socketHandleSubmissionStatusUpdate(socket, sdocid) {
+    try {
+      const timestamp = Date.now();
+      const sdoc = await DI.models.Submission.getSubmissionObjectByIdAsync(sdocid);
+      await sdoc.populate('user').execPopulate();
+      socket.emit('update_body', {
+        html: DI.webTemplate.render('partials/submission_detail_body.html', { sdoc }),
+        tsKey: 'sdoc',
+        tsValue: timestamp,
+      });
+      socket.emit('update_status', {
+        html: DI.webTemplate.render('partials/submission_detail_status.html', { sdoc }),
+        tsKey: 'sdoc',
+        tsValue: timestamp,
+      });
+    } catch (err) {
+      DI.logger.error(err.stack);
+    }
+  }
+
+  static async socketHandleMatchUpdate(socket, mdocid, sdocid) {
+    try {
+      const timestamp = Date.now();
+      const mdoc = await DI.models.Match.getMatchObjectByIdAsync(mdocid);
+      await mdoc.populate('u1 u2 u1Submission u2Submission').execPopulate();
+      const sdoc = await DI.models.Submission.getSubmissionObjectByIdAsync(sdocid);
+      socket.emit('update_match_row', {
+        html: DI.webTemplate.render('partials/submission_detail_match_row.html', {
+          mdoc,
+          sdoc,
+          getRelativeStatus: (status, mdoc) => DI.models.Match.getRelativeStatus(status, mdoc.u1.equals(sdoc.user)),
+        }),
+        tsKey: `mdoc_${mdocid}`,
+        tsValue: timestamp,
+      });
+    } catch (err) {
+      DI.logger.error(err.stack);
+    }
+  }
+
+  @socket.namespace('/submission_detail')
+  async socketSubmissionDetailConnect(socket, query, nsp) {
+    if (query.page != 1) {
+      return;
+    }
+    await Handler.socketHandleSubmissionStatusUpdate(socket, query.id);
+    socket.listenBus('submission.status:updated', async sdoc => {
+      if (!sdoc._id.equals(query.id)) {
+        return;
+      }
+      await Handler.socketHandleSubmissionStatusUpdate(socket, sdoc._id);
+    });
+    async function onMatchUpdated (mdoc) {
+      if (!mdoc.u1Submission.equals(query.id) && !mdoc.u2Submission.equals(query.id)) {
+        return;
+      }
+      await Handler.socketHandleMatchUpdate(socket, mdoc._id, query.id);
+    }
+    socket.listenBus('match:created', onMatchUpdated);
+    socket.listenBus('match.status:updated', onMatchUpdated);
+    socket.listenBus('match.rounds:updated', onMatchUpdated);
+  }
+
   @web.post('/:id/rejudge')
+  @web.middleware(utils.sanitizeParam({
+    id: sanitizers.objectId(),
+  }))
   @web.middleware(utils.checkPermission(permissions.REJUDGE_SUBMISSION))
   async postSubmissionRejudgeAction(req, res) {
-    const sdoc = await DI.models.Submission.recompileAsync(req.params.id);
+    const sdoc = await DI.models.Submission.recompileAsync(req.data.id);
     res.redirect(utils.url('/submission/{0}', false, [sdoc._id]));
   }
 

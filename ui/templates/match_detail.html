@@ -28,44 +28,10 @@
               <th class="col--action">Action</th>
             </tr>
           </thead>
-          <tbody>
-          {% for rdoc in mdoc.rounds %}
-            <tr>
-              <td class="col--round-no">#{{ loop.index }}</td>
-              <td class="col--opening">{{ rdoc.openingId }}</td>
-              {% set status = DI('models.Match.getRelativeStatus')(rdoc.status, true) %}
-              <td class="col--challenger">
-                <div class="field-icon field--{% if rdoc.u1Black %}black{% else %}white{% endif %}"></div>
-                <span class="icon round-status--icon {{ status }}"></span>
-                <span class="round-status--text {{ status }}">
-                  {{ DI('models.Match.ROUND_STATUS_TEXT')[status] }}
-                </span>
-              </td>
-              {% set status = DI('models.Match.getRelativeStatus')(rdoc.status, false) %}
-              <td class="col--challengee">
-                <div class="field-icon field--{% if rdoc.u2Black %}black{% else %}white{% endif %}"></div>
-                <span class="icon round-status--icon {{ status }}"></span>
-                <span class="round-status--text {{ status }}">
-                  {{ DI('models.Match.ROUND_STATUS_TEXT')[status] }}
-                </span>
-              </td>
-              <td class="col--begin-at">
-                {% if rdoc.beginJudgeAt %}
-                  {{ rdoc.beginJudgeAt|datetime }}
-                {% else %}
-                  --
-                {% endif %}
-              </td>
-              <td class="col--end-at">
-                {% if rdoc.endJudgeAt %}
-                  {{ rdoc.endJudgeAt|datetime }}
-                {% else %}
-                  --
-                {% endif %}
-              </td>
-              <td class="col--action"><a class="typo-a" href="{{ url('/match/{0}/round/{1}', false, [mdoc._id, rdoc._id]) }}">View Board</a></td>
-            </tr>
-          {% endfor %}
+          <tbody id="round_row_container">
+          {%- for rdoc in mdoc.rounds %}
+            {%- include "partials/match_detail_round_row.html" -%}
+          {%- endfor %}
           </tbody>
         </table>
       </div>
@@ -79,12 +45,7 @@
       <div class="section__body typo">
         <dl class="large horizontal">
           <dt>Status</dt>
-          <dd>
-            <span class="icon match-status--icon {{ mdoc.status }}"></span>
-            <span class="match-status--text {{ mdoc.status }}">
-              {{ DI('models.Match.STATUS_TEXT')[mdoc.status] }}
-            </span>
-          </dd>
+          {%- include "partials/match_detail_match_status.html" -%}
           <dt>At</dt>
           <dd>
             {{ mdoc.createdAt|datetime }}
@@ -98,31 +59,47 @@
         <dl class="large horizontal">
           <dt>By</dt>
           <dd>
-            #{{ mdoc.u1Submission.version }}: {{ mdoc.u1.profile.displayName }}
+            <a href="{{ url('/submission/user/{0}', false, [mdoc.u1._id]) }}">
+              {{ mdoc.u1.profile.displayName }}
+            </dd>
           </dd>
-          <dt>Submit At</dt>
-          <dd>{{ mdoc.u1Submission.createdAt|datetime }}</dd>
-          <dt>Detail</dt>
+          <dt>Version</dt>
           <dd>
             <a href="{{ url('/submission/{0}', false, [mdoc.u1Submission._id]) }}">
-              View Submission
+              #{{ mdoc.u1Submission.version }}
             </a>
           </dd>
+        {%- if req.credential.hasPermission(permissions.VIEW_ANY_PROFILE) %}
+          <dt>Std Id</dt>
+          <dd>{{ mdoc.u1.profile.studentId }}</dd>
+          <dt>Real Name</dt>
+          <dd>{{ mdoc.u1.profile.realName }}</dd>
+        {%- endif %}
+          <dt>Submit At</dt>
+          <dd>{{ mdoc.u1Submission.createdAt|datetime }}</dd>
         </dl>
         <h2 class="section__title">Opponent</h2>
         <dl class="large horizontal">
           <dt>By</dt>
           <dd>
-            #{{ mdoc.u2Submission.version }}: {{ mdoc.u2.profile.displayName }}
-          </dd>
-          <dt>Submit At</dt>
-          <dd>{{ mdoc.u2Submission.createdAt|datetime }}</dd>
-          <dt>Detail</dt>
-          <dd>
-            <a href="{{ url('/submission/{0}', false, [mdoc.u2Submission._id]) }}">
-              View Submission
+            <a href="{{ url('/submission/user/{0}', false, [mdoc.u2._id]) }}">
+              {{ mdoc.u2.profile.displayName }}
             </a>
           </dd>
+          <dt>Version</dt>
+          <dd>
+            <a href="{{ url('/submission/{0}', false, [mdoc.u2Submission._id]) }}">
+              #{{ mdoc.u2Submission.version }}
+            </a>
+          </dd>
+        {%- if req.credential.hasPermission(permissions.VIEW_ANY_PROFILE) %}
+          <dt>Std Id</dt>
+          <dd>{{ mdoc.u2.profile.studentId }}</dd>
+          <dt>Real Name</dt>
+          <dd>{{ mdoc.u2.profile.realName }}</dd>
+        {%- endif %}
+          <dt>Submit At</dt>
+          <dd>{{ mdoc.u2Submission.createdAt|datetime }}</dd>
         </dl>
       </div>
     </div>

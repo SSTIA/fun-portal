@@ -3,6 +3,7 @@ const permissions = {};
 let bit = 0;
 
 permissions.PROFILE                     = 1 << (bit++);
+permissions.VIEW_ANY_PROFILE            = 1 << (bit++);
 
 permissions.VIEW_ALL_SUBMISSIONS        = 1 << (bit++);
 permissions.VIEW_OWN_SUBMISSIONS        = 1 << (bit++);

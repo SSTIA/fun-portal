@@ -1,4 +1,4 @@
-{% import "components/paginator.html" as paginator %}
+{%- import "components/paginator.html" as paginator -%}
 <!DOCTYPE html>
 <html data-page="{{ page_name }}" data-layout="{{ layout_name }}" class="layout--{{ layout_name }} page--{{ page_name }} nojs">
 <head>
@@ -20,10 +20,13 @@
     var _htmlNode = document.documentElement;
     _htmlNode.className = _htmlNode.className.replace(' nojs', ' hasjs');
     var UiContext = {{ ui_context|json|safe }};
+  {%- if context %}
+    var Context = {{ context|json|safe }};
+  {%- endif %}
   </script>
 </head>
 <body>
-  {% block body %}{% endblock %}
+  {%- block body -%}{%- endblock -%}
   <script type="text/javascript" src="{{ static_url('/vendors.js') }}"></script>
   <script type="text/javascript" src="{{ static_url('/main.js') }}"></script>
 </body>

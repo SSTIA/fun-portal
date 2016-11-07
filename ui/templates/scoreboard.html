@@ -31,7 +31,7 @@
             </tr>
           </thead>
           <tbody>
-          {% for rdoc in sbdoc %}
+          {%- for rdoc in sbdoc %}
             <tr>
               <td class="col--rank">#{{ rdoc.rank }}</td>
               <td class="col--user">{{ rdoc.udoc.profile.displayName }}</td>
@@ -40,23 +40,23 @@
               <td class="col--loses">{{ rdoc.lose }}</td>
               <td class="col--draws">{{ rdoc.draw }}</td>
               <td class="col--submission">
-              {% if rdoc.lsdoc %}
+              {%- if rdoc.lsdoc %}
                 <a class="typo-a" href="{{ url('/submission/{0}', false, [rdoc.lsdoc._id]) }}">
                   #{{ rdoc.lsdoc.version }}: View
                 </a>
-              {% else %}
+              {%- else %}
                 --
-              {% endif %}
+              {%- endif %}
               </td>
               <td class="col--submit-at">
-              {% if rdoc.lsdoc %}
+              {%- if rdoc.lsdoc %}
                 {{ rdoc.lsdoc.createdAt|datetime }}
-              {% else %}
+              {%- else %}
                 --
-              {% endif %}
+              {%- endif %}
               </td>
             </tr>
-          {% endfor %}
+          {%- endfor %}
           </tbody>
         </table>
       </div>

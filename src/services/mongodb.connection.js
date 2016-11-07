@@ -21,3 +21,7 @@ export default async (logger) => {
   return db;
 
 };
+
+export function shutdown() {
+  mongoose.connection.close();
+}

@@ -1,6 +1,7 @@
 import * as web from 'express-decorators';
 import _ from 'lodash';
 import utils from 'libs/utils';
+import sanitizers from 'libs/sanitizers';
 import permissions from 'libs/permissions';
 
 @web.controller('/user')
@@ -24,9 +25,9 @@ export default class Handler {
 
   @web.post('/profile')
   @web.middleware(utils.sanitizeBody({
-    realName: utils.checkNonEmptyString(),
-    displayName: utils.checkNonEmptyString(),
-    teacher: utils.checkNonEmptyString(),
+    realName: sanitizers.nonEmptyString(),
+    displayName: sanitizers.nonEmptyString(),
+    teacher: sanitizers.nonEmptyString(),
   }))
   @web.middleware(utils.checkPermission(permissions.PROFILE))
   async postUserProfileAction(req, res) {

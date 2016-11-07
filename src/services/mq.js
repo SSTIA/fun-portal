@@ -15,6 +15,13 @@ export default async (logger) => {
       publication.on('error', e => logger.error(e));
       return publication;
     },
+    shutdown(...args) {
+      return broker.shutdown(...args);
+    },
   };
 
 };
+
+export function shutdown(broker) {
+  return new Promise(resolve => broker.shutdown(resolve));
+}

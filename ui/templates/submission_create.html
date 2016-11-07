@@ -14,10 +14,10 @@
         <li>Do not abuse our cloud execution service, such as intentionally trying to shutdown our judge machine.</li>
       </ul>
     </blockquote>
-  {% if not submitAllowed %}
+  {%- if not submitAllowed %}
     <p>Sorry, you cannot submit code now because of exceeding the submission frequency limit.</p>
     <p>Please try again after {{ nextSubmitRemaining|duration }} ({{ (nextSubmitRemaining / 1000)|round }} seconds).</p>
-  {% else %}
+  {%- else %}
     <p>Please paste your C source code of your brain in the text box below. Your code will be automatically compiled and judged by the system.</p>
     <form method="post">
       <div class="row">
@@ -33,7 +33,7 @@
         </div>
       </div>
     </form>
-  {% endif %}
+  {%- endif %}
   </div>
 </div>
 {% endblock %}

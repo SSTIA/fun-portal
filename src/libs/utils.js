@@ -1,10 +1,17 @@
 import _ from 'lodash';
-import validator from 'validator';
+import uuid from 'uuid';
 import auth from 'basic-auth';
 import errors from 'libs/errors';
 import permissions from 'libs/permissions';
 
 const utils = {};
+
+utils.profile = (name) => {
+  const token = uuid.v4();
+  const func = () => DI.logger.profile(`${name} [${token}]`);
+  func();
+  return func;
+};
 
 utils.substitute = (str, obj) => {
   return str.replace(/\{([^{}]+)\}/g, (match, key) => {
@@ -18,7 +25,7 @@ utils.substitute = (str, obj) => {
 utils.url = (s, absolute = false, obj = null) => {
   let url = `${DI.config.urlPrefix}${s}`;
   if (absolute) {
-    url = `${DI.config.host}${url}`;
+    url = `http://${DI.config.host}${url}`;
   }
   if (obj === null) {
     return url;
@@ -99,69 +106,6 @@ utils.sanitizeBody = (patterns) => sanitizeExpress('body', patterns);
 utils.sanitizeQuery = (patterns) => sanitizeExpress('query', patterns);
 
 utils.sanitizeParam = (patterns) => sanitizeExpress('params', patterns);
-
-class Checker {
-  constructor(testFunc) {
-    this.test = testFunc;
-  }
-  optional(val) {
-    this.optional = true;
-    this.optionalValue = val;
-    return this;
-  }
-}
-
-utils.checkInt = () => new Checker((any) => {
-  if (typeof any === 'number') {
-    return Math.floor(any);
-  }
-  const str = String(any);
-  if (!validator.isInt(str)) {
-    throw new Error('integer number');
-  }
-  return validator.toInt(str);
-});
-
-utils.checkString = () => new Checker((any) => {
-  if (typeof any === 'string') {
-    return any;
-  }
-  throw new Error('string');
-});
-
-utils.checkNonEmptyString = () => new Checker((any) => {
-  if (typeof any === 'string') {
-    if (any.trim().length === 0) {
-      throw new Error('non empty string');
-    }
-    return any.trim();
-  }
-  throw new Error('non empty string');
-});
-
-utils.checkBool = () => new Checker((any) => {
-  if (typeof any === 'boolean') {
-    return any;
-  }
-  if (any === 'true') {
-    return true;
-  } else if (any === 'false') {
-    return false;
-  }
-  throw new Error('boolean');
-});
-
-utils.checkPageNumber = () => new Checker((any) => {
-  const str = String(any);
-  if (!validator.isInt(str)) {
-    throw new Error('page number');
-  }
-  const num = validator.toInt(str);
-  if (num < 1) {
-    throw new Error('page number');
-  }
-  return num;
-});
 
 utils.pagination = async (query, page, pageSize) => {
   const count = await query.model.count(query._conditions);

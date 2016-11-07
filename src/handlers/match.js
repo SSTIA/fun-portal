@@ -2,21 +2,24 @@ import * as web from 'express-decorators';
 import multer from 'multer';
 import fsp from 'fs-promise';
 import utils from 'libs/utils';
+import sanitizers from 'libs/sanitizers';
 import errors from 'libs/errors';
 import permissions from 'libs/permissions';
+import socket from 'libs/socket';
 
 // file limit is infinity
 const logUpload = multer({
   storage: multer.diskStorage({}),
 });
 
+@socket.enable()
 @web.controller('/match')
 export default class Handler {
 
   @web.post('/api/roundBegin')
   @web.middleware(utils.sanitizeBody({
-    mid: utils.checkNonEmptyString(),
-    rid: utils.checkNonEmptyString(),
+    mid: sanitizers.nonEmptyString(),
+    rid: sanitizers.nonEmptyString(),
   }))
   @web.middleware(utils.checkAPI())
   async apiRoundBegin(req, res) {
@@ -29,9 +32,9 @@ export default class Handler {
 
   @web.post('/api/roundError')
   @web.middleware(utils.sanitizeBody({
-    mid: utils.checkNonEmptyString(),
-    rid: utils.checkNonEmptyString(),
-    text: utils.checkNonEmptyString(),
+    mid: sanitizers.nonEmptyString(),
+    rid: sanitizers.nonEmptyString(),
+    text: sanitizers.nonEmptyString(),
   }))
   @web.middleware(utils.checkAPI())
   async apiRoundError(req, res) {
@@ -48,10 +51,10 @@ export default class Handler {
 
   @web.post('/api/roundComplete')
   @web.middleware(utils.sanitizeBody({
-    mid: utils.checkNonEmptyString(),
-    rid: utils.checkNonEmptyString(),
-    exitCode: utils.checkInt(),
-    summary: utils.checkNonEmptyString(),
+    mid: sanitizers.nonEmptyString(),
+    rid: sanitizers.nonEmptyString(),
+    exitCode: sanitizers.int(),
+    summary: sanitizers.nonEmptyString(),
   }))
   @web.middleware(logUpload.single('log'))
   @web.middleware(utils.checkAPI())
@@ -70,7 +73,7 @@ export default class Handler {
     try {
       await fsp.remove(req.file.path);
     } catch (err) {
-      DI.logger.error(err);
+      DI.logger.error(err.stack);
     }
     const mdoc = await DI.models.Match.judgeCompleteRoundAsync(
       req.data.mid,
@@ -99,6 +102,57 @@ export default class Handler {
     res.render('match_detail', {
       page_title: 'Match Detail',
       mdoc,
+      context: {
+        id: mdoc._id.toString(),
+      },
+    });
+  }
+
+  static async socketHandleMatchStatusUpdate(socket, mdocid) {
+    try {
+      const timestamp = Date.now();
+      const mdoc = await DI.models.Match.getMatchObjectByIdAsync(mdocid);
+      socket.emit('update_match_status', {
+        html: DI.webTemplate.render('partials/match_detail_match_status.html', { mdoc }),
+        tsKey: 'mdoc',
+        tsValue: timestamp,
+      });
+    } catch (err) {
+      DI.logger.error(err.stack);
+    }
+  }
+
+  static async socketHandleMatchRoundsUpdate(socket, mdocid, rdocid) {
+    try {
+      const timestamp = Date.now();
+      const mdoc = await DI.models.Match.getMatchObjectByIdAsync(mdocid);
+      const rdoc = mdoc.rounds ? mdoc.rounds.find(rdoc => rdoc._id.equals(rdocid)) : undefined;
+      if (!rdoc) {
+        return;
+      }
+      socket.emit('update_round_row', {
+        html: DI.webTemplate.render('partials/match_detail_round_row.html', { mdoc, rdoc }),
+        tsKey: `rdoc_${rdoc._id}`,
+        tsValue: timestamp,
+      });
+    } catch (err) {
+      DI.logger.error(err.stack);
+    }
+  }
+
+  @socket.namespace('/match_detail')
+  async socketMatchDetailConnect(socket, query, nsp) {
+    socket.listenBus('match.status:updated', async mdoc => {
+      if (!mdoc._id.equals(query.id)) {
+        return;
+      }
+      await Handler.socketHandleMatchStatusUpdate(socket, mdoc._id);
+    });
+    socket.listenBus('match.rounds:updated', async (mdoc, rdoc) => {
+      if (!mdoc._id.equals(query.id)) {
+        return;
+      }
+      await Handler.socketHandleMatchRoundsUpdate(socket, mdoc._id, rdoc._id);
     });
   }
 
