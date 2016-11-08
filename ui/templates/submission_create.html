@@ -44,7 +44,13 @@
     </div>
     <div class="section__body typo">
       <ul>
-        <li><p>Min interval between submissions: {{ DI('config.compile.limits.submitInterval')|duration }}</p></li>
+        <li><p>Min interval between submissions:
+      {%- if req.credential.hasPermission(permissions.BYPASS_SUBMISSION_LIMIT) %}
+        <span class="text-orange">{{ DI('config.compile.limits.minSubmitInterval')|duration }}</span>
+      {%- else %}
+        {{ DI('config.compile.limits.submitInterval')|duration }}
+      {%- endif %}
+        </p></li>
         <li><p>Max size of Source code: {{ DI('config.compile.limits.sizeOfCode')|filesize }}</p></li>
         <li><p>Max size of compiled exe: {{ DI('config.compile.limits.sizeOfBin')|filesize }}</p></li>
       </ul>

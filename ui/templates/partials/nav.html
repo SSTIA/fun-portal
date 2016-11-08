@@ -13,6 +13,9 @@
         {%- if not req.credential.profile.initial %}
         ({{ req.credential.profile.displayName }})
         {%- endif %}
+        {%- if req.credential.role !== 'string' %}
+        <span class="text-red">({{ req.credential.role }})</span>
+        {%- endif %}
       {%- else %}
         User Center
       {%- endif %}

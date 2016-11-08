@@ -17,6 +17,7 @@ base:
       sizeOfBin: 1048576      # 1 MB
       sizeOfText: 102400      # 100 KB
       submitInterval: 86400000 # 1 day
+      minSubmitInterval: 60000 # 1 minute
   match:
     rules:
       moveTimeout: 5000       # 5 s

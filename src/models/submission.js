@@ -4,6 +4,7 @@ import mongoose from 'mongoose';
 import async from 'async';
 import objectId from 'libs/objectId';
 import errors from 'libs/errors';
+import permissions from 'libs/permissions';
 
 export default () => {
   const SubmissionSchema = new mongoose.Schema({
@@ -169,8 +170,15 @@ export default () => {
     if (last.status === Submission.STATUS_COMPILE_ERROR) {
       return [true];
     }
+    const udoc = await DI.models.User.getUserObjectByIdAsync(uid);
+    let limit;
+    if (udoc.hasPermission(permissions.BYPASS_SUBMISSION_LIMIT)) {
+      limit = DI.config.compile.limits.minSubmitInterval || 1000;
+    } else {
+      limit = DI.config.compile.limits.submitInterval;
+    }
     const interval = Date.now() - last.createdAt.getTime();
-    const remaining = DI.config.compile.limits.submitInterval - interval;
+    const remaining = limit - interval;
     if (remaining <= 0) {
       return [true];
     }
