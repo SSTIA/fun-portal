@@ -18,7 +18,7 @@ export async function ajax(options, dataType = 'json') {
 
 export function post(url, dataOrForm = {}, dataType = 'json') {
   let postData;
-  if (dataOrForm instanceof jQuery && dataOrForm.is('form')) {
+  if (dataOrForm instanceof $ && dataOrForm.is('form')) {
     // $form
     postData = dataOrForm.serialize();
   } else if (dataOrForm instanceof Node && $(dataOrForm).is('form')) {

@@ -1,5 +1,31 @@
 {% extends "layout/basic.html" %}
 {% block content %}
+<div style="display: none" class="dialog__body--stdin">
+  <div>
+    <div class="row"><div class="columns">
+      <h1>Stdin for Current Step</h1>
+    </div></div>
+    <div class="row"><div class="columns">
+      <blockquote class="note">
+        Click to copy
+      </blockquote>
+    </div></div>
+    <div class="row">
+      <div class="medium-6 columns">
+        <label>
+          {{ mdoc.u1.profile.displayName }} stdin
+          <textarea class="monospace textbox" data-clipboard-target="#stdin_left" id="stdin_left" readonly></textarea>
+        </label>
+      </div>
+      <div class="medium-6 columns">
+        <label>
+          {{ mdoc.u2.profile.displayName }} stdin
+          <textarea class="monospace textbox" data-clipboard-target="#stdin_right" id="stdin_right" readonly></textarea>
+        </label>
+      </div>
+    </div>
+  </div>
+</div>
 <div class="row" data-sticky-parent>
   <div class="medium-9 columns">
     <div class="section">
@@ -40,8 +66,25 @@
       <div class="section__body typo">
         <p id="roundText"></p>
       </div>
+      <div class="section__body" name="start-step-toolbar">
+        <button class="rounded button" name="start-step">Start Step-By-Step</button>
+      </div>
+      <div class="section__body" name="step-toolbar" layout="row center-left" style="display:none">
+        <div><button class="button" name="step-prev">Previous</button></div>
+        <div><button class="button" name="step-next">Next</button></div>
+        <div class="separator"></div>
+        <div>Step:</div>
+        <div><input type="number" class="textbox" name="step-current"></div>
+        <div>/ <span name="step-total"></span></div>
+        <div><button class="primary button" name="step-go">Go</button></div>
+        <div class="separator"></div>
+        <div><button class="button" name="step-copy">Current Stdin</button></div>
+      </div>
       <div class="section__body">
         <div id="roundBoard" class="board-container"></div>
+        <div id="roundStepBoard" class="board-container" style="display:none">
+          <div class="loading"><div class="loader-container"><div class="loader"></div></div></div>
+        </div>
       </div>
     {%- endif %}
     </div>

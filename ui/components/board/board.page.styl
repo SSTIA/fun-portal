@@ -10,6 +10,7 @@
   padding: 0
   overflow: hidden
   border: 1px solid #EEE
+  transition: background-color .1s linear
 
   // squre
   &:before
@@ -29,14 +30,18 @@
     width: 100%
     height: 100%
 
+  &.active
+    background: lighten(red, 85%)
+
   .stone
     width: 80%
     height: 80%
     border-radius: 50%
 
-    &:before
-      font-size: rem(10px)
-      content: attr(data-order)
+    &[data-field="1"], &[data-field="2"]
+      &:before
+        font-size: rem(10px)
+        content: attr(data-order)
 
     &[data-field="1"]
       background: #444
