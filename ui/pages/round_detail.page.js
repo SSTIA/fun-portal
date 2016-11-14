@@ -11,7 +11,7 @@ import * as util from '../misc/Util';
 const page = new NamedPage('round_detail', () => {
 
   const clipboard = new Clipboard('#stdin_left, #stdin_right');
-  clipboard.on('success', e => {
+  clipboard.on('success', () => {
     Notification.success('Data copied to clipboard!');
   });
 
