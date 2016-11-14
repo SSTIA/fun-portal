@@ -125,18 +125,27 @@ const page = new NamedPage('round_detail', () => {
   }
 
   function stepPrev() {
+    if (roundLogs === null) {
+      return;
+    }
     if (roundCurrentStep > 0) {
       stepJumpTo(roundCurrentStep - 1);
     }
   }
 
   function stepNext() {
+    if (roundLogs === null) {
+      return;
+    }
     if (roundCurrentStep < roundMaxSteps) {
       stepJumpTo(roundCurrentStep + 1);
     }
   }
 
   function stepGo() {
+    if (roundLogs === null) {
+      return;
+    }
     const step = parseInt($('[name="step-current"]').val());
     stepJumpTo(step);
   }
