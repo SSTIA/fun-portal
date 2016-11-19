@@ -4,6 +4,7 @@ import objectId from 'libs/objectId';
 import errors from 'libs/errors';
 import roles from 'libs/roles';
 import sso from 'libs/sso';
+import {oauth2} from 'libs/sso';
 
 export default () => {
   const UserSchema = new mongoose.Schema({
@@ -201,6 +202,29 @@ export default () => {
       // realname API is not working anymore :(
       return await User.createSsoUserAsync({ realName: '', studentId });
     }
+    return user;
+  };
+
+  UserSchema.statics.authenticateOAuthAsync = async function(code) {
+    let resp = await oauth2.getToken(code);
+
+    if (! resp.access_token) {
+      throw new errors.UserError('Session expired. Please sign in again.');
+    }
+
+    const profile = (await oauth2.getInfo(resp.access_token)).entities[0];
+
+    const studentId = profile.code;
+    const userName = User.buildSsoUserName({studentId});
+
+    const user = await User.getUserObjectByUserNameAsync(userName, false);
+
+    if (user === null) {
+      const realName = profile.name;
+
+      return await User.createSsoUserAsync({realName, studentId});
+    }
+
     return user;
   };
 

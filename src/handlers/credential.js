@@ -1,6 +1,7 @@
 import * as web from 'express-decorators';
 import utils from 'libs/utils';
 import errors from 'libs/errors';
+import {oauth2} from 'libs/sso';
 import credential from 'libs/credential';
 import permissions from 'libs/permissions';
 
@@ -8,7 +9,7 @@ const DIRECTORY_COOKIE = 'iPlanetDirectoryPro';
 
 @web.controller('/')
 export default class Handler {
-
+  
   @web.get('/login')
   async getLoginAction(req, res) {
     const errors = {};
@@ -34,6 +35,40 @@ export default class Handler {
       page_title: 'Sign In',
       ...errors,
     });
+  }
+
+  @web.get('/sso/:id/login')
+  async getSSOLoginAction(req, res) {
+    const errors = {};
+
+    // Only SJTU oauth2 is implemented yet
+    if (DI.config.sso.type !== 'oauth2') {
+      errors.msg = 'SSO is not supported currently.';
+    }
+
+    if (req.params.id == 'sjtu') {
+      res.redirect(oauth2.constructAuthUrl());
+    }
+    else {
+      res.render('error', {
+        page_title: 'Sign In',
+        nav_type: 'error',
+        error: errors,
+      });
+    }
+  }
+
+  @web.get('/sso/:id/redirect')
+  async getSSORedirectAction(req, res) {
+    const user = await DI.models.User.authenticateOAuthAsync(req.query.code);
+    await credential.setCredential(req, user._id);
+
+    if (user.profile.initial) {
+      res.redirect(utils.url('/user/profile'));
+    }
+    else {
+      res.redirect(utils.url('/'));
+    }
   }
 
   // for debug purpose only, only available when
