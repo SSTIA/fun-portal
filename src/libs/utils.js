@@ -6,7 +6,10 @@ import permissions from 'libs/permissions';
 
 const utils = {};
 
-utils.profile = (name) => {
+utils.profile = (name, enabled = true) => {
+  if (!enabled) {
+    return _.noop;
+  }
   const token = uuid.v4();
   const func = () => DI.logger.profile(`${name} [${token}]`);
   func();

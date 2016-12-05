@@ -202,7 +202,7 @@ export default () => {
       return [];
     }
 
-    const endProfile = utils.profile('Match.addMatchesForSubmissionAsync');
+    const endProfile = utils.profile('Match.addMatchesForSubmissionAsync', DI.config.profiling.addMatches);
 
     const mdocs = [];
     await Promise.all(s2u2docs.map(async s2u2doc => {

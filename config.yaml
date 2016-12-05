@@ -30,6 +30,9 @@ base:
       - opening1
       - opening2
       - opening3
+  profiling:
+    eventBus: false
+    addMatches: false
   mq:
     vhosts:
       /:

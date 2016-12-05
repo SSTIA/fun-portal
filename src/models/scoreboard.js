@@ -3,22 +3,35 @@ import _ from 'lodash';
 export default () => {
   const ScoreboardModel = {};
 
-  // TODO: cache
+  let cache = {};
+  function invalidateCache() {
+    cache = {};
+  }
+
+  DI.eventBus.on('submission.status:updated', invalidateCache);
 
   /**
    * Calculate the latest scoreboard
    */
   ScoreboardModel.calculate = async function () {
-    // Latest submissions grouped by user
-    const lsdocs = await DI.models.Submission.getLastSubmissionsByUserAsync();
-    await DI.models.Submission.populate(lsdocs, {
-      path: 'sdocid',
-      select: { code: 0, matches: 0 },
-    });
+    let { lsdocs, mdocs } = cache;
 
-    // All effective and deduplicated matches related to those submissions
-    const _mdocs = await DI.models.Match.getPairwiseMatchesAsync(_.map(lsdocs, 'sdocid._id'));
-    const mdocs = _.uniqBy(_mdocs, mdoc => _.orderBy([mdoc.u1, mdoc.u2], '_id').join('_'));
+    if (!lsdocs) {
+      // Latest submissions grouped by user
+      lsdocs = await DI.models.Submission.getLastSubmissionsByUserAsync();
+      await DI.models.Submission.populate(lsdocs, {
+        path: 'sdocid',
+        select: { code: 0, matches: 0 },
+      });
+      cache.lsdocs = lsdocs;
+    }
+
+    if (!mdocs) {
+      // All effective and deduplicated matches related to those submissions
+      const _mdocs = await DI.models.Match.getPairwiseMatchesAsync(_.map(lsdocs, 'sdocid._id'));
+      mdocs = _.uniqBy(_mdocs, mdoc => _.orderBy([mdoc.u1, mdoc.u2], '_id').join('_'));
+      cache.mdocs = mdocs;
+    }
 
     // Results
     const _rdocs = _.map(await DI.models.User.getAllUsersAsync(), udoc => ({
