@@ -34,7 +34,12 @@
           {%- for rdoc in sbdoc %}
             <tr>
               <td class="col--rank">#{{ rdoc.rank }}</td>
-              <td class="col--user">{{ rdoc.udoc.profile.displayName }}</td>
+              <td class="col--user"><div layout="row center-start">
+              {% if rdoc.badge %}
+                <span class="badge {{ rdoc.badge.style }}">{{ rdoc.badge.text }}</span>
+              {% endif %}
+                {{ rdoc.udoc.profile.displayName }}
+              </div></td>
               <td class="col--score">{{ rdoc.score }}</td>
               <td class="col--wins">{{ rdoc.win }}</td>
               <td class="col--loses">{{ rdoc.lose }}</td>

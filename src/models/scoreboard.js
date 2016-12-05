@@ -33,9 +33,13 @@ export default () => {
       cache.mdocs = mdocs;
     }
 
+    // Badges
+    const badgesByStudentId = _.keyBy(await DI.models.Badge.getBadgesAsync(), 'studentId');
+
     // Results
     const _rdocs = _.map(await DI.models.User.getAllUsersAsync(), udoc => ({
       udoc,
+      badge: badgesByStudentId[_.get(udoc, 'profile.studentId')],
       rank: 0,
       score: 0,
       win: 0,

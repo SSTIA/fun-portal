@@ -1,5 +1,6 @@
 import 'source-map-support/register';
 import 'app-module-path/register';
+import fs from 'fs-promise';
 import FrameworkEntry from 'dg-framework';
 
 import path from 'path';
@@ -15,7 +16,12 @@ global.__projectRoot = path.join(__dirname, '..');
     return;
   }
 
-  const envProfile = 'debug';
+  let envProfile = 'debug';
+  try {
+    await fs.stat(`${__projectRoot}/.debug`);
+  } catch (ignore) {
+    envProfile = 'production';
+  }
 
   const application = new FrameworkEntry({
     env: envProfile,
