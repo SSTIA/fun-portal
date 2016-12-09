@@ -193,10 +193,10 @@ export default class Handler {
   @web.middleware(utils.checkCompleteProfile())
   @web.middleware(utils.checkPermission(permissions.CREATE_SUBMISSION))
   async getSubmissionCreateAction(req, res) {
-    const [submitAllowed, nextSubmitRemaining] = await DI.models.Submission.isUserAllowedToSubmitAsync(req.credential._id);
+    const [hotStatus, nextSubmitRemaining] = await DI.models.Submission.isUserAllowedToSubmitAsync(req.credential._id);
     res.render('submission_create', {
       page_title: 'Submit My Brain',
-      submitAllowed,
+      hotStatus,
       nextSubmitRemaining,
     });
   }

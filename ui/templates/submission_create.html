@@ -14,9 +14,11 @@
         <li>Do not abuse our cloud execution service, such as intentionally trying to shutdown our judge machine.</li>
       </ul>
     </blockquote>
-  {%- if not submitAllowed %}
+  {%- if hotStatus == DI('models.Submission.HOT_STATUS_TIME_LIMIT') %}
     <p>Sorry, you cannot submit code now because of exceeding the submission frequency limit.</p>
     <p>Please try again after {{ nextSubmitRemaining|duration }} ({{ (nextSubmitRemaining / 1000)|round }} seconds).</p>
+  {%- elif hotStatus == DI('models.Submission.HOT_STATUS_SUBMISSION_LIMIT') %}
+    <p>Sorry, you cannot submit code now because your previous submission is pending or running. Please wait for that submission.</p>
   {%- else %}
     <p>Please paste your C source code of your brain in the text box below. Your code will be automatically compiled and judged by the system.</p>
     <form method="post">

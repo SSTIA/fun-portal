@@ -27,6 +27,10 @@ export default () => {
   // Submission Model
   let Submission;
 
+  SubmissionSchema.statics.HOT_STATUS_COLD = 0;
+  SubmissionSchema.statics.HOT_STATUS_TIME_LIMIT = 1;
+  SubmissionSchema.statics.HOT_STATUS_SUBMISSION_LIMIT = 2;
+
   SubmissionSchema.statics.STATUS_PENDING = 'pending';
   SubmissionSchema.statics.STATUS_COMPILING = 'compiling';
   SubmissionSchema.statics.STATUS_COMPILE_ERROR = 'ce';
@@ -159,19 +163,29 @@ export default () => {
   /**
    * Check whether a user is allowed to submit new code
    *
-   * @return {Boolean}
+   * @return {[Number, Number]} [HOT_STATUS, remainingTime]
    */
   SubmissionSchema.statics.isUserAllowedToSubmitAsync = async function (uid) {
     const sdocs = await Submission.getUserSubmissionsCursor(uid).limit(1).exec();
     if (sdocs.length === 0) {
-      return [true];
+      return [Submission.HOT_STATUS_COLD];
     }
     const last = sdocs[0];
-    if (last.status === Submission.STATUS_COMPILE_ERROR) {
-      return [true];
+    if (last.status === Submission.STATUS_COMPILE_ERROR
+      || last.status === Submission.STATUS_SYSTEM_ERROR) {
+      return [Submission.HOT_STATUS_COLD];
     }
     const udoc = await DI.models.User.getUserObjectByIdAsync(uid);
     let limit;
+
+    // Check submission limitation
+    if (last.status === Submission.STATUS_PENDING
+      || last.status === Submission.STATUS_COMPILING
+      || last.status === Submission.STATUS_RUNNING) {
+      return [Submission.HOT_STATUS_SUBMISSION_LIMIT, -1];
+    }
+
+    // Check time limitation
     if (udoc.hasPermission(permissions.BYPASS_SUBMISSION_LIMIT)) {
       limit = DI.config.compile.limits.minSubmitInterval || 1000;
     } else {
@@ -179,10 +193,11 @@ export default () => {
     }
     const interval = Date.now() - last.createdAt.getTime();
     const remaining = limit - interval;
-    if (remaining <= 0) {
-      return [true];
+    if (remaining > 0) {
+      return [Submission.HOT_STATUS_TIME_LIMIT, remaining];
     }
-    return [false, remaining];
+
+    return [Submission.HOT_STATUS_COLD];
   };
 
   /**
@@ -191,8 +206,8 @@ export default () => {
    * @return {Submission}
    */
   SubmissionSchema.statics.createSubmissionAsync = async function (uid, code) {
-    const [submitAllowed] = await Submission.isUserAllowedToSubmitAsync(uid);
-    if (!submitAllowed) {
+    const [hotStatus] = await Submission.isUserAllowedToSubmitAsync(uid);
+    if (hotStatus !== Submission.HOT_STATUS_COLD) {
       throw new errors.UserError('You are not allowed to submit new code currently');
     }
     if (code.length > DI.config.compile.limits.sizeOfCode) {
