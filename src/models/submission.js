@@ -30,6 +30,7 @@ export default () => {
   SubmissionSchema.statics.HOT_STATUS_COLD = 0;
   SubmissionSchema.statics.HOT_STATUS_TIME_LIMIT = 1;
   SubmissionSchema.statics.HOT_STATUS_SUBMISSION_LIMIT = 2;
+  SubmissionSchema.statics.HOT_STATUS_GLOBAL_LIMIT = 3;
 
   SubmissionSchema.statics.STATUS_PENDING = 'pending';
   SubmissionSchema.statics.STATUS_COMPILING = 'compiling';
@@ -164,18 +165,26 @@ export default () => {
   /**
    * Check whether a user is allowed to submit new code
    *
-   * @return {[Number, Number]} [HOT_STATUS, remainingTime]
+   * @return {[Number, Number|String]} [HOT_STATUS, remainingTime|globalLockReason]
    */
   SubmissionSchema.statics.isUserAllowedToSubmitAsync = async function (uid) {
+    const lockdoc = await DI.models.Sys.getAsync('lock_submission', false);
+    if (lockdoc) {
+      const reason = await DI.models.Sys.getAsync('lock_submission_reason', 'Unknown');
+      return [Submission.HOT_STATUS_GLOBAL_LIMIT, reason];
+    }
+
     const sdocs = await Submission.getUserSubmissionsCursor(uid).limit(1).exec();
     if (sdocs.length === 0) {
       return [Submission.HOT_STATUS_COLD];
     }
+
     const last = sdocs[0];
     if (last.status === Submission.STATUS_COMPILE_ERROR
       || last.status === Submission.STATUS_SYSTEM_ERROR) {
       return [Submission.HOT_STATUS_COLD];
     }
+
     const udoc = await DI.models.User.getUserObjectByIdAsync(uid);
     let limit;
 
@@ -209,7 +218,7 @@ export default () => {
   SubmissionSchema.statics.createSubmissionAsync = async function (uid, code) {
     const [hotStatus] = await Submission.isUserAllowedToSubmitAsync(uid);
     if (hotStatus !== Submission.HOT_STATUS_COLD) {
-      throw new errors.UserError('You are not allowed to submit new code currently');
+      throw new errors.UserError('You are not allowed to submit new code currently.');
     }
     if (code.length > DI.config.compile.limits.sizeOfCode) {
       throw new errors.ValidationError('Your source code is too large.');

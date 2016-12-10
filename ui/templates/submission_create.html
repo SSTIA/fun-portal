@@ -19,6 +19,8 @@
     <p>Please try again after {{ nextSubmitRemaining|duration }} ({{ (nextSubmitRemaining / 1000)|round }} seconds).</p>
   {%- elif hotStatus == DI('models.Submission.HOT_STATUS_SUBMISSION_LIMIT') %}
     <p>Sorry, you cannot submit code now because your previous submission is pending or running. Please wait for that submission.</p>
+  {%- elif hotStatus == DI('models.Submission.HOT_STATUS_GLOBAL_LIMIT') %}
+    <p>Sorry, code submission is disabled currently. Reason: {{ nextSubmitRemaining }}</p>
   {%- else %}
     <p>Please paste your C source code of your brain in the text box below. Your code will be automatically compiled and judged by the system.</p>
     <form method="post">

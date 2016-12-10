@@ -1,5 +1,4 @@
 import * as web from 'express-decorators';
-import _ from 'lodash';
 import utils from 'libs/utils';
 import sanitizers from 'libs/sanitizers';
 import permissions from 'libs/permissions';
@@ -32,6 +31,35 @@ export default class Handler {
       await DI.models.Match.rejudgeMatchAsync(mdoc._id);
     }
     res.redirect(utils.url('/manage/matches'));
+  }
+
+  @web.get('/system')
+  @web.middleware(utils.checkPermission(permissions.VIEW_MANAGE_PORTAL))
+  async getSystemVariables(req, res) {
+    res.render('manage_system', {
+      page_title: 'System',
+      sdocs: await DI.models.Sys.getAllAsync(),
+    });
+  }
+
+  @web.post('/system')
+  @web.middleware(utils.sanitizeBody({
+    lock_submission: sanitizers.bool(),
+    lock_submission_reason: sanitizers.string(),
+  }))
+  @web.middleware(utils.checkPermission(permissions.VIEW_MANAGE_PORTAL))
+  async postSystemVariables(req, res) {
+    if (!req.data.lock_submission) {
+      req.data.lock_submission_reason = '';
+    } else {
+      if (req.data.lock_submission_reason === '') {
+        req.data.lock_submission_reason = 'Unknown';
+      }
+    }
+    for (let key in req.data) {
+      await DI.models.Sys.setAsync(key, req.data[key]);
+    }
+    res.redirect(utils.url('/manage/system'));
   }
 
 }
