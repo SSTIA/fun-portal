@@ -3,8 +3,52 @@ import uuid from 'uuid';
 import auth from 'basic-auth';
 import errors from 'libs/errors';
 import permissions from 'libs/permissions';
+import queue from 'queue';
 
 const utils = {};
+
+class DedupWorkerQueue {
+  constructor({ asyncWorkerFunc, delay }) {
+    this.queue = queue({ concurrency: 1 });
+    this.asyncWorkerFunc = asyncWorkerFunc;
+    this.delay = delay;
+  }
+  handleWorkerDone(queueItem, err, callback) {
+    if (err) {
+      console.error(err.stack);
+    }
+    setTimeout(() => {
+      // if there are jobs with same id in the queue,
+      // remove them (except for the last one)
+      let lastJob = true, jobsRemoved = 0;
+      for (var i = this.queue.jobs.length - 1; i >= 0; --i) {
+        if (this.queue.jobs[i]._id === queueItem._id) {
+          if (lastJob) {
+            lastJob = false;
+          } else {
+            this.queue.jobs.splice(i, 1);
+            jobsRemoved++;
+          }
+        }
+      }
+      //console.log('Removed %d jobs for id = %s', jobsRemoved, queueItem._id);
+      callback();
+    }, this.delay);
+  }
+  push(taskId, metaData) {
+    //console.log('Pushing %s into queue', taskId);
+    const queueItem = cb => {
+      this.asyncWorkerFunc(taskId, metaData)
+        .then(() => this.handleWorkerDone(queueItem, null, cb))
+        .catch(err => this.handleWorkerDone(queueItem, err, cb));
+    };
+    queueItem._id = taskId;
+    queueItem._data = metaData;
+    this.queue.push(queueItem);
+    this.queue.start();
+  }
+}
+utils.DedupWorkerQueue = DedupWorkerQueue;
 
 utils.profile = (name, enabled = true) => {
   if (!enabled) {

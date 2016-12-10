@@ -1,7 +1,7 @@
 import _ from 'lodash';
 import uuid from 'uuid';
 import mongoose from 'mongoose';
-import async from 'async';
+import utils from 'libs/utils';
 import objectId from 'libs/objectId';
 import errors from 'libs/errors';
 import permissions from 'libs/permissions';
@@ -76,14 +76,15 @@ export default () => {
   /**
    * Update the submission status one by one when match status is updated
    */
-  const updateStatusQueue = async.queue((sdocid, callback) => {
-    Submission.updateSubmissionStatusAsync(sdocid)
-      .then(callback)
-      .catch(() => callback());
-  }, 1);
+  const updateStatusQueue = new utils.DedupWorkerQueue({
+    delay: 1000,
+    asyncWorkerFunc: sdocid => {
+      return Submission.updateSubmissionStatusAsync(sdocid);
+    },
+  });
 
   DI.eventBus.on('submission.matches.status:updated', sdoc => {
-    updateStatusQueue.push(sdoc._id);
+    updateStatusQueue.push(String(sdoc._id));
   });
 
   /**

@@ -62,30 +62,25 @@ export default class Handler {
     if (!req.file) {
       throw new errors.UserError('Expect logs');
     }
-    const file = await DI.gridfs.putBlobAsync(fsp.createReadStream(req.file.path), {
-      contentType: 'text/plain',
-      metadata: {
-        type: 'match.log',
-        match: req.data.mid,
-        round: req.data.rid,
-      },
-    });
     try {
-      await fsp.remove(req.file.path);
-    } catch (err) {
-      DI.logger.error(err.stack);
-    }
-    const mdoc = await DI.models.Match.judgeCompleteRoundAsync(
-      req.data.mid,
-      req.data.rid,
-      DI.models.Match.getStatusFromJudgeExitCode(req.data.exitCode),
-      {
-        summary: req.data.summary,
-        logBlob: file._id,
-        text: '',
+      const mdoc = await DI.models.Match.judgeCompleteRoundAsync(
+        req.data.mid,
+        req.data.rid,
+        DI.models.Match.getStatusFromJudgeExitCode(req.data.exitCode),
+        {
+          summary: req.data.summary,
+          logBlobStream: fsp.createReadStream(req.file.path),
+          text: '',
+        }
+      );
+      res.json(mdoc);
+    } finally {
+      try {
+        await fsp.remove(req.file.path);
+      } catch (err) {
+        DI.logger.error(err.stack);
       }
-    );
-    res.json(mdoc);
+    }
   }
 
   @web.get('/refreshStatus')

@@ -1,7 +1,6 @@
 import _ from 'lodash';
 import fsp from 'fs-promise';
 import mongoose from 'mongoose';
-import async from 'async';
 import utils from 'libs/utils';
 import objectId from 'libs/objectId';
 import errors from 'libs/errors';
@@ -98,14 +97,15 @@ export default () => {
   /**
    * Update the match status one by one when round status is updated
    */
-  const updateStatusQueue = async.queue((mdocid, callback) => {
-    Match.updateMatchStatusAsync(mdocid)
-      .then(callback)
-      .catch(() => callback());
-  }, 1);
+  const updateStatusQueue = new utils.DedupWorkerQueue({
+    delay: 50,
+    asyncWorkerFunc: mdocid => {
+      return Match.updateMatchStatusAsync(mdocid);
+    },
+  });
 
   DI.eventBus.on('match.rounds.status:updated', mdoc => {
-    updateStatusQueue.push(mdoc._id);
+    updateStatusQueue.push(String(mdoc._id));
   });
 
   /**
@@ -125,7 +125,7 @@ export default () => {
   };
 
   /**
-   * Get the match object by userId
+   * Get the match object by match id
    *
    * @return {Match} Mongoose match object
    */
@@ -142,6 +142,20 @@ export default () => {
       throw new errors.UserError('Match not found');
     }
     return s;
+  };
+
+  /**
+   * Get the round and match object by match id and round id.
+   *
+   * @return {[Match, Round]}
+   */
+  MatchSchema.statics.getRoundObjectByIdAsync = async function (mdocid, rdocid) {
+    const mdoc = await Match.getMatchObjectByIdAsync(mdocid);
+    const rdoc = mdoc.rounds.find(rdoc => rdoc._id.equals(rdocid));
+    if (rdoc === undefined) {
+      throw new errors.UserError('judgeStartRoundAsync: Round not found');
+    }
+    return [mdoc, rdoc];
   };
 
   /**
@@ -310,13 +324,10 @@ export default () => {
    * @return {Match}
    */
   MatchSchema.statics.judgeStartRoundAsync = async function (mdocid, rid) {
-    const mdoc = await Match.getMatchObjectByIdAsync(mdocid);
-    const round = mdoc.rounds.find(rdoc => rdoc._id.equals(rid));
-    if (round !== undefined) {
-      round.status = Match.STATUS_RUNNING;
-      round.beginJudgeAt = new Date();
-      await mdoc.save();
-    }
+    const [mdoc, rdoc] = await Match.getRoundObjectByIdAsync(mdocid, rid);
+    rdoc.status = Match.STATUS_RUNNING;
+    rdoc.beginJudgeAt = new Date();
+    await mdoc.save();
     return mdoc;
   };
 
@@ -338,17 +349,27 @@ export default () => {
     ) {
       throw new Error(`judgeCompleteRoundAsync: status ${status} is invalid`);
     }
-    const mdoc = await Match.getMatchObjectByIdAsync(mdocid);
-    const round = mdoc.rounds.find(rdoc => rdoc._id.equals(rid));
-    if (round !== undefined) {
-      round.status = status;
-      round.endJudgeAt = new Date();
-      if (!round.beginJudgeAt) {
-        round.beginJudgeAt = new Date();
-      }
-      _.assign(round, extra);
-      await mdoc.save();
+    const [mdoc, rdoc] = await Match.getRoundObjectByIdAsync(mdocid, rid);
+    rdoc.status = status;
+    rdoc.endJudgeAt = new Date();
+    if (!rdoc.beginJudgeAt) {
+      rdoc.beginJudgeAt = new Date();
     }
+    if (extra.logBlobStream) {
+      // if a log stream is specified, put it into gridfs
+      const file = await DI.gridfs.putBlobAsync(extra.logBlobStream, {
+        contentType: 'text/plain',
+        metadata: {
+          type: 'match.log',
+          match: mdocid,
+          round: rid,
+        },
+      });
+      extra.logBlob = file._id;
+      extra.logBlobStream = null;
+    }
+    _.assign(rdoc, extra);
+    await mdoc.save();
     return mdoc;
   };
 
