@@ -5,7 +5,11 @@
     <div class="section">
       <div class="section__header">
         <h1 class="section__title">Current Scoreboard</h1>
+      {%- if sbdoc !== false %}
+        <div class="section__tools">Update at: {{ cacheAt|datetime }} (refresh every {{ DI('config.scoreboard.cacheDuration')|duration }})</div>
+      {%- endif %}
       </div>
+    {%- if sbdoc !== false %}
       <div class="section__body no-padding">
         <table class="data-table">
           <colgroup>
@@ -35,9 +39,9 @@
             <tr>
               <td class="col--rank">#{{ rdoc.rank }}</td>
               <td class="col--user"><div layout="row center-start">
-              {% if rdoc.badge %}
+              {%- if rdoc.badge %}
                 <span class="badge {{ rdoc.badge.style }}">{{ rdoc.badge.text }}</span>
-              {% endif %}
+              {%- endif %}
                 {{ rdoc.udoc.profile.displayName }}
               </div></td>
               <td class="col--score">{{ rdoc.score }}</td>
@@ -65,6 +69,12 @@
           </tbody>
         </table>
       </div>
+    {%- else %}
+      <div class="section__body"><div class="typo">
+        <p>Scoreboard is under calculation :(</p>
+        <p>Please wait a moment and refresh this page.</p>
+      </div></div>
+    {%- endif %}
     </div>
   </div>
 </div>

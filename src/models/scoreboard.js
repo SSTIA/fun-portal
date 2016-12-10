@@ -3,35 +3,50 @@ import _ from 'lodash';
 export default () => {
   const ScoreboardModel = {};
 
-  let cache = {};
-  function invalidateCache() {
-    cache = {};
+  let cache = {
+    available: false,
+    dirty: true,
+  };
+
+  async function flushCache() {
+    if (!cache.dirty) {
+      cache.at = new Date();
+      return;
+    }
+    const lsdocs = await DI.models.Submission.getLastSubmissionsByUserAsync();
+    await DI.models.Submission.populate(lsdocs, {
+      path: 'sdocid',
+      select: { code: 0, matches: 0 },
+    });
+
+    // All effective and deduplicated matches related to those submissions
+    const _mdocs = await DI.models.Match.getPairwiseMatchesAsync(_.map(lsdocs, 'sdocid._id'));
+    const mdocs = _.uniqBy(_mdocs, mdoc => _.orderBy([mdoc.u1, mdoc.u2], '_id').join('_'));
+
+    cache.lsdocs = lsdocs;
+    cache.mdocs = mdocs;
+    cache.available = true;
+    cache.at = new Date();
+    cache.dirty = false;
   }
 
-  DI.eventBus.on('submission.status:updated', invalidateCache);
+  setInterval(flushCache, DI.config.scoreboard.cacheDuration);
+  setTimeout(flushCache, 5 * 1000);
+
+  DI.eventBus.on('submission.status:updated', () => {
+    cache.dirty = true;
+  });
 
   /**
    * Calculate the latest scoreboard
+   *
+   * @return {[rows, cacheAt]}
    */
   ScoreboardModel.calculate = async function () {
+    if (!cache.available) {
+      return [false];
+    }
     let { lsdocs, mdocs } = cache;
-
-    if (!lsdocs) {
-      // Latest submissions grouped by user
-      lsdocs = await DI.models.Submission.getLastSubmissionsByUserAsync();
-      await DI.models.Submission.populate(lsdocs, {
-        path: 'sdocid',
-        select: { code: 0, matches: 0 },
-      });
-      cache.lsdocs = lsdocs;
-    }
-
-    if (!mdocs) {
-      // All effective and deduplicated matches related to those submissions
-      const _mdocs = await DI.models.Match.getPairwiseMatchesAsync(_.map(lsdocs, 'sdocid._id'));
-      mdocs = _.uniqBy(_mdocs, mdoc => _.orderBy([mdoc.u1, mdoc.u2], '_id').join('_'));
-      cache.mdocs = mdocs;
-    }
 
     // Badges
     const badgesByStudentId = _.keyBy(await DI.models.Badge.getBadgesAsync(), 'studentId');
@@ -87,7 +102,7 @@ export default () => {
       }
     });
 
-    return rdocs;
+    return [rdocs, cache.at];
   };
 
   return {
