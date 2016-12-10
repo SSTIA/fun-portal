@@ -1,0 +1,56 @@
+{% extends "layout/user_base.html" %}
+{% block user_content %}
+<div class="section">
+  <div class="section__header">
+    <h1 class="section__title">Pending Matches</h1>
+    <div class="section__tools">
+      <form action="{{ url('/manage/matches/pending') }}" method="post">
+        <input type="hidden" name="_csrf" value="{{ ui_context.csrfToken }}">
+        <input type="submit" value="Rejudge All" class="button">
+      </form>
+    </div>
+  </div>
+  <div class="section__body no-padding">
+    <table class="data-table">
+      <colgroup>
+        <col class="col--status match-status--border">
+        <col class="col--create-at">
+        <col class="col--update-at">
+        <col class="col--rounds">
+      </colgroup>
+      <thead>
+        <tr>
+          <th class="col--status match-status--border">Status</th>
+          <th class="col--create-at">Create At</th>
+          <th class="col--update-at">Update At</th>
+          <th class="col--rounds">Rounds</th>
+        </tr>
+      </thead>
+      <tbody>
+      {%- for mdoc in pending_mdocs %}
+        <tr>
+          <td class="col--status match-status--border {{ mdoc.status }}">
+            <span class="icon match-status--icon {{ mdoc.status }}"></span>
+            <a href="{{ url('/match/{0}', false, [mdoc._id]) }}" class="match-status--text {{ mdoc.status }}">
+              {{ DI('models.Match.STATUS_TEXT')[mdoc.status] }}
+            </a>
+          </td>
+          <td class="col--create-at">
+            {{ mdoc.createdAt|datetime }}
+          </td>
+          <td class="col--update-at">
+            {{ mdoc.updatedAt|datetime }}
+          </td>
+          <td class="col--rounds">
+            {%- for status, rounds in mdoc.rounds | groupby('status') | dictsort %}
+              <span>{{ status }}: {{ rounds.length }}</span>
+              /
+            {%- endfor %}
+          </td>
+        </tr>
+      {%- endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+{% endblock %}

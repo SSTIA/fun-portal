@@ -242,7 +242,7 @@ export default () => {
   };
 
   /**
-   * Check whether a user has a permission
+   * Check whether a user has some permissions
    * @return {Boolean}
    */
   UserSchema.methods.hasPermission = function (perm) {

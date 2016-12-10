@@ -1,4 +1,5 @@
 import _ from 'lodash';
+import uuid from 'uuid';
 import fsp from 'fs-promise';
 import mongoose from 'mongoose';
 import utils from 'libs/utils';
@@ -153,7 +154,7 @@ export default () => {
     const mdoc = await Match.getMatchObjectByIdAsync(mdocid);
     const rdoc = mdoc.rounds.find(rdoc => rdoc._id.equals(rdocid));
     if (rdoc === undefined) {
-      throw new errors.UserError('judgeStartRoundAsync: Round not found');
+      throw new errors.UserError('Round not found');
     }
     return [mdoc, rdoc];
   };
@@ -203,6 +204,21 @@ export default () => {
   }
 
   /**
+   * Push a round task into the queue
+   */
+  async function publishRoundTaskAsync(mdoc, rdoc) {
+    await DI.mq.publish('judge', {
+      mdocid: String(mdoc._id),
+      s1docid: String(mdoc.u1Submission),
+      s2docid: String(mdoc.u2Submission),
+      rid: rdoc._id,
+      u1field: rdoc.u1Black ? 'black' : 'white',
+      opening: await Match.getOpeningFromIdAsync(rdoc.openingId),
+      rules: DI.config.match.rules,
+    });
+  }
+
+  /**
    * Add all matches for a new submission. If the submission have related matches
    * previously, they will be removed.
    *
@@ -230,21 +246,25 @@ export default () => {
       });
       await mdoc.save();
       // push each round of each match into the queue
-      await Promise.all(mdoc.rounds.map(async round => await DI.mq.publish('judge', {
-        mdocid: String(mdoc._id),
-        s1docid: String(mdoc.u1Submission),
-        s2docid: String(mdoc.u2Submission),
-        rid: round._id,
-        u1field: round.u1Black ? 'black' : 'white',
-        opening: await Match.getOpeningFromIdAsync(round.openingId),
-        rules: DI.config.match.rules,
-      })));
+      await Promise.all(mdoc.rounds.map(rdoc => publishRoundTaskAsync(mdoc, rdoc)));
       mdocs.push(mdoc);
     }));
 
     endProfile();
 
     return mdocs;
+  };
+
+  /**
+   * Reset match and regenerate rounds for a match.
+   */
+  MatchSchema.statics.rejudgeMatchAsync = async function (mdocid) {
+    const mdoc = await Match.getMatchObjectByIdAsync(mdocid);
+    mdoc.status = Match.STATUS_PENDING;
+    mdoc.rounds = generateRoundDocs();
+    await mdoc.save();
+    await Promise.all(mdoc.rounds.map(rdoc => publishRoundTaskAsync(mdoc, rdoc)));
+    return mdoc;
   };
 
   /**
@@ -390,6 +410,18 @@ export default () => {
   };
 
   /**
+   * Get all pending, running or system_error matches
+   */
+  MatchSchema.statics.getPendingMatchesAsync = async function () {
+    return await Match
+      .find({
+        status: { $in: [Match.STATUS_PENDING, Match.STATUS_RUNNING, Match.STATUS_SYSTEM_ERROR] },
+      })
+      .sort({ _id: -1 })
+      .exec();
+  };
+
+  /**
    * Update status of all matches
    */
   MatchSchema.statics.refreshAllMatchesAsync = async function () {
@@ -426,6 +458,7 @@ export default () => {
   MatchSchema.index({ u1Submission: 1, u2Submission: -1, status: 1, _id: -1 }, { unique: true });
   MatchSchema.index({ u1Submission: 1, _id: -1 });
   MatchSchema.index({ u2Submission: 1, _id: -1 });
+  MatchSchema.index({ status: 1, _id: -1 });
 
   Match = mongoose.model('Match', MatchSchema);
   return Match;
