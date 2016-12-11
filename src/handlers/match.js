@@ -137,6 +137,9 @@ export default class Handler {
 
   @socket.namespace('/match_detail')
   async socketMatchDetailConnect(socket, query, nsp) {
+    if (!DI.config.web.realtimePush) {
+      return;
+    }
     socket.listenBus('match.status:updated', async mdoc => {
       if (!mdoc._id.equals(query.id)) {
         return;

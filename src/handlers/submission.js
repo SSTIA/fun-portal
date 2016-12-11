@@ -287,6 +287,9 @@ export default class Handler {
 
   @socket.namespace('/submission_detail')
   async socketSubmissionDetailConnect(socket, query, nsp) {
+    if (!DI.config.web.realtimePush) {
+      return;
+    }
     if (query.page != 1) {
       return;
     }
@@ -303,7 +306,6 @@ export default class Handler {
       }
       await Handler.socketHandleMatchUpdate(socket, mdoc._id, query.id);
     }
-    socket.listenBus('match:created', onMatchUpdated);
     socket.listenBus('match.status:updated', onMatchUpdated);
     socket.listenBus('match.rounds:updated', onMatchUpdated);
   }
