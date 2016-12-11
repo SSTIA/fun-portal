@@ -9,8 +9,8 @@ import './highlight.styl';
 
 const highlightApi = {
   highlightBlocks: ($dom) => {
-    for (const block of $dom.find('pre')) {
-      Prism.highlightElement(block);
+    for (const block of $dom.find('pre code')) {
+      Prism.highlightElement(block.parentNode);
     }
   },
 };
