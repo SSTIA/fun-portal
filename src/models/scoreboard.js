@@ -1,4 +1,5 @@
 import _ from 'lodash';
+import utils from 'libs/utils';
 
 export default () => {
   const ScoreboardModel = {};
@@ -13,6 +14,9 @@ export default () => {
       cache.at = new Date();
       return;
     }
+
+    const endProfile = utils.profile('Scoreboard.flushCache');
+
     const lsdocs = await DI.models.Submission.getLastSubmissionsByUserAsync();
     await DI.models.Submission.populate(lsdocs, {
       path: 'sdocid',
@@ -20,18 +24,23 @@ export default () => {
     });
 
     // All effective and deduplicated matches related to those submissions
-    const _mdocs = await DI.models.Match.getPairwiseMatchesAsync(_.map(lsdocs, 'sdocid._id'));
-    const mdocs = _.uniqBy(_mdocs, mdoc => _.orderBy([mdoc.u1, mdoc.u2], '_id').join('_'));
+    //const _mdocs = await DI.models.Match.getPairwiseMatchesAsync(_.map(lsdocs, 'sdocid._id'));
+    //const mdocs = _.uniqBy(_mdocs, mdoc => _.orderBy([mdoc.u1, mdoc.u2], '_id').join('_'));
+    const _mdocs = await DI.models.LeaderPair.getAllAsync();
+    const mdocs = _.uniqBy(_mdocs, mdoc => [mdoc.u1.toString(), mdoc.u2.toString()].sort().join('_'));
 
     cache.lsdocs = lsdocs;
     cache.mdocs = mdocs;
     cache.available = true;
     cache.at = new Date();
     cache.dirty = false;
+
+    endProfile();
   }
 
   setInterval(flushCache, DI.config.scoreboard.cacheDuration).unref();
-  setTimeout(flushCache, 5 * 1000).unref();
+
+  DI.eventBus.on('system.started', () => flushCache());
 
   DI.eventBus.on('submission.status:updated', () => {
     cache.dirty = true;

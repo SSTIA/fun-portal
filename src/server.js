@@ -41,6 +41,8 @@ global.__projectRoot = path.join(__dirname, '..');
 
   global.DI = application.DI;
 
-  application.start().catch(e => console.log(e.stack));
+  application.start()
+    .then(() => DI.eventBus.emitAsyncWithProfiling('system.started'))
+    .catch(e => console.log(e.stack));
 
 })();

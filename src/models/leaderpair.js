@@ -1,6 +1,5 @@
 import _ from 'lodash';
 import mongoose from 'mongoose';
-import objectId from 'libs/objectId';
 
 export default () => {
   const LeaderPairSchema = new mongoose.Schema({
@@ -20,12 +19,14 @@ export default () => {
     await LeaderPair.remove({});
     DI.logger.debug('LeaderPair.rebuildAsync: fetching last submissions...');
     const lsdocs = await DI.models.Submission.getLastSubmissionsByUserAsync();
-    const mdocs = await DI.models.Match.getPairwiseMatchesAsync(_.map(lsdocs, 'sdocid'));
-    for (let i = 0; i < mdocs.length; ++i) {
-      DI.logger.debug('LeaderPair.rebuildAsync: updating %d/%d...', i + 1, mdocs.length);
-      await LeaderPair.updatePairByMatchAsync(mdocs[i]);
+    const mdocCursor = DI.models.Match.getPairwiseMatchesCursor(_.map(lsdocs, 'sdocid'));
+    const mdocCount = await mdocCursor.query.model.count(mdocCursor.query._conditions);
+    for (let mdoc = await mdocCursor.next(), i = 1; mdoc !== null; mdoc = await mdocCursor.next(), i++) {
+      DI.logger.debug('LeaderPair.rebuildAsync: updating %d/%d...', i, mdocCount);
+      await LeaderPair.updatePairByMatchAsync(mdoc);
     }
     DI.logger.debug('LeaderPair.rebuildAsync: done');
+    return true;
   };
 
   /**
@@ -51,6 +52,17 @@ export default () => {
     return LeaderPair.updatePairAsync(mdoc.u1, mdoc.u2, mdoc.u1Submission, mdoc.status);
   };
 
+  /**
+   * Get all leader pairs
+   */
+  LeaderPairSchema.statics.getAllAsync = async function () {
+    const lpdocs = await LeaderPair
+      .find({}, { _id: 0, u1: 1, u2: 1, status: 1 })
+      .sort({ u1Submission: -1 })
+      .exec();
+    return lpdocs;
+  };
+
   DI.eventBus.on('match.status:updated', async mdoc => {
     if (!DI.models.Match.isEffectiveStatus(mdoc.status)) {
       return;
@@ -64,6 +76,7 @@ export default () => {
 
   LeaderPairSchema.index({ u1u2: 1 }, { unique: true });
   LeaderPairSchema.index({ u1u2: 1, u1Submission: 1 });
+  LeaderPairSchema.index({ u1Submission: -1 });
 
   LeaderPair = mongoose.model('LeaderPair', LeaderPairSchema);
   return LeaderPair;

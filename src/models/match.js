@@ -449,6 +449,17 @@ export default () => {
       .sort({ _id: -1 })
       .exec();
   };
+  MatchSchema.statics.getPairwiseMatchesCursor = function (sids) {
+    return Match
+      .find({
+        u1Submission: { $in: sids },
+        u2Submission: { $in: sids },
+        status: { $in: [Match.STATUS_U1WIN, Match.STATUS_U2WIN, Match.STATUS_DRAW] },
+      })
+      .sort({ _id: -1 })
+      .cursor();
+  };
+
 
   MatchSchema.index({ u1Submission: 1, u2Submission: -1, status: 1, _id: -1 }, { unique: true });
   MatchSchema.index({ u1Submission: 1, _id: -1 });
