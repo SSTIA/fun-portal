@@ -1,5 +1,4 @@
 import _ from 'lodash';
-import uuid from 'uuid';
 import fsp from 'fs-promise';
 import mongoose from 'mongoose';
 import utils from 'libs/utils';
@@ -115,14 +114,10 @@ export default () => {
    * @param  {String}  matchStatus
    * @return {Boolean}
    */
-  MatchSchema.statics.isRunningStatus = function (matchStatus) {
-    if (matchStatus === Match.STATUS_PENDING) {
-      return true;
-    }
-    if (matchStatus === Match.STATUS_RUNNING) {
-      return true;
-    }
-    return false;
+  MatchSchema.statics.isEffectiveStatus = function (matchStatus) {
+    return matchStatus === Match.STATUS_U1WIN ||
+      matchStatus === Match.STATUS_U2WIN ||
+      matchStatus === Match.STATUS_DRAW;
   };
 
   /**

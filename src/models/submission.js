@@ -110,11 +110,11 @@ export default () => {
     if (!this.matches) {
       return;
     }
-    const hasRunningMatch = _.some(this.matches, mdoc => DI.models.Match.isRunningStatus(mdoc.status));
-    if (hasRunningMatch) {
-      this.status = Submission.STATUS_RUNNING;
-    } else {
+    const allEffective = _.every(this.matches, mdoc => DI.models.Match.isEffectiveStatus(mdoc.status));
+    if (allEffective) {
       this.status = Submission.STATUS_EFFECTIVE;
+    } else {
+      this.status = Submission.STATUS_RUNNING;
     }
   };
 

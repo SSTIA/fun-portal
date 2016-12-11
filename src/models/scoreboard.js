@@ -30,8 +30,8 @@ export default () => {
     cache.dirty = false;
   }
 
-  setInterval(flushCache, DI.config.scoreboard.cacheDuration);
-  setTimeout(flushCache, 5 * 1000);
+  setInterval(flushCache, DI.config.scoreboard.cacheDuration).unref();
+  setTimeout(flushCache, 5 * 1000).unref();
 
   DI.eventBus.on('submission.status:updated', () => {
     cache.dirty = true;
