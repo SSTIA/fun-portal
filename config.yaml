@@ -30,7 +30,7 @@ base:
       width: 20
       height: 20
       winningStones: 5
-    openings:
+    openings:                 # note: opening content will be cached until restart
       - opening1
       - opening2
       - opening3

@@ -158,16 +158,20 @@ export default () => {
     return Match.STATUS_SYSTEM_ERROR;
   };
 
+  let openingCache = {};
+
   /**
    * Get opening data from opening id
-   * TODO: optimize
    * @param  {String} openingId
    * @return {String}
    */
   MatchSchema.statics.getOpeningFromIdAsync = async function (openingId) {
-    const filePath = `./openings/${openingId}.json`;
-    const content = await fsp.readFile(filePath);
-    return content.toString();
+    if (!openingCache[openingId]) {
+      const filePath = `./openings/${openingId}.json`;
+      const content = await fsp.readFile(filePath);
+      openingCache[openingId] = content.toString();
+    }
+    return openingCache[openingId];
   };
 
   /**
