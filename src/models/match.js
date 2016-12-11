@@ -202,6 +202,8 @@ export default () => {
       mdocid: String(mdoc._id),
       s1docid: String(mdoc.u1Submission),
       s2docid: String(mdoc.u2Submission),
+      u1docid: String(mdoc.u1),
+      u2docid: String(mdoc.u2),
       rid: rdoc._id,
       u1field: rdoc.u1Black ? 'black' : 'white',
       opening: await Match.getOpeningFromIdAsync(rdoc.openingId),
