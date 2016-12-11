@@ -9,10 +9,8 @@
     </h1>
   </div>
 {%- if sdoc.text %}
-{%- if sdoc.user.equals(req.credential._id) or req.credential.hasPermission(permissions.VIEW_ANY_SUBMISSION_CODE) %}
   <div class="section__body typo">
     <pre><code>{{ sdoc.text }}</code></pre>
   </div>
-{%- endif %}
 {%- endif %}
 </div>

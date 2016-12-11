@@ -10,7 +10,7 @@ base:
   scoreboard:
     cacheDuration: 600000     # 10 minutes
   web:
-    realtimePush: true
+    realtimePush: true        # disable realtime push if you have many judgers
   api:
     credential:
       username: foo
