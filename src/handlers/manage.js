@@ -49,12 +49,8 @@ export default class Handler {
   }))
   @web.middleware(utils.checkPermission(permissions.VIEW_MANAGE_PORTAL))
   async postSystemVariables(req, res) {
-    if (!req.data.lock_submission) {
-      req.data.lock_submission_reason = '';
-    } else {
-      if (req.data.lock_submission_reason === '') {
-        req.data.lock_submission_reason = 'Unknown';
-      }
+    if (req.data.lock_submission && req.data.lock_submission_reason === '') {
+      req.data.lock_submission_reason = 'Unknown';
     }
     for (let key in req.data) {
       await DI.models.Sys.setAsync(key, req.data[key]);
