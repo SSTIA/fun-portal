@@ -192,16 +192,18 @@ export default () => {
    *         for HOT_STATUS_TIME_LIMIT, 2nd element is the remaining time
    */
   SubmissionSchema.statics.isUserAllowedToSubmitAsync = async function (uid) {
+    const udoc = await DI.models.User.getUserObjectByIdAsync(uid);
+
     // Global submission lock?
     const lockdoc = await DI.models.Sys.getAsync('lock_submission', false);
-    if (lockdoc) {
+    if (lockdoc && !udoc.hasPermission(permissions.BYPASS_SUBMISSION_LOCK)) {
       const reason = await DI.models.Sys.getAsync('lock_submission_reason', 'Unknown');
       return [Submission.HOT_STATUS_GLOBAL_LIMIT, reason];
     }
 
     // Submission quota limit?
     const usedTime = await Submission.getUsedSubmissionQuotaAsync(uid);
-    if (usedTime > DI.config.compile.limits.maxExecQuota) {
+    if (usedTime > DI.config.compile.limits.maxExecQuota && !udoc.hasPermission(permissions.BYPASS_SUBMISSION_QUOTA)) {
       return [Submission.HOT_STATUS_QUOTA_LIMIT, usedTime];
     }
 
@@ -217,7 +219,6 @@ export default () => {
       return [Submission.HOT_STATUS_COLD];
     }
 
-    const udoc = await DI.models.User.getUserObjectByIdAsync(uid);
     let limit;
 
     // Last submission is running?

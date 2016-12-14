@@ -13,6 +13,8 @@ permissions.VIEW_ANY_SUBMISSION         = 1 << (bit++);
 permissions.VIEW_ANY_SUBMISSION_CODE    = 1 << (bit++);
 permissions.CREATE_SUBMISSION           = 1 << (bit++);
 permissions.BYPASS_SUBMISSION_LIMIT     = 1 << (bit++);
+permissions.BYPASS_SUBMISSION_LOCK      = 1 << (bit++);
+permissions.BYPASS_SUBMISSION_QUOTA     = 1 << (bit++);
 permissions.REJUDGE_SUBMISSION          = 1 << (bit++);
 
 permissions.VIEW_SCOREBOARD             = 1 << (bit++);

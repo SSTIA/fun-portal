@@ -48,7 +48,7 @@
     </div>
     <div class="section__body typo">
       <ul>
-        <li><p>Judge time comsumed today: {{ usedTime|duration }}</p></li>
+        <li><p>Judge time consumed today: <span data-tooltip="{{ usedTime }}ms">{{ usedTime|duration }}</span></p></li>
         <li><p>Min interval between submissions:
       {%- if req.credential.hasPermission(permissions.BYPASS_SUBMISSION_LIMIT) %}
         <span class="text-orange">{{ DI('config.compile.limits.minSubmitInterval')|duration }}</span>
