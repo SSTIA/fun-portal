@@ -1,5 +1,6 @@
 base:
   db: mongodb://localhost/portal
+  redis: redis://localhost
   secret: your_secret
   port: 80
   host: 127.0.0.1:80

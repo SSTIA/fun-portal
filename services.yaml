@@ -12,6 +12,11 @@ mq:
   inject:
     - logger
 
+redis:
+  path: redis
+  inject:
+    - logger
+
 mongodbConnection:
   path: mongodb.connection
   inject:
