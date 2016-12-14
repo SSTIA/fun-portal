@@ -1,5 +1,6 @@
 import _ from 'lodash';
 import uuid from 'uuid';
+import moment from 'moment';
 import mongoose from 'mongoose';
 import utils from 'libs/utils';
 import objectId from 'libs/objectId';
@@ -16,21 +17,33 @@ export default () => {
     text: String,
     taskToken: String,    // A unique token for each task, so that duplicate tasks
                           // won't be judged multiple times
+    rejudge: Boolean,
     matches: [{
       _id: mongoose.Schema.Types.ObjectId,
       status: String,
+      usedTime: Number,
     }],
   }, {
     timestamps: true,
+    toObject: { virtuals: true },
+    toJSON: { virtuals: true },
+  });
+
+  /**
+   * Get total used time based on used time of each match
+   */
+  SubmissionSchema.virtual('totalUsedTime').get(function () {
+    return _.sumBy(this.matches, 'usedTime');
   });
 
   // Submission Model
   let Submission;
 
   SubmissionSchema.statics.HOT_STATUS_COLD = 0;
-  SubmissionSchema.statics.HOT_STATUS_TIME_LIMIT = 1;
-  SubmissionSchema.statics.HOT_STATUS_SUBMISSION_LIMIT = 2;
-  SubmissionSchema.statics.HOT_STATUS_GLOBAL_LIMIT = 3;
+  SubmissionSchema.statics.HOT_STATUS_GLOBAL_LIMIT = 1;
+  SubmissionSchema.statics.HOT_STATUS_QUOTA_LIMIT = 2;
+  SubmissionSchema.statics.HOT_STATUS_SUBMISSION_LIMIT = 3;
+  SubmissionSchema.statics.HOT_STATUS_TIME_LIMIT = 4;
 
   SubmissionSchema.statics.STATUS_PENDING = 'pending';
   SubmissionSchema.statics.STATUS_COMPILING = 'compiling';
@@ -100,6 +113,16 @@ export default () => {
   });
 
   /**
+   * Update today's quota when a submission status is updated
+   * Notice that there is a window between submission_status_updated and quota_updated
+   */
+  DI.eventBus.on('submission.status:updated', async sdoc => {
+    if (sdoc.status === Submission.STATUS_EFFECTIVE && !sdoc.rejudge) {
+      Submission.incrUsedSubmissionQuotaAsync(sdoc.user, sdoc.totalUsedTime);
+    }
+  });
+
+  /**
    * Update the status of the submission based on status of matches.
    * Status will be changed only from `running` to `effective`, or reversed.
    */
@@ -111,11 +134,8 @@ export default () => {
       return;
     }
     const allEffective = _.every(this.matches, mdoc => DI.models.Match.isEffectiveStatus(mdoc.status));
-    if (allEffective) {
-      this.status = Submission.STATUS_EFFECTIVE;
-    } else {
-      this.status = Submission.STATUS_RUNNING;
-    }
+    const newStatus = allEffective ? Submission.STATUS_EFFECTIVE : Submission.STATUS_RUNNING;
+    this.status = newStatus;
   };
 
   SubmissionSchema.statics.updateSubmissionStatusAsync = async function (sdocid) {
@@ -165,37 +185,49 @@ export default () => {
   /**
    * Check whether a user is allowed to submit new code
    *
-   * @return {[Number, Number|String]} [HOT_STATUS, remainingTime|globalLockReason]
+   * @return {[Number, Any]}
+   *         Number is HOT_STATUS
+   *         for HOT_STATUS_GLOBAL_LIMIT, 2nd element is the reason
+   *         for HOT_STATUS_QUOTA_LIMIT, 2nd element is the quota used
+   *         for HOT_STATUS_TIME_LIMIT, 2nd element is the remaining time
    */
   SubmissionSchema.statics.isUserAllowedToSubmitAsync = async function (uid) {
+    // Global submission lock?
     const lockdoc = await DI.models.Sys.getAsync('lock_submission', false);
     if (lockdoc) {
       const reason = await DI.models.Sys.getAsync('lock_submission_reason', 'Unknown');
       return [Submission.HOT_STATUS_GLOBAL_LIMIT, reason];
     }
 
+    // Submission quota limit?
+    const usedTime = await Submission.getUsedSubmissionQuotaAsync(uid);
+    if (usedTime > DI.config.compile.limits.maxExecQuota) {
+      return [Submission.HOT_STATUS_QUOTA_LIMIT, usedTime];
+    }
+
+    // No last submission?
     const sdocs = await Submission.getUserSubmissionsCursor(uid).limit(1).exec();
     if (sdocs.length === 0) {
       return [Submission.HOT_STATUS_COLD];
     }
 
+    // Last submission is CE?
     const last = sdocs[0];
-    if (last.status === Submission.STATUS_COMPILE_ERROR
-      || last.status === Submission.STATUS_SYSTEM_ERROR) {
+    if (last.status === Submission.STATUS_COMPILE_ERROR) {
       return [Submission.HOT_STATUS_COLD];
     }
 
     const udoc = await DI.models.User.getUserObjectByIdAsync(uid);
     let limit;
 
-    // Check submission limitation
+    // Last submission is running?
     if (last.status === Submission.STATUS_PENDING
       || last.status === Submission.STATUS_COMPILING
       || last.status === Submission.STATUS_RUNNING) {
-      return [Submission.HOT_STATUS_SUBMISSION_LIMIT, -1];
+      return [Submission.HOT_STATUS_SUBMISSION_LIMIT];
     }
 
-    // Check time limitation
+    // Submission interval limit?
     if (udoc.hasPermission(permissions.BYPASS_SUBMISSION_LIMIT)) {
       limit = DI.config.compile.limits.minSubmitInterval || 1000;
     } else {
@@ -230,6 +262,7 @@ export default () => {
       code,
       status: Submission.STATUS_PENDING,
       text: '',
+      rejudge: false,
     });
     await Submission._compileForMatchAsync(sdoc);
     return sdoc;
@@ -254,6 +287,7 @@ export default () => {
     sdoc.text = '';
     sdoc.taskToken = null;
     sdoc.matches = null;
+    sdoc.rejudge = true;
     await Submission._compileForMatchAsync(sdoc);
     return sdoc;
   };
@@ -375,6 +409,7 @@ export default () => {
       sdoc.matches = _.map(mdocs, mdoc => ({
         _id: mdoc._id,
         status: mdoc.status,
+        usedTime: 0,
       }));
       await sdoc.save();
     }
@@ -416,7 +451,36 @@ export default () => {
       return;
     }
     smdoc.status = mdoc.status;
+    smdoc.usedTime = mdoc.usedTime;
     await sdoc.save();
+  };
+
+  /**
+   * Get used submission quota of a user
+   *
+   * @param  {ObjectId} uid
+   * @return {Number}
+   */
+  SubmissionSchema.statics.getUsedSubmissionQuotaAsync = async function (uid) {
+    const result = parseInt(await DI.redis.getAsync(`used_quota:${uid}`));
+    if (isNaN(result)) {
+      return 0;
+    }
+    return result;
+  };
+
+  /**
+   * Increase used submission quota of a user
+   *
+   * @param  {ObjectId} uid
+   * @param  {Number} usedTime used time in milliseconds
+   */
+  SubmissionSchema.statics.incrUsedSubmissionQuotaAsync = async function (uid, usedTime) {
+    return await DI.redis
+      .multi()
+      .incrby(`used_quota:${uid}`, usedTime)
+      .expireat(`used_quota:${uid}`, moment().add(1, 'd').startOf('day').unix())
+      .execAsync();
   };
 
   SubmissionSchema.index({ user: 1, _id: -1 });

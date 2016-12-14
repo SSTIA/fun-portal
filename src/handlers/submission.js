@@ -198,6 +198,7 @@ export default class Handler {
       page_title: 'Submit My Brain',
       hotStatus,
       nextSubmitRemaining,
+      usedTime: await DI.models.Submission.getUsedSubmissionQuotaAsync(req.credential._id),
     });
   }
 

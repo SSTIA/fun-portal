@@ -63,12 +63,21 @@ export default class Handler {
       throw new errors.UserError('Expect logs');
     }
     try {
+      let usedTime = 1 * 60 * 1000;
+      try {
+        const sdoc = JSON.parse(req.data.summary);
+        usedTime = sdoc.elapsedRoundTime[0];
+      } catch (err) {
+        // failed to extract elapsed round time
+        DI.logger.error(err.stack);
+      }
       const mdoc = await DI.models.Match.judgeCompleteRoundAsync(
         req.data.mid,
         req.data.rid,
         DI.models.Match.getStatusFromJudgeExitCode(req.data.exitCode),
         {
           summary: req.data.summary,
+          usedTime,
           logBlobStream: fsp.createReadStream(req.file.path),
           text: '',
         }

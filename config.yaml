@@ -23,6 +23,7 @@ base:
       sizeOfText: 102400      # 100 KB
       submitInterval: 86400000 # 1 day
       minSubmitInterval: 60000 # 1 minute
+      maxExecQuota: 1800000   # 30 minutes
   match:
     rules:
       moveTimeout: 5000       # 5 s

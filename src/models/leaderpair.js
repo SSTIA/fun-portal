@@ -49,11 +49,21 @@ export default () => {
     const u2buf = new Buffer(u2id.toString(), 'hex');
     const u1u2 = Buffer.concat([u1buf, u2buf]);
     if (!verify) {
-      await LeaderPair.update(
-        { u1u2, u1Submission: { $lte: u1sid } },
-        { $set: { u1Submission: u1sid, u1: u1id, u2: u2id, status: u1status } },
-        { upsert: true, runValidators: true }
-      ).exec();
+      try {
+        await LeaderPair.update(
+          { u1u2, u1Submission: { $lte: u1sid } },
+          { $set: { u1Submission: u1sid, u1: u1id, u2: u2id, status: u1status } },
+          { upsert: true }
+        ).exec();
+      } catch (e) {
+        if (e.name === 'MongoError' && e.code === 11000) {
+          // if u1Submission > u1sid, upsert will become insert (which will fail
+          // because of unique index). we don't want that record being inserted
+          // either so just silently ignore this duplicate-key error here.
+        } else {
+          throw e;
+        }
+      }
     } else {
       const doc = await LeaderPair.findOne({ u1u2 });
       try {

@@ -23,9 +23,16 @@ export default () => {
       logBlob: mongoose.Schema.Types.ObjectId,  // grid fs
       text: String,
       summary: String,
+      usedTime: Number,   // extracted from summary by controller
     }],
   }, {
     timestamps: true,
+    toObject: { virtuals: true },
+    toJSON: { virtuals: true },
+  });
+
+  MatchSchema.virtual('usedTime').get(function () {
+    return _.sumBy(this.rounds, 'usedTime');
   });
 
   // Match Model
@@ -235,6 +242,7 @@ export default () => {
         u2: s2u2doc._id,
         u1Submission: s1,
         u2Submission: s2u2doc.sdocid,
+        usedTime: 0,
         rounds: generateRoundDocs(),
       });
       await mdoc.save();
