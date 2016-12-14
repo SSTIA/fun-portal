@@ -4,6 +4,7 @@
       <li><a href="{{ url('/') }}" class="nav__logo">GomokuJudge</a></li>
       <li><a href="{{ url('/') }}" class="nav__item{% if nav_type == 'scoreboard' %} active{% endif %}">Scoreboard</a></li>
       <li><a href="{{ url('/submission') }}" class="nav__item{% if nav_type == 'submission' %} active{% endif %}">Submission</a></li>
+      <li><a href="https://github.com/sse2016-gomoku-fun/about/wiki/What's-New" class="nav__item" target="_blank">What's New</a></li>
     </ol>
     <ol layout="row center-right">
     {%- if req.credential.hasPermission(permissions.PROFILE) %}
