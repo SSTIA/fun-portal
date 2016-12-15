@@ -13,7 +13,7 @@
 
   +mobile()
     .col--rank, .col--score, .col--wins
-      width: auto
+      width: rem(70px)
     .col--loses, .col--draws, .col--submission, .col--submit-at
       display: none
 
@@ -24,6 +24,10 @@
     padding: rem(0 5px)
     color: #FFF
     background: oc-gray-6
+
+  +mobile()
+    .badge
+      display: none
 
   .badge-red
     background: oc-red-5

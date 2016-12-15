@@ -42,7 +42,7 @@
               {%- if rdoc.badge %}
                 <span class="badge {{ rdoc.badge.style }}">{{ rdoc.badge.text }}</span>
               {%- endif %}
-                {{ rdoc.udoc.profile.displayName }}
+                <a href="{{ url('/submission/user/{0}', false, [rdoc.udoc._id]) }}">{{ rdoc.udoc.profile.displayName }}</a>
               </div></td>
               <td class="col--score">{{ rdoc.score }}</td>
               <td class="col--wins">{{ rdoc.win }}</td>

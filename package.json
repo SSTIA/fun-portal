@@ -59,6 +59,7 @@
     "request": "^2.75.0",
     "request-promise-native": "^1.0.3",
     "rupture": "^0.6.1",
+    "slideout": "^1.0.1",
     "socket.io": "^1.5.1",
     "source-map-support": "^0.4.3",
     "sticky-kit": "^1.1.3",

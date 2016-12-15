@@ -29,3 +29,16 @@
 
   .col--time, .col--wins
     border-left: 1px solid $table-border-color
+
+  +mobile()
+    .col--status
+      width: rem(100px)
+
+      .icon
+        display: none
+
+    .col--wins, .col--loses, .col--draws
+      display: none
+
+    .col--time
+      width: rem(100px)

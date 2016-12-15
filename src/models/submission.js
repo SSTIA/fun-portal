@@ -457,6 +457,17 @@ export default () => {
   };
 
   /**
+   * Get all pending, running, compiling or system_error matches
+   */
+  SubmissionSchema.statics.getPendingSubmissionsCursor = function () {
+    return Submission
+      .find({
+        status: { $in: [Submission.STATUS_PENDING, Submission.STATUS_RUNNING, Submission.STATUS_COMPILING, Submission.STATUS_SYSTEM_ERROR] },
+      })
+      .sort({ _id: -1 });
+  };
+
+  /**
    * Get used submission quota of a user
    *
    * @param  {ObjectId} uid

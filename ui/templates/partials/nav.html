@@ -1,12 +1,12 @@
-<div class="nav">
-  <div class="row"><div class="columns" layout="row center-justify">
-    <ol layout="row center-left">
+<nav class="nav slideout-menu" id="menu">
+  <div class="row"><div class="columns nav__container">
+    <ol class="nav__container-item">
       <li><a href="{{ url('/') }}" class="nav__logo">GomokuJudge</a></li>
       <li><a href="{{ url('/') }}" class="nav__item{% if nav_type == 'scoreboard' %} active{% endif %}">Scoreboard</a></li>
       <li><a href="{{ url('/submission') }}" class="nav__item{% if nav_type == 'submission' %} active{% endif %}">Submission</a></li>
       <li><a href="https://github.com/sse2016-gomoku-fun/about/wiki/What's-New" class="nav__item" target="_blank">What's New</a></li>
     </ol>
-    <ol layout="row center-right">
+    <ol class="nav__container-item">
     {%- if req.credential.hasPermission(permissions.PROFILE) %}
       <li><a href="{{ url('/user/profile') }}" class="nav__item{% if nav_type == 'user' %} active{% endif %}">
       {%- if req.credential.profile.studentId %}
@@ -26,4 +26,4 @@
     {%- endif %}
     </ol>
   </div></div>
-</div>
+</nav>

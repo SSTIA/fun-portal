@@ -10,7 +10,7 @@
     {{ mdoc.createdAt|datetime }}
   </td>
   <td class="col--challenger">
-  #{{ mdoc.u1Submission.version }}:
+    <span class="s_version">#{{ mdoc.u1Submission.version }}: </span>
   {%- if mdoc.u1.equals(sdoc.user) %}
     <span class="text-aqua">(Submitter)</span>
   {%- else %}
@@ -20,7 +20,7 @@
   {%- endif %}
   </td>
   <td class="col--challengee">
-  #{{ mdoc.u2Submission.version }}:
+    <span class="s_version">#{{ mdoc.u2Submission.version }}: </span>
   {%- if mdoc.u2.equals(sdoc.user) %}
     <span class="text-aqua">(Submitter)</span>
   {%- else %}

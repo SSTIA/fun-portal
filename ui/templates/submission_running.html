@@ -1,0 +1,18 @@
+{% extends "layout/submission_base.html" %}
+{% block submission_content %}
+<div class="section">
+  <div class="section__header">
+    <h1 class="section__title">Running Submissions</h1>
+  </div>
+{% if sdocs.length > 0 %}
+  <div class="section__body no-padding">
+    {%- include "partials/submissions_table.html" -%}
+    {{ paginator.render(page, pages, url('/submission/running/{page}')) }}
+  </div>
+{% else %}
+  <div class="section__body">
+    <p>There are no running submissions.</p>
+  </div>
+{% endif %}
+</div>
+{% endblock %}

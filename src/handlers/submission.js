@@ -126,6 +126,26 @@ export default class Handler {
     }
   }
 
+  @web.get('/running/:page?')
+  @web.middleware(utils.sanitizeParam({
+    page: sanitizers.pageNumber().optional(1),
+  }))
+  @web.middleware(utils.checkPermission(permissions.VIEW_ALL_SUBMISSIONS))
+  async getRunningSubmissionsAction(req, res) {
+    const [ sdocs, pages ] = await utils.pagination(
+      DI.models.Submission.getPendingSubmissionsCursor(),
+      req.data.page,
+      SUBMISSIONS_PER_PAGE
+    );
+    await DI.models.User.populate(sdocs, 'user');
+    res.render('submission_running', {
+      page_title: 'Running Submissions',
+      sdocs,
+      page: req.data.page,
+      pages,
+    });
+  }
+
   @web.get('/all/:page?')
   @web.middleware(utils.sanitizeParam({
     page: sanitizers.pageNumber().optional(1),
@@ -171,7 +191,7 @@ export default class Handler {
     uid: sanitizers.objectId(),
     page: sanitizers.pageNumber().optional(1),
   }))
-  @web.middleware(utils.checkPermission(permissions.VIEW_OWN_SUBMISSIONS))
+  @web.middleware(utils.checkPermission(permissions.VIEW_ALL_SUBMISSIONS))
   async getUserSubmissionsAction(req, res) {
     const udoc = await DI.models.User.getUserObjectByIdAsync(req.data.uid);
     const [ sdocs, pages ] = await utils.pagination(
