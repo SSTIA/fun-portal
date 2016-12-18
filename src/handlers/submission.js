@@ -1,4 +1,5 @@
 import * as web from 'express-decorators';
+import _ from 'lodash';
 import multer from 'multer';
 import fsp from 'fs-promise';
 import utils from 'libs/utils';
@@ -225,13 +226,15 @@ export default class Handler {
   @web.post('/create')
   @web.middleware(utils.sanitizeBody({
     code: sanitizers.nonEmptyString(),
+    compiler: sanitizers.nonEmptyString().in(_.keys(DI.config.compile.display)),
   }))
   @web.middleware(utils.checkCompleteProfile())
   @web.middleware(utils.checkPermission(permissions.CREATE_SUBMISSION))
   async postSubmissionCreateAction(req, res) {
     const sdoc = await DI.models.Submission.createSubmissionAsync(
       req.credential._id,
-      req.data.code
+      req.data.code,
+      req.data.compiler
     );
     res.redirect(utils.url('/submission/{0}', false, [sdoc._id]));
   }

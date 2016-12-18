@@ -17,6 +17,14 @@ base:
       username: foo
       password: bar
   compile:
+    display:
+      gcc51c11:     TDM-GCC 5.1.0 (Release, 32-bit, with C11)
+      gcc49:        TDM-GCC 4.9.2 (Release, 32-bit)
+      gcc49c11:     TDM-GCC 4.9.2 (Release, 32-bit, with C11)
+      msvc2015:     Visual C++ 2015 (Release, x86)
+      clang37:      Apple clang 3.7.0 (Xcode 7.0+, i386)
+      clang38:      Apple clang 3.8.0 (Xcode 7.3+, i386)
+      clang39:      Apple clang 3.9.0 (Xcode 8.0+, i386)
     limits:
       sizeOfCode: 1048576     # 1 MB
       sizeOfBin: 1048576      # 1 MB

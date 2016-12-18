@@ -131,6 +131,11 @@ const sanitize = (source, patterns) => {
       } catch (err) {
         throw new errors.ValidationError(`Parameter '${key}' is expected to be a(n) ${err.message}`);
       }
+      if (patterns[key].in === true) {
+        if (patterns[key].inValues.indexOf(ret[key]) === -1) {
+          throw new errors.ValidationError(`Parameter '${key}' is not a value of { ${patterns[key].inValues.join(', ')} }`);
+        }
+      }
     }
   }
   return ret;

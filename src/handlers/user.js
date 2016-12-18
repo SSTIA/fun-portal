@@ -38,4 +38,26 @@ export default class Handler {
     res.redirect(utils.url('/user/profile?updated'));
   }
 
+  @web.get('/settings')
+  @web.middleware(utils.checkPermission(permissions.PROFILE))
+  async getUserSettingsAction(req, res) {
+    const udoc = req.credential;
+    res.render('user_settings', {
+      page_title: 'Settings',
+      udoc,
+    });
+  }
+
+  @web.post('/settings')
+  @web.middleware(utils.sanitizeBody({
+    compiler: sanitizers.nonEmptyString().in(_.keys(DI.config.compile.display)),
+  }))
+  @web.middleware(utils.checkPermission(permissions.PROFILE))
+  async postUserSettingsAction(req, res) {
+    const udoc = req.credential;
+    _.assign(udoc.settings, req.data);
+    await udoc.save();
+    res.redirect(utils.url('/user/settings?updated'));
+  }
+
 }

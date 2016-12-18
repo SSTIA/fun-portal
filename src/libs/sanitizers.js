@@ -12,6 +12,11 @@ class Checker {
     this.optionalValue = val;
     return this;
   }
+  in(vals) {
+    this.in = true;
+    this.inValues = vals;
+    return this;
+  }
 }
 
 sanitizers.int = () => new Checker((any) => {

@@ -13,6 +13,12 @@
             My Profile
           </a>
         </li>
+        <li class="menu__item">
+          <a href="{{ url('/user/settings') }}" class="menu__link{% if page_name == 'user_settings' %} active{% endif %}">
+            <span class="icon icon-wrench"></span>
+            Settings
+          </a>
+        </li>
       {%- if req.credential.hasPermission(permissions.VIEW_MANAGE_PORTAL) %}
         <li class="menu__item">
           <a href="{{ url('/manage/system') }}" class="menu__link{% if page_name == 'manage_system' %} active{% endif %}">

@@ -12,6 +12,9 @@ export default () => {
     isSsoAccount: Boolean,
     role: String,
     hash: String,   // only for isSsoAccount=false
+    settings: {
+      compiler: String,
+    },
     profile: {
       realName: String,
       studentId: String,
@@ -153,6 +156,9 @@ export default () => {
         displayName: userName,
         teacher: '',
         initial: true,
+      },
+      settings: {
+        compiler: '',
       },
       submissionNumber: 0,
     });

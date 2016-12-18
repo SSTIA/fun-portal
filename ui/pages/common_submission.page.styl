@@ -27,7 +27,10 @@
   .col--wins, .col--loses, .col--draws
     width: rem(70px)
 
-  .col--time, .col--wins
+  .col--compiler
+    width: rem(100px)
+
+  .col--compiler, .col--time, .col--wins
     border-left: 1px solid $table-border-color
 
   +mobile()
@@ -37,7 +40,7 @@
       .icon
         display: none
 
-    .col--wins, .col--loses, .col--draws
+    .col--compiler, .col--wins, .col--loses, .col--draws
       display: none
 
     .col--time

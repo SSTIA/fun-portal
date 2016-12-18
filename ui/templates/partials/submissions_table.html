@@ -3,6 +3,7 @@
     <col class="col--status submission-status--border">
     <col class="col--time">
     <col class="col--by">
+    <col class="col--compiler">
     <col class="col--wins">
     <col class="col--loses">
     <col class="col--draws">
@@ -12,6 +13,7 @@
       <th class="col--status submission-status--border">Status</th>
       <th class="col--time">At</th>
       <th class="col--by">By</th>
+      <th class="col--compiler">Compiler</th>
       <th class="col--wins">Win</th>
       <th class="col--loses">Lose</th>
       <th class="col--draws">Draw</th>
@@ -31,6 +33,7 @@
         #{{ sdoc.version }}:
         <a href="{{ url('/submission/user/{0}', false, [sdoc.user._id]) }}">{{ sdoc.user.profile.displayName }}</a>
       </td>
+      <td class="col--compiler">{{ sdoc.compiler|default('Unknown') }}</td>
     {% if sdoc.matches %}
       {%- set match_status = sdoc.matches | groupby('status') -%}
       <td class="col--wins">

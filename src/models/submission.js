@@ -12,6 +12,7 @@ export default () => {
     user: { type: mongoose.Schema.Types.ObjectId, ref: 'User' },
     version: Number,  // nth submission of this user
     code: String,
+    compiler: String,
     exeBlob: mongoose.Schema.Types.ObjectId,  // grid fs
     status: String,
     text: String,
@@ -248,7 +249,7 @@ export default () => {
    *
    * @return {Submission}
    */
-  SubmissionSchema.statics.createSubmissionAsync = async function (uid, code) {
+  SubmissionSchema.statics.createSubmissionAsync = async function (uid, code, compiler) {
     const [hotStatus] = await Submission.isUserAllowedToSubmitAsync(uid);
     if (hotStatus !== Submission.HOT_STATUS_COLD) {
       throw new errors.UserError('You are not allowed to submit new code currently.');
@@ -261,6 +262,7 @@ export default () => {
       user: uid,
       version,
       code,
+      compiler,
       status: Submission.STATUS_PENDING,
       text: '',
       rejudge: false,

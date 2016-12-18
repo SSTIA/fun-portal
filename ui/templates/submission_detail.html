@@ -89,6 +89,8 @@
       {%- endif %}
         <dt>Submit At</dt>
         <dd>{{ sdoc.createdAt|datetime }}</dd>
+        <dt>Compiler</dt>
+        <dd>{{ sdoc.compiler|default('Unknown') }}</dd>
       {% if sdoc.totalUsedTime %}
         <dt data-tooltip="Time Consume">Time Consume</dt>
         <dd data-tooltip="{{ sdoc.totalUsedTime }}ms">{{ sdoc.totalUsedTime|duration }}</dd>

@@ -26,11 +26,24 @@
     <p>Sorry, code submission is disabled currently. Reason: {{ nextSubmitRemaining }}</p>
   {%- else %}
     <p>Please paste your C source code of your brain in the text box below. Your code will be automatically compiled and judged by the system.</p>
+  </div>
+  <div class="section__body">
     <form method="post">
       <div class="row">
         <div class="columns">
           <label>C Source Code:</label>
           <textarea name="code" class="monospace textbox" autofocus required></textarea>
+        </div>
+      </div>
+      <div class="row">
+        <div class="medium-5 columns">
+          <label>Compiler:</label>
+          <select class="select" name="compiler">
+          {% for name, label in DI("config.compile.display") %}
+            <option value="{{ name }}"{% if req.credential.settings.compiler == name %} selected{% endif %}>{{ label }}</option>
+          {% endfor %}
+          </select>
+          <p class="help-text">You can change your default compiler in <a href="{{ url('/user/settings') }}">Settings</a>.</p>
         </div>
       </div>
       <div class="row">
