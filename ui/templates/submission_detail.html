@@ -81,9 +81,11 @@
             {{ sdoc.user.profile.displayName }}
           </a>
         </dd>
-      {%- if req.credential.hasPermission(permissions.VIEW_ANY_PROFILE) %}
+      {%- if sdoc.user.settings.hideId !== true or req.credential.hasPermission(permissions.VIEW_ANY_PROFILE) %}
         <dt>Std Id</dt>
         <dd>{{ sdoc.user.profile.studentId }}</dd>
+      {%- endif %}
+      {%- if req.credential.hasPermission(permissions.VIEW_ANY_PROFILE) %}
         <dt>Real Name</dt>
         <dd>{{ sdoc.user.profile.realName }}</dd>
       {%- endif %}

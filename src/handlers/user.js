@@ -51,6 +51,7 @@ export default class Handler {
   @web.post('/settings')
   @web.middleware(utils.sanitizeBody({
     compiler: sanitizers.nonEmptyString().in(_.keys(DI.config.compile.display)),
+    hideId: sanitizers.bool(),
   }))
   @web.middleware(utils.checkPermission(permissions.PROFILE))
   async postUserSettingsAction(req, res) {

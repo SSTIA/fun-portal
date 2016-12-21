@@ -14,6 +14,7 @@ export default () => {
     hash: String,   // only for isSsoAccount=false
     settings: {
       compiler: String,
+      hideId: Boolean,
     },
     profile: {
       realName: String,
