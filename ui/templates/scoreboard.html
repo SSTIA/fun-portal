@@ -14,7 +14,6 @@
         <table class="data-table">
           <colgroup>
             <col class="col--rank">
-            <col class="col--stdid">
             <col class="col--user">
             <col class="col--score">
             <col class="col--wins">
@@ -26,7 +25,6 @@
           <thead>
             <tr>
               <th class="col--rank">Rank</th>
-              <th class="col--stdid">Std Id</th>
               <th class="col--user">User</th>
               <th class="col--score">Score</th>
               <th class="col--wins">Win</th>
@@ -40,12 +38,6 @@
           {%- for rdoc in sbdoc %}
             <tr>
               <td class="col--rank">#{{ rdoc.rank }}</td>
-              <td class="col--stdid">
-              {%- if rdoc.udoc.settings.hideId !== true %}
-                {{ rdoc.udoc.profile.studentId }}</td>
-              {%- else %}
-                ???
-              {%- endif %}
               <td class="col--user"><div layout="row center-start">
               {%- if rdoc.badge %}
                 <span class="badge {{ rdoc.badge.style }}">{{ rdoc.badge.text }}</span>
