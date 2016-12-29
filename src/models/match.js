@@ -97,7 +97,7 @@ export default () => {
    * Update the match status one by one when round status is updated
    */
   const updateStatusQueue = new utils.DedupWorkerQueue({
-    delay: 50,
+    delay: 15,
     asyncWorkerFunc: mdocid => {
       return Match.updateMatchStatusAsync(mdocid);
     },
@@ -269,6 +269,21 @@ export default () => {
   };
 
   /**
+   * Rejudge system error matches
+   */
+  MatchSchema.statics.rejudgeErrorMatchAsync = async function () {
+    const mdocCursor = Match
+      .find({ status: Match.STATUS_SYSTEM_ERROR })
+      .sort({ _id: 1 })
+      .cursor();
+    for (let mdoc = await mdocCursor.next(); mdoc !== null; mdoc = await mdocCursor.next()) {
+      DI.logger.debug('Match.rejudgeErrorMatchAsync: %s', mdoc._id);
+      await DI.models.Match.rejudgeMatchAsync(mdoc._id);
+    }
+    DI.logger.debug('Match.rejudgeErrorMatchAsync: done');
+  };
+
+  /**
    * Translate MatchStatus into RelativeStatus
    *
    * @param  {String}  status
@@ -413,10 +428,14 @@ export default () => {
   /**
    * Get all pending, running or system_error matches
    */
-  MatchSchema.statics.getPendingMatchesAsync = async function () {
+  MatchSchema.statics.getPendingMatchesAsync = async function (includePending = true) {
+    const $in = [Match.STATUS_RUNNING, Match.STATUS_SYSTEM_ERROR];
+    if (includePending) {
+      $in.push(Match.STATUS_PENDING);
+    }
     return await Match
       .find({
-        status: { $in: [Match.STATUS_PENDING, Match.STATUS_RUNNING, Match.STATUS_SYSTEM_ERROR] },
+        status: { $in },
       })
       .sort({ _id: -1 })
       .exec();
