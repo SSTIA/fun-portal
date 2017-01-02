@@ -24,6 +24,7 @@ export default () => {
       status: String,
       usedTime: Number,
     }],
+    matchLogCleared: Boolean,
   }, {
     timestamps: true,
     toObject: { virtuals: true },
@@ -341,6 +342,52 @@ export default () => {
       { $project: { user: 1, createdAt : 1, status: 1 } },
       { $group: { _id: '$user', sdocid: { $first: '$_id' } } },
     ]).allowDiskUse(true).exec();
+  };
+
+  SubmissionSchema.statics.shrink = async function () {
+    DI.logger.info('Collecting last submissions...');
+    const lsdocs = await DI.models.Submission.getLastSubmissionsByUserAsync();
+    const sdocWhitelist = {};
+    lsdocs.forEach(lsdoc => sdocWhitelist[lsdoc.sdocid.toString()] = true);
+
+    const fsFiles = DI.mongodbConnection.collection('fs.files');
+    const fsChunks = DI.mongodbConnection.collection('fs.chunks');
+
+    let shrinked = 0;
+    const n = await DI.models.Submission.count({});
+    const sdocs = await DI.models.Submission.find({}, { status: 1, matchLogCleared: 1 }).sort({ _id: 1 }).exec();
+    for (const sdoc of sdocs) {
+      if (sdoc.matchLogCleared === true) {
+        DI.logger.info('[%d / %d] Ignored processed submission %s', ++shrinked, n, sdoc._id);
+      } else if (sdoc.status !== Submission.STATUS_EFFECTIVE) {
+        DI.logger.info('[%d / %d] Ignored non-effective submission %s', ++shrinked, n, sdoc._id);
+      } else if (sdocWhitelist[sdoc._id.toString()]) {
+        DI.logger.info('[%d / %d] Ignored last submission %s', ++shrinked, n, sdoc._id);
+      } else {
+        DI.logger.warn('[%d / %d] Shrinking submission %s...', ++shrinked, n, sdoc._id);
+        const mdocCursor = DI.models.Match.find({ u1Submission: sdoc._id }, { 'rounds.logBlob': 1 }).sort({ _id: 1 }).cursor();
+        for (let mdoc = await mdocCursor.next(); mdoc !== null; mdoc = await mdocCursor.next()) {
+          if (mdoc.rounds) {
+            const filesToRemove = [];
+            for (let round of mdoc.rounds) {
+              if (round.logBlob) {
+                filesToRemove.push(round.logBlob);
+                round.logBlob = null;
+              }
+            }
+            try {
+              await fsFiles.remove({ _id: { $in: filesToRemove } });
+              await fsChunks.remove({ files_id: { $in: filesToRemove } });
+            } catch (err) {
+              DI.logger.error(err);
+            }
+            await mdoc.save();
+          }
+        }
+        sdoc.matchLogCleared = true;
+        await sdoc.save();
+      }
+    }
   };
 
   /**
