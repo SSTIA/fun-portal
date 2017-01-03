@@ -1,4 +1,5 @@
 import _ from 'lodash';
+import fsp from 'fs-promise';
 import uuid from 'uuid';
 import moment from 'moment';
 import mongoose from 'mongoose';
@@ -344,6 +345,9 @@ export default () => {
     ]).allowDiskUse(true).exec();
   };
 
+  /**
+   * Shrink the log of matches in previous submissions
+   */
   SubmissionSchema.statics.shrink = async function () {
     DI.logger.info('Collecting last submissions...');
     const lsdocs = await DI.models.Submission.getLastSubmissionsByUserAsync();
@@ -388,6 +392,22 @@ export default () => {
         await sdoc.save();
       }
     }
+  };
+
+  /**
+   * Export everyone's latest code
+   */
+  SubmissionSchema.statics.exportCode = async function (location = '') {
+    const directory = location + '/export_' + moment().format('YYYY-MM-DD-HH-mm');
+    await fsp.ensureDir(directory);
+    const lsdocs = await Submission.getLastSubmissionsByUserAsync();
+    for (const lsdoc of lsdocs) {
+      DI.logger.info('%s', lsdoc.sdocid);
+      const sdoc = await Submission.getSubmissionObjectByIdAsync(lsdoc.sdocid);
+      await sdoc.populate('user').execPopulate();
+      await fsp.writeFile(`${directory}/${sdoc.user.profile.studentId}_${sdoc.user.profile.realName}.c`, sdoc.code);
+    }
+    DI.logger.info('Done.');
   };
 
   /**

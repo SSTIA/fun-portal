@@ -1,7 +1,20 @@
 {% extends "layout/basic.html" %}
 {% block content %}
+{% if req.credential.hasPermission(permissions.VIEW_ANY_PROFILE) %}
+{% set showDetail = true %}
+{% else %}
+{% set showDetail = false %}
+{% endif %}
 <div class="row">
   <div class="columns">
+    <div class="section">
+      <div class="section__header">
+        <h1 class="section__title"><span class="icon icon-warning text-red"></span> Important Notice</h1>
+      </div>
+      <div class="section__body">
+        <p>The submission will be ended at: <mark>Jan. 3, 2017, Tuesday, 10:00 AM (CST)</mark> (<span class="time" data-timestamp="1483408800"></span>)</p>
+      </div>
+    </div>
     <div class="section">
       <div class="section__header">
         <h1 class="section__title">Current Scoreboard</h1>
@@ -15,6 +28,10 @@
           <colgroup>
             <col class="col--rank">
             <col class="col--user">
+          {% if showDetail %}
+            <col class="col--student_id">
+            <col class="col--real_name">
+          {% endif %}
             <col class="col--score">
             <col class="col--wins">
             <col class="col--loses">
@@ -26,6 +43,10 @@
             <tr>
               <th class="col--rank">Rank</th>
               <th class="col--user">User</th>
+            {% if showDetail %}
+              <th class="col--student_id">Id</th>
+              <th class="col--real_name">Name</th>
+            {% endif %}
               <th class="col--score">Score</th>
               <th class="col--wins">Win</th>
               <th class="col--loses">Lose</th>
@@ -44,6 +65,14 @@
               {%- endif %}
                 <a href="{{ url('/submission/user/{0}', false, [rdoc.udoc._id]) }}">{{ rdoc.udoc.profile.displayName }}</a>
               </div></td>
+            {% if showDetail %}
+              <td class="col--student_id">
+                {{ rdoc.udoc.profile.studentId }}
+              </td>
+              <td class="col--real_name">
+                {{ rdoc.udoc.profile.realName }}
+              </td>
+            {% endif %}
               <td class="col--score">{{ rdoc.score }}</td>
               <td class="col--wins">{{ rdoc.win }}</td>
               <td class="col--loses">{{ rdoc.lose }}</td>
