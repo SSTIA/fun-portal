@@ -5,7 +5,7 @@ import utils from 'libs/utils';
 import objectId from 'libs/objectId';
 import errors from 'libs/errors';
 
-export default () => {
+export default function() {
   const MatchSchema = new mongoose.Schema({
     status: String,
     u1: { type: mongoose.Schema.Types.ObjectId, ref: 'User' },
@@ -187,11 +187,11 @@ export default () => {
    */
   function generateRoundDocs() {
     const rounds = [];
-	const ran_openings = [];
-	for (let opening_i = 0; opening_i < DI.config.match.rounds; opening_i++) {
-	  const ran = Math.floor(Math.random() * DI.config.match.openings.length);
-	  ran_openings.push(DI.config.match.openings[ran]);
-	}
+    const ran_openings = [];
+    for (let opening_i = 0; opening_i < DI.config.match.rounds; opening_i++) {
+      const ran = Math.floor(Math.random() * DI.config.match.openings.length);
+      ran_openings.push(DI.config.match.openings[ran]);
+    }
     for (const openingId of ran_openings) {
       for (const u1Black of [true, false]) {
         rounds.push({
@@ -499,4 +499,4 @@ export default () => {
   Match = mongoose.model('Match', MatchSchema);
   return Match;
 
-};
+}
