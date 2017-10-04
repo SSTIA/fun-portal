@@ -1,22 +1,37 @@
 base:
   db: mongodb://localhost/portal
+  redis: redis://localhost
   secret: your_secret
   port: 80
-  host: http://127.0.0.1
+  host: 127.0.0.1:80
   cspReportUrl: /
   urlPrefix: ''
   cdnPrefix: ''
   ssoUrl: http://127.0.0.1:20212   # false to enable debug mode and bypass SSO
+  scoreboard:
+    cacheDuration: 600000     # 10 minutes
+  web:
+    realtimePush: true        # disable realtime push if you have many judgers
   api:
     credential:
       username: foo
       password: bar
   compile:
+    display:
+      gcc51c11:     TDM-GCC 5.1.0 (Release, 32-bit, with C11)
+      gcc49:        TDM-GCC 4.9.2 (Release, 32-bit)
+      gcc49c11:     TDM-GCC 4.9.2 (Release, 32-bit, with C11)
+      msvc2015:     Visual C++ 2015 (Release, x86)
+      clang37:      Apple clang 3.7.0 (Xcode 7.0+, i386)
+      clang38:      Apple clang 3.8.0 (Xcode 7.3+, i386)
+      clang39:      Apple clang 3.9.0 (Xcode 8.0+, i386)
     limits:
       sizeOfCode: 1048576     # 1 MB
       sizeOfBin: 1048576      # 1 MB
       sizeOfText: 102400      # 100 KB
       submitInterval: 86400000 # 1 day
+      minSubmitInterval: 60000 # 1 minute
+      maxExecQuota: 36000000  # 10 hours
   match:
     rules:
       moveTimeout: 5000       # 5 s
@@ -25,10 +40,13 @@ base:
       width: 20
       height: 20
       winningStones: 5
-    openings:
+    openings:                 # note: opening content will be cached until restart
       - opening1
       - opening2
       - opening3
+  profiling:
+    eventBus: false
+    addMatches: false
   mq:
     vhosts:
       /:

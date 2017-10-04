@@ -25,3 +25,22 @@
 
   .col--challenger, .col--rounds
     border-left: 1px solid $table-border-color
+
+  +mobile()
+    .col--rounds
+      display: none
+
+    .col--status
+      width: rem(70px)
+
+      .icon
+        display: none
+
+    .col--at
+      width: rem(100px)
+
+    .col--challenger, .col--challengee
+      width: auto
+
+      .s_version
+        display: none

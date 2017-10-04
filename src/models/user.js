@@ -12,6 +12,10 @@ export default () => {
     isSsoAccount: Boolean,
     role: String,
     hash: String,   // only for isSsoAccount=false
+    settings: {
+      compiler: String,
+      hideId: Boolean,
+    },
     profile: {
       realName: String,
       studentId: String,
@@ -154,6 +158,9 @@ export default () => {
         teacher: '',
         initial: true,
       },
+      settings: {
+        compiler: '',
+      },
       submissionNumber: 0,
     });
     newUser.setUserName(userName);
@@ -242,7 +249,7 @@ export default () => {
   };
 
   /**
-   * Check whether a user has a permission
+   * Check whether a user has some permissions
    * @return {Boolean}
    */
   UserSchema.methods.hasPermission = function (perm) {

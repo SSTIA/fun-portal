@@ -1,10 +1,64 @@
 import _ from 'lodash';
-import validator from 'validator';
+import uuid from 'uuid';
 import auth from 'basic-auth';
 import errors from 'libs/errors';
 import permissions from 'libs/permissions';
+import queue from 'queue';
 
 const utils = {};
+
+class DedupWorkerQueue {
+  constructor({ asyncWorkerFunc, delay }) {
+    this.queue = queue({ concurrency: 1 });
+    this.asyncWorkerFunc = asyncWorkerFunc;
+    this.delay = delay;
+  }
+  handleWorkerDone(queueItem, err, callback) {
+    if (err) {
+      console.error(err.stack);
+    }
+    setTimeout(() => {
+      // if there are jobs with same id in the queue,
+      // remove them (except for the last one)
+      let lastJob = true, jobsRemoved = 0;
+      for (var i = this.queue.jobs.length - 1; i >= 0; --i) {
+        if (this.queue.jobs[i]._id === queueItem._id) {
+          if (lastJob) {
+            lastJob = false;
+          } else {
+            this.queue.jobs.splice(i, 1);
+            jobsRemoved++;
+          }
+        }
+      }
+      //console.log('Removed %d jobs for id = %s', jobsRemoved, queueItem._id);
+      callback();
+    }, this.delay);
+  }
+  push(taskId, metaData) {
+    //console.log('Pushing %s into queue', taskId);
+    const queueItem = cb => {
+      this.asyncWorkerFunc(taskId, metaData)
+        .then(() => this.handleWorkerDone(queueItem, null, cb))
+        .catch(err => this.handleWorkerDone(queueItem, err, cb));
+    };
+    queueItem._id = taskId;
+    queueItem._data = metaData;
+    this.queue.push(queueItem);
+    this.queue.start();
+  }
+}
+utils.DedupWorkerQueue = DedupWorkerQueue;
+
+utils.profile = (name, enabled = true) => {
+  if (!enabled) {
+    return _.noop;
+  }
+  const token = uuid.v4();
+  const func = () => DI.logger.profile(`${name} [${token}]`);
+  func();
+  return func;
+};
 
 utils.substitute = (str, obj) => {
   return str.replace(/\{([^{}]+)\}/g, (match, key) => {
@@ -18,7 +72,7 @@ utils.substitute = (str, obj) => {
 utils.url = (s, absolute = false, obj = null) => {
   let url = `${DI.config.urlPrefix}${s}`;
   if (absolute) {
-    url = `${DI.config.host}${url}`;
+    url = `http://${DI.config.host}${url}`;
   }
   if (obj === null) {
     return url;
@@ -77,6 +131,11 @@ const sanitize = (source, patterns) => {
       } catch (err) {
         throw new errors.ValidationError(`Parameter '${key}' is expected to be a(n) ${err.message}`);
       }
+      if (patterns[key].in === true) {
+        if (patterns[key].inValues.indexOf(ret[key]) === -1) {
+          throw new errors.ValidationError(`Parameter '${key}' is not a value of { ${patterns[key].inValues.join(', ')} }`);
+        }
+      }
     }
   }
   return ret;
@@ -99,69 +158,6 @@ utils.sanitizeBody = (patterns) => sanitizeExpress('body', patterns);
 utils.sanitizeQuery = (patterns) => sanitizeExpress('query', patterns);
 
 utils.sanitizeParam = (patterns) => sanitizeExpress('params', patterns);
-
-class Checker {
-  constructor(testFunc) {
-    this.test = testFunc;
-  }
-  optional(val) {
-    this.optional = true;
-    this.optionalValue = val;
-    return this;
-  }
-}
-
-utils.checkInt = () => new Checker((any) => {
-  if (typeof any === 'number') {
-    return Math.floor(any);
-  }
-  const str = String(any);
-  if (!validator.isInt(str)) {
-    throw new Error('integer number');
-  }
-  return validator.toInt(str);
-});
-
-utils.checkString = () => new Checker((any) => {
-  if (typeof any === 'string') {
-    return any;
-  }
-  throw new Error('string');
-});
-
-utils.checkNonEmptyString = () => new Checker((any) => {
-  if (typeof any === 'string') {
-    if (any.trim().length === 0) {
-      throw new Error('non empty string');
-    }
-    return any.trim();
-  }
-  throw new Error('non empty string');
-});
-
-utils.checkBool = () => new Checker((any) => {
-  if (typeof any === 'boolean') {
-    return any;
-  }
-  if (any === 'true') {
-    return true;
-  } else if (any === 'false') {
-    return false;
-  }
-  throw new Error('boolean');
-});
-
-utils.checkPageNumber = () => new Checker((any) => {
-  const str = String(any);
-  if (!validator.isInt(str)) {
-    throw new Error('page number');
-  }
-  const num = validator.toInt(str);
-  if (num < 1) {
-    throw new Error('page number');
-  }
-  return num;
-});
 
 utils.pagination = async (query, page, pageSize) => {
   const count = await query.model.count(query._conditions);

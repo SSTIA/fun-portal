@@ -4,6 +4,37 @@ $nav-button-height = 35px
 .nav
   background: #FFF
   box-shadow: 0 0 20px rgba(#000, 0.1)
+  z-index: 2
+  position: relative
+
+.nav--slideout-trigger
+  left: 0
+  top: 0
+  width: 100%
+  position: relative
+  display: none
+  background: oc-cyan-5
+  color: #FFF
+  line-height: rem($nav-item-height)
+
+  .nav__hamburger
+    background: none
+    border: 0
+    border-radius: 0
+    color: #FFF
+    outline: 0
+
+.nav__container
+  display: flex
+  justify-content: space-between
+  flex-direction: row
+  align-items: center
+
+.nav__container-item
+  display: flex
+  justify-content: flex-start
+  flex-direction: row
+  align-items: center
 
 .nav__logo
   &, &:visited, &:hover
@@ -64,4 +95,55 @@ $nav-button-height = 35px
   &:hover
     background-color: oc-blue-5
 
+// For Mobile: show a slideout vertical arranged menu
++mobile()
 
+  .nav
+    z-index: 0
+    box-shadow: 0
+
+  .nav--slideout-trigger
+    display: block
+
+  .nav .columns
+    padding: 0
+
+  .nav.slideout-menu
+    background: #1D1F20
+
+  .nav__container, .nav__container-item
+    flex-direction: column
+    justify-content: flex-start
+    align-items: stretch
+
+  .nav__logo
+    width: auto
+    opacity: 1
+    text-align: center
+    display: block
+    margin: rem(20px 0)
+
+  .nav__item, .nav__button
+    display: block
+    line-height: rem($nav-item-height - 6)
+    padding: rem(0 10px 3px 10px)
+    border: 0
+    border-left: 3px solid transparent
+    margin: 0
+    margin-bottom: rem(5px)
+    border-radius: 0
+
+    &, &:visited, &:active
+      background: none !important
+      color: #FFF !important
+
+    &:hover
+      background: rgba(#FFF, 0.10) !important
+      color: #FFF !important
+
+  .nav__item
+    &:before
+      left: -2px
+      top: 0
+      height: 100%
+      width: 1px

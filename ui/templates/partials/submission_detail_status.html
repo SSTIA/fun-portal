@@ -1,0 +1,6 @@
+<dd data-id="submission_status">
+  <span class="icon submission-status--icon {{ sdoc.status }}"></span>
+  <span class="submission-status--text {{ sdoc.status }}">
+    {{ DI('models.Submission.STATUS_TEXT')[sdoc.status] }}
+  </span>
+</dd>

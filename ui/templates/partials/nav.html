@@ -1,25 +1,29 @@
-<div class="nav">
-  <div class="row"><div class="columns" layout="row center-justify">
-    <ol layout="row center-left">
+<nav class="nav slideout-menu" id="menu">
+  <div class="row"><div class="columns nav__container">
+    <ol class="nav__container-item">
       <li><a href="{{ url('/') }}" class="nav__logo">GomokuJudge</a></li>
       <li><a href="{{ url('/') }}" class="nav__item{% if nav_type == 'scoreboard' %} active{% endif %}">Scoreboard</a></li>
       <li><a href="{{ url('/submission') }}" class="nav__item{% if nav_type == 'submission' %} active{% endif %}">Submission</a></li>
+      <li><a href="https://github.com/sse2016-gomoku-fun/about/wiki/What's-New" class="nav__item" target="_blank">What's New</a></li>
     </ol>
-    <ol layout="row center-right">
-    {% if req.credential.hasPermission(permissions.PROFILE) %}
+    <ol class="nav__container-item">
+    {%- if req.credential.hasPermission(permissions.PROFILE) %}
       <li><a href="{{ url('/user/profile') }}" class="nav__item{% if nav_type == 'user' %} active{% endif %}">
-      {% if req.credential.profile.studentId %}
+      {%- if req.credential.profile.studentId %}
         {{ req.credential.profile.studentId }}
-        {% if not req.credential.profile.initial %}
+        {%- if not req.credential.profile.initial %}
         ({{ req.credential.profile.displayName }})
-        {% endif %}
-      {% else %}
+        {%- endif %}
+        {%- if req.credential.role !== 'string' %}
+        <span class="text-red">({{ req.credential.role }})</span>
+        {%- endif %}
+      {%- else %}
         User Center
-      {% endif %}
+      {%- endif %}
       </a></li>
-    {% else %}
+    {%- else %}
       <li><a href="{{ url('/login') }}" class="nav__button">Sign In</a></li>
-    {% endif %}
+    {%- endif %}
     </ol>
   </div></div>
-</div>
+</nav>

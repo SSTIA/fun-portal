@@ -1,16 +1,37 @@
 {% extends "layout/basic.html" %}
 {% block content %}
+{% if req.credential.hasPermission(permissions.VIEW_ANY_PROFILE) %}
+{% set showDetail = true %}
+{% else %}
+{% set showDetail = false %}
+{% endif %}
 <div class="row">
   <div class="columns">
     <div class="section">
       <div class="section__header">
-        <h1 class="section__title">Current Scoreboard</h1>
+        <h1 class="section__title"><span class="icon icon-warning text-red"></span> Important Notice</h1>
       </div>
+      <div class="section__body">
+        <p>The submission will be ended at: <mark>Jan. 3, 2017, Tuesday, 10:00 AM (CST)</mark> (<span class="time" data-timestamp="1483408800"></span>)</p>
+      </div>
+    </div>
+    <div class="section">
+      <div class="section__header">
+        <h1 class="section__title">Current Scoreboard</h1>
+      {%- if sbdoc !== false %}
+        <div class="section__tools">Update at: {{ cacheAt|datetime }} (refresh every {{ DI('config.scoreboard.cacheDuration')|duration }})</div>
+      {%- endif %}
+      </div>
+    {%- if sbdoc !== false %}
       <div class="section__body no-padding">
         <table class="data-table">
           <colgroup>
             <col class="col--rank">
             <col class="col--user">
+          {% if showDetail %}
+            <col class="col--student_id">
+            <col class="col--real_name">
+          {% endif %}
             <col class="col--score">
             <col class="col--wins">
             <col class="col--loses">
@@ -22,6 +43,10 @@
             <tr>
               <th class="col--rank">Rank</th>
               <th class="col--user">User</th>
+            {% if showDetail %}
+              <th class="col--student_id">Id</th>
+              <th class="col--real_name">Name</th>
+            {% endif %}
               <th class="col--score">Score</th>
               <th class="col--wins">Win</th>
               <th class="col--loses">Lose</th>
@@ -31,35 +56,54 @@
             </tr>
           </thead>
           <tbody>
-          {% for rdoc in sbdoc %}
+          {%- for rdoc in sbdoc %}
             <tr>
               <td class="col--rank">#{{ rdoc.rank }}</td>
-              <td class="col--user">{{ rdoc.udoc.profile.displayName }}</td>
+              <td class="col--user"><div layout="row center-start">
+              {%- if rdoc.badge %}
+                <span class="badge {{ rdoc.badge.style }}">{{ rdoc.badge.text }}</span>
+              {%- endif %}
+                <a href="{{ url('/submission/user/{0}', false, [rdoc.udoc._id]) }}">{{ rdoc.udoc.profile.displayName }}</a>
+              </div></td>
+            {% if showDetail %}
+              <td class="col--student_id">
+                {{ rdoc.udoc.profile.studentId }}
+              </td>
+              <td class="col--real_name">
+                {{ rdoc.udoc.profile.realName }}
+              </td>
+            {% endif %}
               <td class="col--score">{{ rdoc.score }}</td>
               <td class="col--wins">{{ rdoc.win }}</td>
               <td class="col--loses">{{ rdoc.lose }}</td>
               <td class="col--draws">{{ rdoc.draw }}</td>
               <td class="col--submission">
-              {% if rdoc.lsdoc %}
+              {%- if rdoc.lsdoc %}
                 <a class="typo-a" href="{{ url('/submission/{0}', false, [rdoc.lsdoc._id]) }}">
                   #{{ rdoc.lsdoc.version }}: View
                 </a>
-              {% else %}
+              {%- else %}
                 --
-              {% endif %}
+              {%- endif %}
               </td>
               <td class="col--submit-at">
-              {% if rdoc.lsdoc %}
+              {%- if rdoc.lsdoc %}
                 {{ rdoc.lsdoc.createdAt|datetime }}
-              {% else %}
+              {%- else %}
                 --
-              {% endif %}
+              {%- endif %}
               </td>
             </tr>
-          {% endfor %}
+          {%- endfor %}
           </tbody>
         </table>
       </div>
+    {%- else %}
+      <div class="section__body"><div class="typo">
+        <p>Scoreboard is under calculation :(</p>
+        <p>Please wait a moment and refresh this page.</p>
+      </div></div>
+    {%- endif %}
     </div>
   </div>
 </div>

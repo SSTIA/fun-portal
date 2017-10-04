@@ -1,7 +1,6 @@
 import DomDialog from './DomDialog';
 
 import tpl from '../../utils/tpl';
-import i18n from '../../utils/i18n';
 
 export default class Dialog {
   constructor(options = {}) {
@@ -50,15 +49,15 @@ export default class Dialog {
   }
 }
 
-const buttonOk = tpl`<button class="primary rounded button" data-action="ok">${i18n('Ok')}</button>`;
-const buttonCancel = tpl`<button class="rounded button" data-action="cancel">${i18n('Cancel')}</button>`;
-const buttonYes = tpl`<button class="primary rounded button" data-action="yes">${i18n('Yes')}</button>`;
-const buttonNo = tpl`<button class="rounded button" data-action="no">${i18n('No')}</button>`;
+Dialog.buttonOk = tpl`<button class="primary rounded button" data-action="ok">Ok</button>`;
+Dialog.buttonCancel = tpl`<button class="rounded button" data-action="cancel">Cancel</button>`;
+Dialog.buttonYes = tpl`<button class="primary rounded button" data-action="yes">Yes</button>`;
+Dialog.buttonNo = tpl`<button class="rounded button" data-action="no">No</button>`;
 
 export class InfoDialog extends Dialog {
   constructor(options = {}) {
     super({
-      $action: buttonOk,
+      $action: Dialog.buttonOk,
       cancelByClickingBack: true,
       cancelByEsc: true,
       ...options,
@@ -69,7 +68,7 @@ export class InfoDialog extends Dialog {
 export class ActionDialog extends Dialog {
   constructor(options = {}) {
     super({
-      $action: [buttonCancel, buttonOk].join('\n'),
+      $action: [Dialog.buttonCancel, Dialog.buttonOk].join('\n'),
       cancelByClickingBack: true,
       cancelByEsc: true,
       ...options,
@@ -81,9 +80,9 @@ export class ConfirmDialog extends Dialog {
   constructor(options = {}) {
     let buttons = [];
     if (options.canCancel) {
-      buttons = [buttonCancel, buttonNo, buttonYes];
+      buttons = [Dialog.buttonCancel, Dialog.buttonNo, Dialog.buttonYes];
     } else {
-      buttons = [buttonNo, buttonYes];
+      buttons = [Dialog.buttonNo, Dialog.buttonYes];
     }
     super({
       $action: buttons.join('\n'),

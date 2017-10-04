@@ -1,0 +1,40 @@
+<tr data-id="{{ mdoc._id }}">
+  {%- set status = getRelativeStatus(mdoc.status, mdoc) -%}
+  <td class="col--status match-status--border {{ status }}">
+    <span class="icon match-status--icon {{ status }}"></span>
+    <a href="{{ url('/match/{0}', false, [mdoc._id]) }}" class="match-status--text {{ status }}">
+      {{ DI('models.Match.STATUS_TEXT')[status] }}
+    </a>
+  </td>
+  <td class="col--at">
+    {{ mdoc.createdAt|datetime }}
+  </td>
+  <td class="col--challenger">
+    <span class="s_version">#{{ mdoc.u1Submission.version }}: </span>
+  {%- if mdoc.u1.equals(sdoc.user) %}
+    <span class="text-aqua">(Submitter)</span>
+  {%- else %}
+    <a href="{{ url('/submission/{0}', false, [mdoc.u1Submission._id]) }}">
+      {{ mdoc.u1.profile.displayName }}
+    </a>
+  {%- endif %}
+  </td>
+  <td class="col--challengee">
+    <span class="s_version">#{{ mdoc.u2Submission.version }}: </span>
+  {%- if mdoc.u2.equals(sdoc.user) %}
+    <span class="text-aqua">(Submitter)</span>
+  {%- else %}
+    <a href="{{ url('/submission/{0}', false, [mdoc.u2Submission._id]) }}">
+      {{ mdoc.u2.profile.displayName }}
+    </a>
+  {%- endif %}
+  </td>
+  <td class="col--rounds" layout="row stretch-left">
+  {%- for status, rounds in mdoc.rounds | groupby('status') | dictsort %}
+    {%- set status = getRelativeStatus(status, mdoc) -%}
+    <a href="{{ url('/match/{0}', false, [mdoc._id]) }}" class="round-status--cell {{ status }}" style="width: {{ (rounds.length / mdoc.rounds.length * 100) }}%">
+      <span>{{ rounds.length }} {{ DI('models.Match.ROUND_STATUS_TEXT')[status] }}</span>
+    </a>
+  {%- endfor %}
+  </td>
+</tr>

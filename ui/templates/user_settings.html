@@ -1,0 +1,42 @@
+{% extends "layout/user_base.html" %}
+{% block user_content %}
+<div class="section">
+  <div class="section__header">
+    <h1 class="section__title">Settings</h1>
+  </div>
+  <div class="section__body"><form method="post">
+  {%- if req.query.updated !== undefined %}
+    <div class="typo">
+      <blockquote class="success">
+        Your settings has been updated.
+      </blockquote>
+    </div>
+  {%- endif %}
+    <div class="row">
+      <div class="medium-5 columns">
+        <label>Default Compiler</label>
+        <select class="select" name="compiler">
+        {% for name, label in DI("config.compile.display") %}
+          <option value="{{ name }}"{% if udoc.settings.compiler == name %} selected{% endif %}>{{ label }}</option>
+        {% endfor %}
+        </select>
+      </div>
+    </div>
+    <div class="row">
+      <div class="medium-5 columns">
+        <label>Identity Visibility</label>
+        <select class="select" name="hideId">
+          <option value="true"{% if udoc.settings.hideId === true %} selected{% endif %}>Hide</option>
+          <option value="false"{% if udoc.settings.hideId !== true %} selected{% endif %}>Public</option>
+        </select>
+      </div>
+    </div>
+    <div class="row">
+      <div class="medium-5 columns">
+        <input type="hidden" name="_csrf" value="{{ ui_context.csrfToken }}">
+        <button class="primary rounded button" type="submit">Save</button>
+      </div>
+    </div>
+  </form></div>
+</div>
+{% endblock %}

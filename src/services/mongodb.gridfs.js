@@ -32,6 +32,16 @@ export default async (dbConnection) => {
         });
       });
     },
+    removeAsync(options) {
+      return new Promise((resolve, reject) => {
+        gfs.remove(options, (err) => {
+          if (err) {
+            return reject(err);
+          }
+          resolve();
+        });
+      });
+    },
   };
 
 };

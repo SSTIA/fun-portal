@@ -1,7 +1,7 @@
 import _ from 'lodash';
 import fsp from 'fs-promise';
 import mongoose from 'mongoose';
-import async from 'async';
+import utils from 'libs/utils';
 import objectId from 'libs/objectId';
 import errors from 'libs/errors';
 
@@ -23,9 +23,16 @@ export default () => {
       logBlob: mongoose.Schema.Types.ObjectId,  // grid fs
       text: String,
       summary: String,
+      usedTime: Number,   // extracted from summary by controller
     }],
   }, {
     timestamps: true,
+    toObject: { virtuals: true },
+    toJSON: { virtuals: true },
+  });
+
+  MatchSchema.virtual('usedTime').get(function () {
+    return _.sumBy(this.rounds, 'usedTime');
   });
 
   // Match Model
@@ -65,42 +72,39 @@ export default () => {
 
   MatchSchema.statics.ROUND_STATUS_TEXT = MatchSchema.statics.STATUS_TEXT;
 
-  async function updateSingleMatchStatus(matchId) {
-    try {
-      const match = await Match.getMatchObjectByIdAsync(matchId);
-      match.updateMatchStatus();
-      await match.save();
-    } catch (ignored) {
-      // ignore errors
-    }
-  }
-
-  /**
-   * Single worker queue to deal with match status updates to avoid race conditions
-   */
-  const matchStatusUpdateQueue = async.queue((matchId, callback) => {
-    updateSingleMatchStatus(matchId).then(() => callback());
-  }, 1);
-
-  /**
-   * Update the match status when round status is updated
-   */
   MatchSchema.pre('save', function (next) {
-    const modifiedPaths = this.modifiedPaths();
-    if (_.some(modifiedPaths, path => path.match(/^rounds\.\d+\.status$/))) {
-      matchStatusUpdateQueue.push(this._id);
-    }
+    this.__lastModifiedPaths = this.modifiedPaths();
     next();
   });
 
+  MatchSchema.post('save', function () {
+    const mdoc = this.toObject();
+    Promise.all(this.__lastModifiedPaths.map(async (path) => {
+      let m;
+      if (path === 'status') {
+        await DI.eventBus.emitAsyncWithProfiling('match.status:updated::**', mdoc);
+      } else if (m = path.match(/^rounds\.(\d+)$/)) {
+        const rdoc = mdoc.rounds[m[1]];
+        await DI.eventBus.emitAsyncWithProfiling('match.rounds:updated::**', mdoc, rdoc);
+      } else if (m = path.match(/^rounds\.(\d+)\.status$/)) {
+        const rdoc = mdoc.rounds[m[1]];
+        await DI.eventBus.emitAsyncWithProfiling('match.rounds.status:updated::**', mdoc, rdoc);
+      }
+    }));
+  });
+
   /**
-   * Broadcast match status changed event when it is changed
+   * Update the match status one by one when round status is updated
    */
-  MatchSchema.pre('save', function (next) {
-    if (this.isModified('status')) {
-      setTimeout(() => DI.eventBus.emit('match.statusChanged', this), 1000);
-    }
-    next();
+  const updateStatusQueue = new utils.DedupWorkerQueue({
+    delay: 15,
+    asyncWorkerFunc: mdocid => {
+      return Match.updateMatchStatusAsync(mdocid);
+    },
+  });
+
+  DI.eventBus.on('match.rounds.status:updated', mdoc => {
+    updateStatusQueue.push(String(mdoc._id));
   });
 
   /**
@@ -109,18 +113,14 @@ export default () => {
    * @param  {String}  matchStatus
    * @return {Boolean}
    */
-  MatchSchema.statics.isRunningStatus = function (matchStatus) {
-    if (matchStatus === Match.STATUS_PENDING) {
-      return true;
-    }
-    if (matchStatus === Match.STATUS_RUNNING) {
-      return true;
-    }
-    return false;
+  MatchSchema.statics.isEffectiveStatus = function (matchStatus) {
+    return matchStatus === Match.STATUS_U1WIN ||
+      matchStatus === Match.STATUS_U2WIN ||
+      matchStatus === Match.STATUS_DRAW;
   };
 
   /**
-   * Get the match object by userId
+   * Get the match object by match id
    *
    * @return {Match} Mongoose match object
    */
@@ -140,6 +140,20 @@ export default () => {
   };
 
   /**
+   * Get the round and match object by match id and round id.
+   *
+   * @return {[Match, Round]}
+   */
+  MatchSchema.statics.getRoundObjectByIdAsync = async function (mdocid, rdocid) {
+    const mdoc = await Match.getMatchObjectByIdAsync(mdocid);
+    const rdoc = mdoc.rounds.find(rdoc => rdoc._id.equals(rdocid));
+    if (rdoc === undefined) {
+      throw new errors.UserError('Round not found');
+    }
+    return [mdoc, rdoc];
+  };
+
+  /**
    * Get round status from fun-judge exit code
    * @param  {Number} exitCode
    * @return {String}
@@ -151,15 +165,20 @@ export default () => {
     return Match.STATUS_SYSTEM_ERROR;
   };
 
+  let openingCache = {};
+
   /**
    * Get opening data from opening id
    * @param  {String} openingId
    * @return {String}
    */
   MatchSchema.statics.getOpeningFromIdAsync = async function (openingId) {
-    const filePath = `./openings/${openingId}.json`;
-    const content = await fsp.readFile(filePath);
-    return content.toString();
+    if (!openingCache[openingId]) {
+      const filePath = `./openings/${openingId}.json`;
+      const content = await fsp.readFile(filePath);
+      openingCache[openingId] = content.toString();
+    }
+    return openingCache[openingId];
   };
 
   /**
@@ -183,6 +202,23 @@ export default () => {
   }
 
   /**
+   * Push a round task into the queue
+   */
+  async function publishRoundTaskAsync(mdoc, rdoc) {
+    await DI.mq.publish('judge', {
+      mdocid: String(mdoc._id),
+      s1docid: String(mdoc.u1Submission),
+      s2docid: String(mdoc.u2Submission),
+      u1docid: String(mdoc.u1),
+      u2docid: String(mdoc.u2),
+      rid: rdoc._id,
+      u1field: rdoc.u1Black ? 'black' : 'white',
+      opening: await Match.getOpeningFromIdAsync(rdoc.openingId),
+      rules: DI.config.match.rules,
+    });
+  }
+
+  /**
    * Add all matches for a new submission. If the submission have related matches
    * previously, they will be removed.
    *
@@ -191,33 +227,60 @@ export default () => {
    * @param {[{_id: User, sdocid: Submission}]} s2u2docs
    */
   MatchSchema.statics.addMatchesForSubmissionAsync = async function (s1, u1, s2u2docs) {
+    await Match.remove({ u1Submission: s1 });
     if (s2u2docs.length === 0) {
       return [];
     }
-    await Match.remove({ u1Submission: s1 });
-    const mdocs = await Match.insertMany(s2u2docs.map(s2u2doc => ({
-      status: Match.STATUS_PENDING,
-      u1,
-      u2: s2u2doc._id,
-      u1Submission: s1,
-      u2Submission: s2u2doc.sdocid,
-      rounds: generateRoundDocs(),
-    })));
-    // push each round of each match into the queue
-    for (const match of mdocs) {
-      for (const round of match.rounds) {
-        await DI.mq.publish('judge', {
-          mdocid: String(match._id),
-          s1docid: String(match.u1Submission),
-          s2docid: String(match.u2Submission),
-          rid: round._id,
-          u1field: round.u1Black ? 'black' : 'white',
-          opening: await Match.getOpeningFromIdAsync(round.openingId),
-          rules: DI.config.match.rules,
-        });
-      }
-    }
+
+    const endProfile = utils.profile('Match.addMatchesForSubmissionAsync', DI.config.profiling.addMatches);
+
+    const mdocs = [];
+    await Promise.all(s2u2docs.map(async s2u2doc => {
+      const mdoc = new Match({
+        status: Match.STATUS_PENDING,
+        u1,
+        u2: s2u2doc._id,
+        u1Submission: s1,
+        u2Submission: s2u2doc.sdocid,
+        usedTime: 0,
+        rounds: generateRoundDocs(),
+      });
+      await mdoc.save();
+      // push each round of each match into the queue
+      await Promise.all(mdoc.rounds.map(rdoc => publishRoundTaskAsync(mdoc, rdoc)));
+      mdocs.push(mdoc);
+    }));
+
+    endProfile();
+
     return mdocs;
+  };
+
+  /**
+   * Reset match and regenerate rounds for a match.
+   */
+  MatchSchema.statics.rejudgeMatchAsync = async function (mdocid) {
+    const mdoc = await Match.getMatchObjectByIdAsync(mdocid);
+    mdoc.status = Match.STATUS_PENDING;
+    mdoc.rounds = generateRoundDocs();
+    await mdoc.save();
+    await Promise.all(mdoc.rounds.map(rdoc => publishRoundTaskAsync(mdoc, rdoc)));
+    return mdoc;
+  };
+
+  /**
+   * Rejudge system error matches
+   */
+  MatchSchema.statics.rejudgeErrorMatchAsync = async function () {
+    const mdocCursor = Match
+      .find({ status: Match.STATUS_SYSTEM_ERROR })
+      .sort({ _id: 1 })
+      .cursor();
+    for (let mdoc = await mdocCursor.next(); mdoc !== null; mdoc = await mdocCursor.next()) {
+      DI.logger.debug('Match.rejudgeErrorMatchAsync: %s', mdoc._id);
+      await DI.models.Match.rejudgeMatchAsync(mdoc._id);
+    }
+    DI.logger.debug('Match.rejudgeErrorMatchAsync: done');
   };
 
   /**
@@ -249,7 +312,7 @@ export default () => {
   /**
    * Update match status according to round status
    */
-  MatchSchema.methods.updateMatchStatus = function () {
+  MatchSchema.methods.updateStatus = function () {
     const statusStat = {
       [Match.STATUS_PENDING]: 0,
       [Match.STATUS_RUNNING]: 0,
@@ -283,6 +346,12 @@ export default () => {
     }
   };
 
+  MatchSchema.statics.updateMatchStatusAsync = async function (mdocid) {
+    const mdoc = await Match.getMatchObjectByIdAsync(mdocid);
+    mdoc.updateStatus();
+    await mdoc.save();
+  };
+
   /**
    * Mark a pending round as running
    *
@@ -291,13 +360,10 @@ export default () => {
    * @return {Match}
    */
   MatchSchema.statics.judgeStartRoundAsync = async function (mdocid, rid) {
-    const mdoc = await Match.getMatchObjectByIdAsync(mdocid);
-    const round = mdoc.rounds.find(rdoc => rdoc._id.equals(rid));
-    if (round !== undefined) {
-      round.status = Match.STATUS_RUNNING;
-      round.beginJudgeAt = new Date();
-      await mdoc.save();
-    }
+    const [mdoc, rdoc] = await Match.getRoundObjectByIdAsync(mdocid, rid);
+    rdoc.status = Match.STATUS_RUNNING;
+    rdoc.beginJudgeAt = new Date();
+    await mdoc.save();
     return mdoc;
   };
 
@@ -319,33 +385,60 @@ export default () => {
     ) {
       throw new Error(`judgeCompleteRoundAsync: status ${status} is invalid`);
     }
-    const mdoc = await Match.getMatchObjectByIdAsync(mdocid);
-    const round = mdoc.rounds.find(rdoc => rdoc._id.equals(rid));
-    if (round !== undefined) {
-      round.status = status;
-      round.endJudgeAt = new Date();
-      if (!round.beginJudgeAt) {
-        round.beginJudgeAt = new Date();
-      }
-      _.assign(round, extra);
-      await mdoc.save();
+    const [mdoc, rdoc] = await Match.getRoundObjectByIdAsync(mdocid, rid);
+    rdoc.status = status;
+    rdoc.endJudgeAt = new Date();
+    if (!rdoc.beginJudgeAt) {
+      rdoc.beginJudgeAt = new Date();
     }
+    if (extra.logBlobStream) {
+      // if a log stream is specified, put it into gridfs
+      const file = await DI.gridfs.putBlobAsync(extra.logBlobStream, {
+        contentType: 'text/plain',
+        metadata: {
+          type: 'match.log',
+          match: mdocid,
+          round: rid,
+        },
+      });
+      extra.logBlob = file._id;
+      extra.logBlobStream = null;
+    }
+    _.assign(rdoc, extra);
+    await mdoc.save();
     return mdoc;
   };
 
   /**
    * Get all related matches for a submission
    * @param  {MongoId} sid
-   * @return {[Match]}
+   * @return {[Cursor]}
    */
-  MatchSchema.statics.getMatchesForSubmissionAsync = async function (sid) {
-    const mdocs = await Match.find({
-      $or: [
-        { u1Submission: sid },
-        { u2Submission: sid },
-      ],
-    }).sort({ _id: -1 }).limit(20);
-    return mdocs;
+  MatchSchema.statics.getMatchesForSubmissionCursor = function (sid) {
+    return Match
+      .find({
+        $or: [
+          { u1Submission: sid },
+          { u2Submission: sid },
+        ],
+      })
+      .sort({ _id: -1 });
+  };
+
+  /**
+   * Get all pending, running or system_error matches
+   */
+  MatchSchema.statics.getPendingMatchesAsync = async function (includePending = true) {
+    const $in = [Match.STATUS_RUNNING, Match.STATUS_SYSTEM_ERROR];
+    if (includePending) {
+      $in.push(Match.STATUS_PENDING);
+    }
+    return await Match
+      .find({
+        status: { $in },
+      })
+      .sort({ _id: -1 })
+      .exec();
   };
 
   /**
@@ -359,7 +452,7 @@ export default () => {
     const cursor = Match.find().sort({ _id: 1 }).cursor();
     for (let mdoc = await cursor.next(); mdoc !== null; mdoc = await cursor.next()) {
       ret.all++;
-      mdoc.updateMatchStatus();
+      mdoc.updateStatus();
       if (mdoc.isModified('status')) {
         ret.updated++;
         await mdoc.save();
@@ -381,9 +474,22 @@ export default () => {
       .sort({ _id: -1 })
       .exec();
   };
+  MatchSchema.statics.getPairwiseMatchesCursor = function (sids) {
+    return Match
+      .find({
+        u1Submission: { $in: sids },
+        u2Submission: { $in: sids },
+        status: { $in: [Match.STATUS_U1WIN, Match.STATUS_U2WIN, Match.STATUS_DRAW] },
+      })
+      .sort({ _id: -1 })
+      .cursor();
+  };
+
 
   MatchSchema.index({ u1Submission: 1, u2Submission: -1, status: 1, _id: -1 }, { unique: true });
-  MatchSchema.index({ u2Submission: 1 });
+  MatchSchema.index({ u1Submission: 1, _id: -1 });
+  MatchSchema.index({ u2Submission: 1, _id: -1 });
+  MatchSchema.index({ status: 1, _id: -1 });
 
   Match = mongoose.model('Match', MatchSchema);
   return Match;

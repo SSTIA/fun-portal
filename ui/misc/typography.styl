@@ -10,13 +10,15 @@ html
 *, *:before, *:after
   box-sizing: inherit
 
+#panel
+  background: $bg-color
+
 html
   height: 100%
   color: $text-color
   -webkit-text-size-adjust: 100%
   -ms-text-size-adjust: 100%
   text-rendering: optimizelegibility
-  background: $bg-color
 
 .layout--immersive
   background: #6591a9 url('immersive-bg.jpg') no-repeat center center
@@ -90,6 +92,11 @@ blockquote
   &:before
     display: block
     margin-bottom: 0.6rem
+
+  &.success
+    border-color: green
+    background: #F8F8F8
+    color: lighten($text-color, 10%)
 
   &.note
     border-color: $primary-color
@@ -193,6 +200,7 @@ mark
 
 pre, code, pre tt
   font-family: $code-font-family
+  font-size: rem($font-size-small)
 
 .monospace
   font-family: $code-font-family

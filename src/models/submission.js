@@ -1,30 +1,52 @@
 import _ from 'lodash';
+import fsp from 'fs-promise';
 import uuid from 'uuid';
+import moment from 'moment';
 import mongoose from 'mongoose';
-import async from 'async';
+import utils from 'libs/utils';
 import objectId from 'libs/objectId';
 import errors from 'libs/errors';
+import permissions from 'libs/permissions';
 
 export default () => {
   const SubmissionSchema = new mongoose.Schema({
     user: { type: mongoose.Schema.Types.ObjectId, ref: 'User' },
     version: Number,  // nth submission of this user
     code: String,
+    compiler: String,
     exeBlob: mongoose.Schema.Types.ObjectId,  // grid fs
     status: String,
     text: String,
     taskToken: String,    // A unique token for each task, so that duplicate tasks
                           // won't be judged multiple times
+    rejudge: Boolean,
     matches: [{
       _id: mongoose.Schema.Types.ObjectId,
       status: String,
+      usedTime: Number,
     }],
+    matchLogCleared: Boolean,
   }, {
     timestamps: true,
+    toObject: { virtuals: true },
+    toJSON: { virtuals: true },
+  });
+
+  /**
+   * Get total used time based on used time of each match
+   */
+  SubmissionSchema.virtual('totalUsedTime').get(function () {
+    return _.sumBy(this.matches, 'usedTime');
   });
 
   // Submission Model
   let Submission;
+
+  SubmissionSchema.statics.HOT_STATUS_COLD = 0;
+  SubmissionSchema.statics.HOT_STATUS_GLOBAL_LIMIT = 1;
+  SubmissionSchema.statics.HOT_STATUS_QUOTA_LIMIT = 2;
+  SubmissionSchema.statics.HOT_STATUS_SUBMISSION_LIMIT = 3;
+  SubmissionSchema.statics.HOT_STATUS_TIME_LIMIT = 4;
 
   SubmissionSchema.statics.STATUS_PENDING = 'pending';
   SubmissionSchema.statics.STATUS_COMPILING = 'compiling';
@@ -42,51 +64,87 @@ export default () => {
     'effective': 'Effective',
   };
 
-  async function updateSingleSubmissionStatus(submissionId) {
-    try {
-      const submission = await Submission.getSubmissionObjectByIdAsync(submissionId);
-      submission.updateSubmissionStatus();
-      await submission.save();
-    } catch (ignored) {
-      // ignore errors
-    }
-  }
-
-  /**
-   * Single worker queue to deal with submission status updates to avoid race conditions
-   */
-  const submissionStatusUpdateQueue = async.queue((submissionId, callback) => {
-    updateSingleSubmissionStatus(submissionId).then(() => callback());
-  }, 1);
-
-  /**
-   * Update the submission status when match status is updated
-   */
   SubmissionSchema.pre('save', function (next) {
-    const modifiedPaths = this.modifiedPaths();
-    if (_.some(modifiedPaths, path => path.match(/^matches\.\d+\.status$/))) {
-      submissionStatusUpdateQueue.push(this._id);
-    }
+    this.__lastIsNew = this.isNew;
+    this.__lastModifiedPaths = this.modifiedPaths();
     next();
+  });
+
+  SubmissionSchema.post('save', function () {
+    const sdoc = this.toObject();
+    Promise.all([
+      (async () => {
+        if (this.__lastIsNew) {
+          await DI.eventBus.emitAsyncWithProfiling('submission:created::**', sdoc);
+        }
+      })(),
+      ...this.__lastModifiedPaths.map(async (path) => {
+        let m;
+        if (path === 'status') {
+          await DI.eventBus.emitAsyncWithProfiling('submission.status:updated::**', sdoc);
+        } else if (m = path.match(/^matches\.(\d+)\.status$/)) {
+          const smdoc = sdoc.matches[m[1]];
+          await DI.eventBus.emitAsyncWithProfiling('submission.matches.status:updated::**', sdoc, smdoc);
+        }
+      }),
+    ]);
+  });
+
+  /**
+   * Update the submission status one by one when match status is updated
+   */
+  const updateStatusQueue = new utils.DedupWorkerQueue({
+    delay: 1000,
+    asyncWorkerFunc: sdocid => {
+      return Submission.updateSubmissionStatusAsync(sdocid);
+    },
+  });
+
+  DI.eventBus.on('submission.matches.status:updated', sdoc => {
+    updateStatusQueue.push(String(sdoc._id));
+  });
+
+  /**
+   * Update corresponding smdoc status when a match status is updated
+   */
+  DI.eventBus.on('match.status:updated', async mdoc => {
+    try {
+      await Submission.updateSubmissionMatchAsync(mdoc._id);
+    } catch (err) {
+      DI.logger.error(err.stack);
+    }
+  });
+
+  /**
+   * Update today's quota when a submission status is updated
+   * Notice that there is a window between submission_status_updated and quota_updated
+   */
+  DI.eventBus.on('submission.status:updated', async sdoc => {
+    if (sdoc.status === Submission.STATUS_EFFECTIVE && !sdoc.rejudge) {
+      Submission.incrUsedSubmissionQuotaAsync(sdoc.user, sdoc.totalUsedTime);
+    }
   });
 
   /**
    * Update the status of the submission based on status of matches.
    * Status will be changed only from `running` to `effective`, or reversed.
    */
-  SubmissionSchema.methods.updateSubmissionStatus = function () {
+  SubmissionSchema.methods.updateStatus = function () {
     if (this.status !== Submission.STATUS_RUNNING && this.status !== Submission.STATUS_EFFECTIVE) {
       return;
     }
     if (!this.matches) {
       return;
     }
-    const hasRunningMatch = _.some(this.matches, mdoc => DI.models.Match.isRunningStatus(mdoc.status));
-    if (hasRunningMatch) {
-      this.status = Submission.STATUS_RUNNING;
-    } else {
-      this.status = Submission.STATUS_EFFECTIVE;
-    }
+    const allEffective = _.every(this.matches, mdoc => DI.models.Match.isEffectiveStatus(mdoc.status));
+    const newStatus = allEffective ? Submission.STATUS_EFFECTIVE : Submission.STATUS_RUNNING;
+    this.status = newStatus;
+  };
+
+  SubmissionSchema.statics.updateSubmissionStatusAsync = async function (sdocid) {
+    const sdoc = await Submission.getSubmissionObjectByIdAsync(sdocid);
+    sdoc.updateStatus();
+    await sdoc.save();
   };
 
   /**
@@ -130,23 +188,62 @@ export default () => {
   /**
    * Check whether a user is allowed to submit new code
    *
-   * @return {Boolean}
+   * @return {[Number, Any]}
+   *         Number is HOT_STATUS
+   *         for HOT_STATUS_GLOBAL_LIMIT, 2nd element is the reason
+   *         for HOT_STATUS_QUOTA_LIMIT, 2nd element is the quota used
+   *         for HOT_STATUS_TIME_LIMIT, 2nd element is the remaining time
    */
   SubmissionSchema.statics.isUserAllowedToSubmitAsync = async function (uid) {
+    const udoc = await DI.models.User.getUserObjectByIdAsync(uid);
+
+    // Global submission lock?
+    const lockdoc = await DI.models.Sys.getAsync('lock_submission', false);
+    if (lockdoc && !udoc.hasPermission(permissions.BYPASS_SUBMISSION_LOCK)) {
+      const reason = await DI.models.Sys.getAsync('lock_submission_reason', 'Unknown');
+      return [Submission.HOT_STATUS_GLOBAL_LIMIT, reason];
+    }
+
+    // Submission quota limit?
+    const usedTime = await Submission.getUsedSubmissionQuotaAsync(uid);
+    if (usedTime > DI.config.compile.limits.maxExecQuota && !udoc.hasPermission(permissions.BYPASS_SUBMISSION_QUOTA)) {
+      return [Submission.HOT_STATUS_QUOTA_LIMIT, usedTime];
+    }
+
+    // No last submission?
     const sdocs = await Submission.getUserSubmissionsCursor(uid).limit(1).exec();
     if (sdocs.length === 0) {
-      return [true];
+      return [Submission.HOT_STATUS_COLD];
     }
+
+    // Last submission is CE?
     const last = sdocs[0];
     if (last.status === Submission.STATUS_COMPILE_ERROR) {
-      return [true];
+      return [Submission.HOT_STATUS_COLD];
+    }
+
+    let limit;
+
+    // Last submission is running?
+    if (last.status === Submission.STATUS_PENDING
+      || last.status === Submission.STATUS_COMPILING
+      || last.status === Submission.STATUS_RUNNING) {
+      return [Submission.HOT_STATUS_SUBMISSION_LIMIT];
+    }
+
+    // Submission interval limit?
+    if (udoc.hasPermission(permissions.BYPASS_SUBMISSION_LIMIT)) {
+      limit = DI.config.compile.limits.minSubmitInterval || 1000;
+    } else {
+      limit = DI.config.compile.limits.submitInterval;
     }
     const interval = Date.now() - last.createdAt.getTime();
-    const remaining = DI.config.compile.limits.submitInterval - interval;
-    if (remaining <= 0) {
-      return [true];
+    const remaining = limit - interval;
+    if (remaining > 0) {
+      return [Submission.HOT_STATUS_TIME_LIMIT, remaining];
     }
-    return [false, remaining];
+
+    return [Submission.HOT_STATUS_COLD];
   };
 
   /**
@@ -154,10 +251,10 @@ export default () => {
    *
    * @return {Submission}
    */
-  SubmissionSchema.statics.createSubmissionAsync = async function (uid, code) {
-    const [submitAllowed] = await Submission.isUserAllowedToSubmitAsync(uid);
-    if (!submitAllowed) {
-      throw new errors.UserError('You are not allowed to submit new code currently');
+  SubmissionSchema.statics.createSubmissionAsync = async function (uid, code, compiler) {
+    const [hotStatus] = await Submission.isUserAllowedToSubmitAsync(uid);
+    if (hotStatus !== Submission.HOT_STATUS_COLD) {
+      throw new errors.UserError('You are not allowed to submit new code currently.');
     }
     if (code.length > DI.config.compile.limits.sizeOfCode) {
       throw new errors.ValidationError('Your source code is too large.');
@@ -167,8 +264,10 @@ export default () => {
       user: uid,
       version,
       code,
+      compiler,
       status: Submission.STATUS_PENDING,
       text: '',
+      rejudge: false,
     });
     await Submission._compileForMatchAsync(sdoc);
     return sdoc;
@@ -193,6 +292,7 @@ export default () => {
     sdoc.text = '';
     sdoc.taskToken = null;
     sdoc.matches = null;
+    sdoc.rejudge = true;
     await Submission._compileForMatchAsync(sdoc);
     return sdoc;
   };
@@ -206,7 +306,7 @@ export default () => {
   SubmissionSchema.statics._compileForMatchAsync = async function (sdoc) {
     if (sdoc.taskToken) {
       const error = new Error('_compileForMatchAsync: Expect taskToken is undefined');
-      DI.logger.error(error);
+      DI.logger.error(error.stack);
     }
     sdoc.exeBlob = null;
     sdoc.status = Submission.STATUS_PENDING;
@@ -243,6 +343,71 @@ export default () => {
       { $project: { user: 1, createdAt : 1, status: 1 } },
       { $group: { _id: '$user', sdocid: { $first: '$_id' } } },
     ]).allowDiskUse(true).exec();
+  };
+
+  /**
+   * Shrink the log of matches in previous submissions
+   */
+  SubmissionSchema.statics.shrink = async function () {
+    DI.logger.info('Collecting last submissions...');
+    const lsdocs = await DI.models.Submission.getLastSubmissionsByUserAsync();
+    const sdocWhitelist = {};
+    lsdocs.forEach(lsdoc => sdocWhitelist[lsdoc.sdocid.toString()] = true);
+
+    const fsFiles = DI.mongodbConnection.collection('fs.files');
+    const fsChunks = DI.mongodbConnection.collection('fs.chunks');
+
+    let shrinked = 0;
+    const n = await DI.models.Submission.count({});
+    const sdocs = await DI.models.Submission.find({}, { status: 1, matchLogCleared: 1 }).sort({ _id: 1 }).exec();
+    for (const sdoc of sdocs) {
+      if (sdoc.matchLogCleared === true) {
+        DI.logger.info('[%d / %d] Ignored processed submission %s', ++shrinked, n, sdoc._id);
+      } else if (sdoc.status !== Submission.STATUS_EFFECTIVE) {
+        DI.logger.info('[%d / %d] Ignored non-effective submission %s', ++shrinked, n, sdoc._id);
+      } else if (sdocWhitelist[sdoc._id.toString()]) {
+        DI.logger.info('[%d / %d] Ignored last submission %s', ++shrinked, n, sdoc._id);
+      } else {
+        DI.logger.warn('[%d / %d] Shrinking submission %s...', ++shrinked, n, sdoc._id);
+        const mdocCursor = DI.models.Match.find({ u1Submission: sdoc._id }, { 'rounds.logBlob': 1 }).sort({ _id: 1 }).cursor();
+        for (let mdoc = await mdocCursor.next(); mdoc !== null; mdoc = await mdocCursor.next()) {
+          if (mdoc.rounds) {
+            const filesToRemove = [];
+            for (let round of mdoc.rounds) {
+              if (round.logBlob) {
+                filesToRemove.push(round.logBlob);
+                round.logBlob = null;
+              }
+            }
+            try {
+              await fsFiles.remove({ _id: { $in: filesToRemove } });
+              await fsChunks.remove({ files_id: { $in: filesToRemove } });
+            } catch (err) {
+              DI.logger.error(err);
+            }
+            await mdoc.save();
+          }
+        }
+        sdoc.matchLogCleared = true;
+        await sdoc.save();
+      }
+    }
+  };
+
+  /**
+   * Export everyone's latest code
+   */
+  SubmissionSchema.statics.exportCode = async function (location = '') {
+    const directory = location + '/export_' + moment().format('YYYY-MM-DD-HH-mm');
+    await fsp.ensureDir(directory);
+    const lsdocs = await Submission.getLastSubmissionsByUserAsync();
+    for (const lsdoc of lsdocs) {
+      DI.logger.info('%s', lsdoc.sdocid);
+      const sdoc = await Submission.getSubmissionObjectByIdAsync(lsdoc.sdocid);
+      await sdoc.populate('user').execPopulate();
+      await fsp.writeFile(`${directory}/${sdoc.user.profile.studentId}_${sdoc.user.profile.realName}.c`, sdoc.code);
+    }
+    DI.logger.info('Done.');
   };
 
   /**
@@ -314,6 +479,7 @@ export default () => {
       sdoc.matches = _.map(mdocs, mdoc => ({
         _id: mdoc._id,
         status: mdoc.status,
+        usedTime: 0,
       }));
       await sdoc.save();
     }
@@ -339,36 +505,64 @@ export default () => {
   };
 
   /**
-   * Update the status of a mdoc in the submission and determine the submission status
+   * Update the status of a smdoc according to the status of mdoc
    *
-   * @param  {ObjectId} sid
    * @param  {ObjectId} mdocid
-   * @param  {String} status Match Status
    */
-  SubmissionSchema.statics._updateSubMatchStatusAsync = async function (sid, mdocid, status) {
-    const sdoc = await Submission.getSubmissionObjectByIdAsync(sid);
+  SubmissionSchema.statics.updateSubmissionMatchAsync = async function (mdocid) {
+    const mdoc = await DI.models.Match.getMatchObjectByIdAsync(mdocid);
+    const sdoc = await Submission.getSubmissionObjectByIdAsync(mdoc.u1Submission);
     if (!sdoc.matches) {
       // Only compiled submission contains `matches`
       return;
     }
-    const mdoc = sdoc.matches.find(mdoc => mdoc._id.equals(mdocid));
-    if (mdoc === undefined) {
+    const smdoc = sdoc.matches.find(smdoc => smdoc._id.equals(mdocid));
+    if (smdoc === undefined) {
       return;
     }
-    mdoc.status = status;
+    smdoc.status = mdoc.status;
+    smdoc.usedTime = mdoc.usedTime;
     await sdoc.save();
   };
 
   /**
-   * Update corresponding sub-match status when a match status is updated
+   * Get all pending, running, compiling or system_error matches
    */
-  DI.eventBus.on('match.statusChanged', (match) => {
-    Submission._updateSubMatchStatusAsync(
-      objectId.getFromIdOrDoc(match.u1Submission),
-      match._id,
-      match.status
-    ).catch(err => DI.logger.error(err));
-  });
+  SubmissionSchema.statics.getPendingSubmissionsCursor = function () {
+    return Submission
+      .find({
+        status: { $in: [Submission.STATUS_PENDING, Submission.STATUS_RUNNING, Submission.STATUS_COMPILING, Submission.STATUS_SYSTEM_ERROR] },
+      })
+      .sort({ _id: -1 });
+  };
+
+  /**
+   * Get used submission quota of a user
+   *
+   * @param  {ObjectId} uid
+   * @return {Number}
+   */
+  SubmissionSchema.statics.getUsedSubmissionQuotaAsync = async function (uid) {
+    const result = parseInt(await DI.redis.getAsync(`used_quota:${uid}`));
+    if (isNaN(result)) {
+      return 0;
+    }
+    return result;
+  };
+
+  /**
+   * Increase used submission quota of a user
+   *
+   * @param  {ObjectId} uid
+   * @param  {Number} usedTime used time in milliseconds
+   */
+  SubmissionSchema.statics.incrUsedSubmissionQuotaAsync = async function (uid, usedTime) {
+    return await DI.redis
+      .multi()
+      .incrby(`used_quota:${uid}`, usedTime)
+      .expireat(`used_quota:${uid}`, moment().add(1, 'd').startOf('day').unix())
+      .execAsync();
+  };
 
   SubmissionSchema.index({ user: 1, _id: -1 });
   SubmissionSchema.index({ status: 1, _id: -1 });

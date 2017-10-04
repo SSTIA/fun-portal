@@ -12,8 +12,14 @@
       </div>
       <ol class="menu">
         <li class="menu__item">
+          <a href="{{ url('/submission/running') }}" class="menu__link{% if page_name == 'submission_running' %} active{% endif %}">
+            <span class="icon icon-hourglass"></span>
+            Running Submissions
+          </a>
+        </li>
+        <li class="menu__item">
           <a href="{{ url('/submission/all') }}" class="menu__link{% if page_name == 'submission_all' %} active{% endif %}">
-            <span class="icon icon-flag"></span>
+            <span class="icon icon-unordered_list"></span>
             All Submissions
           </a>
         </li>

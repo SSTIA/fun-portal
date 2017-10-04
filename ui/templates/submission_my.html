@@ -4,49 +4,17 @@
   <div class="section__header">
     <h1 class="section__title">My Submissions</h1>
   </div>
-{% if sdocs|length === 0 %}
+{%- if sdocs|length === 0 %}
   <div class="section__body typo">
     <blockquote class="note">
       <p>You haven't submitted any code. <a href="{{ url('/submission/create') }}">Click here</a> to submit your code!</p>
     </blockquote>
   </div>
-{% else %}
+{%- else %}
   <div class="section__body no-padding">
-    <table class="data-table">
-      <colgroup>
-        <col class="col--status submission-status--border">
-        <col class="col--version">
-        <col class="col--time">
-        <col class="col--action">
-      </colgroup>
-      <thead>
-        <tr>
-          <th class="col--status submission-status--border">Status</th>
-          <th class="col--version">Version</th>
-          <th class="col--time">Submitted At</th>
-          <th class="col--action">Actions</th>
-        </tr>
-      </thead>
-      <tbody>
-      {% for sdoc in sdocs %}
-        <tr>
-          <td class="col--status submission-status--border {{ sdoc.status }}">
-            <span class="icon submission-status--icon {{ sdoc.status }}"></span>
-            <span class="submission-status--text {{ sdoc.status }}">
-              {{ DI('models.Submission.STATUS_TEXT')[sdoc.status] }}
-            </span>
-          </td>
-          <td class="col--version">#{{ sdoc.version }}</td>
-          <td class="col--time">{{ sdoc.createdAt|datetime }}</td>
-          <td class="col--action">
-            <a href="{{ url('/submission/{0}', false, [sdoc._id]) }}" class="typo-a">Detail</a>
-          </td>
-        </tr>
-      {% endfor %}
-      </tbody>
-    </table>
-    {{ paginator.render(req.data.page, pages, url('/submission/my/{page}')) }}
+    {%- include "partials/submissions_table.html" -%}
+    {{ paginator.render(page, pages, url('/submission/my/{page}')) }}
   </div>
-{% endif %}
+{%- endif %}
 </div>
 {% endblock %}

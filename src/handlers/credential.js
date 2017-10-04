@@ -1,5 +1,6 @@
 import * as web from 'express-decorators';
 import utils from 'libs/utils';
+import sanitizers from 'libs/sanitizers';
 import errors from 'libs/errors';
 import credential from 'libs/credential';
 import permissions from 'libs/permissions';
@@ -40,7 +41,7 @@ export default class Handler {
   // ssoUrl === false
   @web.post('/login')
   @web.middleware(utils.sanitizeBody({
-    studentId: utils.checkNonEmptyString(),
+    studentId: sanitizers.nonEmptyString(),
   }))
   async postLoginAction(req, res) {
     if (DI.config.ssoUrl !== false) {

@@ -5,13 +5,20 @@
     <h1 class="section__title">My Profile</h1>
   </div>
   <div class="section__body"><form method="post">
-  {% if udoc.profile.initial %}
+  {%- if udoc.profile.initial %}
     <div class="typo">
       <blockquote class="note">
         You are required to fill in your personal information before continuing.
       </blockquote>
     </div>
-  {% endif %}
+  {%- endif %}
+  {%- if req.query.updated !== undefined %}
+    <div class="typo">
+      <blockquote class="success">
+        Your profile has been updated.
+      </blockquote>
+    </div>
+  {%- endif %}
     <div class="row">
       <div class="medium-5 columns">
         <label>Student ID</label>

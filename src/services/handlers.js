@@ -2,7 +2,7 @@ import express from 'express';
 import glob from 'glob';
 import errors from 'libs/errors';
 
-export default (app, logger) => {
+export default (app, io, logger) => {
 
   const router = express.Router();
   app.use(DI.config.urlPrefix, router);
@@ -11,7 +11,12 @@ export default (app, logger) => {
     .sync(`${__codeRoot}/handlers/*.js`)
     .map(handler => {
       const hi = new (require(handler).default)(app);
-      hi.register(router);
+      if (hi.register) {
+        hi.register(router);
+      }
+      if (hi.registerSocket) {
+        hi.registerSocket(io);
+      }
     });
 
   // Fallback: Generate 404

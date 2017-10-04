@@ -1,0 +1,35 @@
+<tr data-id="round_{{ rdoc._id }}">
+  <td class="col--round-no">#{{ loop.index }}</td>
+  <td class="col--opening">{{ rdoc.openingId }}</td>
+  {%- set status = DI('models.Match.getRelativeStatus')(rdoc.status, true) -%}
+  <td class="col--challenger">
+    <div class="field-icon field--{% if rdoc.u1Black %}black{% else %}white{% endif %}"></div>
+    <span class="icon round-status--icon {{ status }}"></span>
+    <span class="round-status--text {{ status }}">
+      {{ DI('models.Match.ROUND_STATUS_TEXT')[status] }}
+    </span>
+  </td>
+  {%- set status = DI('models.Match.getRelativeStatus')(rdoc.status, false) -%}
+  <td class="col--challengee">
+    <div class="field-icon field--{% if rdoc.u2Black %}black{% else %}white{% endif %}"></div>
+    <span class="icon round-status--icon {{ status }}"></span>
+    <span class="round-status--text {{ status }}">
+      {{ DI('models.Match.ROUND_STATUS_TEXT')[status] }}
+    </span>
+  </td>
+  <td class="col--begin-at">
+    {%- if rdoc.beginJudgeAt %}
+      {{ rdoc.beginJudgeAt|datetime }}
+    {%- else %}
+      --
+    {%- endif %}
+  </td>
+  <td class="col--end-at">
+    {%- if rdoc.endJudgeAt %}
+      {{ rdoc.endJudgeAt|datetime }}
+    {%- else %}
+      --
+    {%- endif %}
+  </td>
+  <td class="col--action"><a class="typo-a" href="{{ url('/match/{0}/round/{1}', false, [mdoc._id, rdoc._id]) }}">View Board</a></td>
+</tr>

@@ -6,18 +6,18 @@
       <div class="section__header">
         <h1 class="section__title">Sign In</h1>
       </div>
-    {% if DI('config.ssoUrl') %}
+    {%- if DI('config.ssoUrl') %}
       <div class="section__body">
         <div class="supplementary">
           <p>Use your Tongji account to sign in. Don't worry, we will not save your credentials.</p>
         </div>
       </div>
       <div class="section__body"><form action="http://tjis.tongji.edu.cn:58080/amserver/UI/Login">
-      {% if error !== undefined %}
+      {%- if error !== undefined %}
         <div class="typo">
           <blockquote class="warn"><p>{{ error }}</p></blockquote>
         </div>
-      {% endif %}
+      {%- endif %}
         <div class="row"><div class="columns">
           <label>Tongji Student ID</label>
           <input type="text" class="textbox" name="Login.Token1" autofocus>
@@ -32,18 +32,18 @@
           <button class="expanded rounded primary button" type="submit">Sign In</button>
         </div></div>
       </form></div>
-    {% else %}
+    {%- else %}
       <div class="section__body">
         <div class="supplementary">
           <p>DEBUG MODE: Input the student id you want to log in as.</p>
         </div>
       </div>
       <div class="section__body"><form method="POST">
-      {% if error !== undefined %}
+      {%- if error !== undefined %}
         <div class="typo">
           <blockquote class="warn"><p>{{ error }}</p></blockquote>
         </div>
-      {% endif %}
+      {%- endif %}
         <div class="row"><div class="columns">
           <label>Student Id</label>
           <input type="text" class="textbox" name="studentId" autofocus>
@@ -53,7 +53,7 @@
           <button class="expanded rounded primary button" type="submit">Sign In</button>
         </div></div>
       </form></div>
-    {% endif %}
+    {%- endif %}
     </div>
   </div>
 </div>

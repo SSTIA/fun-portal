@@ -1,0 +1,26 @@
+{% extends "layout/user_base.html" %}
+{% block user_content %}
+<div class="section">
+  <div class="section__header">
+    <h1 class="section__title">System</h1>
+  </div>
+  <div class="section__body"><form method="post">
+    <div class="row">
+      <div class="medium-3 columns">
+        <label>Lock Submission</label>
+        <select class="select" name="lock_submission">
+          {%- set value = sdocs.lock_submission|default(false) %}
+          <option value="true"{% if value == true %} selected{% endif %}>Yes</option>
+          <option value="false"{% if value == false %} selected{% endif %}>No</option>
+        </select>
+      </div>
+      <div class="medium-5 columns end">
+        <label>Reason</label>
+        <input type="text" name="lock_submission_reason" class="textbox" value="{{ sdocs.lock_submission_reason|default('') }}">
+      </div>
+    </div>
+    <input type="hidden" name="_csrf" value="{{ ui_context.csrfToken }}">
+    <input type="submit" value="Save" class="primary rounded button">
+  </form></div>
+</div>
+{% endblock %}

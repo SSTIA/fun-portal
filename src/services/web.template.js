@@ -55,6 +55,7 @@ export default (app) => {
         page_name: pageName,
         ui_context: {
           cdnPrefix: DI.config.cdnPrefix,
+          urlPrefix: DI.config.urlPrefix,
           csrfToken: req.csrfToken ? req.csrfToken() : 'NA',
         },
         ...parameters,

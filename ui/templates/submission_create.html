@@ -14,16 +14,36 @@
         <li>Do not abuse our cloud execution service, such as intentionally trying to shutdown our judge machine.</li>
       </ul>
     </blockquote>
-  {% if not submitAllowed %}
-    <p>Sorry, you cannot submit code now because of exceeding the submission frequency limit.</p>
+  {%- if hotStatus == DI('models.Submission.HOT_STATUS_TIME_LIMIT') %}
+    <p>Sorry, you cannot submit code now because of submitting too frequently.</p>
     <p>Please try again after {{ nextSubmitRemaining|duration }} ({{ (nextSubmitRemaining / 1000)|round }} seconds).</p>
-  {% else %}
+  {%- elif hotStatus == DI('models.Submission.HOT_STATUS_QUOTA_LIMIT') %}
+    <p>Sorry, you cannot submit code <span class="text-red">today</span> because you are only allowed to consume {{ DI('config.compile.limits.maxExecQuota')|duration }} per day.</p>
+    <p>You have consumed {{ usedTime|duration }} ({{ usedTime }}ms).</p>
+  {%- elif hotStatus == DI('models.Submission.HOT_STATUS_SUBMISSION_LIMIT') %}
+    <p>Sorry, you cannot submit code now because your previous submission is pending or running. Please wait for that submission.</p>
+  {%- elif hotStatus == DI('models.Submission.HOT_STATUS_GLOBAL_LIMIT') %}
+    <p>Sorry, code submission is disabled currently. Reason: {{ nextSubmitRemaining }}</p>
+  {%- else %}
     <p>Please paste your C source code of your brain in the text box below. Your code will be automatically compiled and judged by the system.</p>
+  </div>
+  <div class="section__body">
     <form method="post">
       <div class="row">
         <div class="columns">
           <label>C Source Code:</label>
           <textarea name="code" class="monospace textbox" autofocus required></textarea>
+        </div>
+      </div>
+      <div class="row">
+        <div class="medium-5 columns">
+          <label>Compiler:</label>
+          <select class="select" name="compiler">
+          {% for name, label in DI("config.compile.display") %}
+            <option value="{{ name }}"{% if req.credential.settings.compiler == name %} selected{% endif %}>{{ label }}</option>
+          {% endfor %}
+          </select>
+          <p class="help-text">You can change your default compiler in <a href="{{ url('/user/settings') }}">Settings</a>.</p>
         </div>
       </div>
       <div class="row">
@@ -33,7 +53,7 @@
         </div>
       </div>
     </form>
-  {% endif %}
+  {%- endif %}
   </div>
 </div>
 {% endblock %}
@@ -44,7 +64,14 @@
     </div>
     <div class="section__body typo">
       <ul>
-        <li><p>Min interval between submissions: {{ DI('config.compile.limits.submitInterval')|duration }}</p></li>
+        <li><p>Max judge time consumption: <span data-tooltip="{{ DI('config.compile.limits.maxExecQuota') }}ms">{{ DI('config.compile.limits.maxExecQuota')|duration }}</span> per day</p> (consumed <span data-tooltip="{{ usedTime }}ms">{{ usedTime|duration }}</span>)</li>
+        <li><p>Min interval between submissions:
+      {%- if req.credential.hasPermission(permissions.BYPASS_SUBMISSION_LIMIT) %}
+        <span class="text-orange">{{ DI('config.compile.limits.minSubmitInterval')|duration }}</span>
+      {%- else %}
+        {{ DI('config.compile.limits.submitInterval')|duration }}
+      {%- endif %}
+        </p></li>
         <li><p>Max size of Source code: {{ DI('config.compile.limits.sizeOfCode')|filesize }}</p></li>
         <li><p>Max size of compiled exe: {{ DI('config.compile.limits.sizeOfBin')|filesize }}</p></li>
       </ul>

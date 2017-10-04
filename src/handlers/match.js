@@ -2,21 +2,24 @@ import * as web from 'express-decorators';
 import multer from 'multer';
 import fsp from 'fs-promise';
 import utils from 'libs/utils';
+import sanitizers from 'libs/sanitizers';
 import errors from 'libs/errors';
 import permissions from 'libs/permissions';
+import socket from 'libs/socket';
 
 // file limit is infinity
 const logUpload = multer({
   storage: multer.diskStorage({}),
 });
 
+@socket.enable()
 @web.controller('/match')
 export default class Handler {
 
   @web.post('/api/roundBegin')
   @web.middleware(utils.sanitizeBody({
-    mid: utils.checkNonEmptyString(),
-    rid: utils.checkNonEmptyString(),
+    mid: sanitizers.nonEmptyString(),
+    rid: sanitizers.nonEmptyString(),
   }))
   @web.middleware(utils.checkAPI())
   async apiRoundBegin(req, res) {
@@ -29,9 +32,9 @@ export default class Handler {
 
   @web.post('/api/roundError')
   @web.middleware(utils.sanitizeBody({
-    mid: utils.checkNonEmptyString(),
-    rid: utils.checkNonEmptyString(),
-    text: utils.checkNonEmptyString(),
+    mid: sanitizers.nonEmptyString(),
+    rid: sanitizers.nonEmptyString(),
+    text: sanitizers.nonEmptyString(),
   }))
   @web.middleware(utils.checkAPI())
   async apiRoundError(req, res) {
@@ -48,10 +51,10 @@ export default class Handler {
 
   @web.post('/api/roundComplete')
   @web.middleware(utils.sanitizeBody({
-    mid: utils.checkNonEmptyString(),
-    rid: utils.checkNonEmptyString(),
-    exitCode: utils.checkInt(),
-    summary: utils.checkNonEmptyString(),
+    mid: sanitizers.nonEmptyString(),
+    rid: sanitizers.nonEmptyString(),
+    exitCode: sanitizers.int(),
+    summary: sanitizers.nonEmptyString(),
   }))
   @web.middleware(logUpload.single('log'))
   @web.middleware(utils.checkAPI())
@@ -59,30 +62,34 @@ export default class Handler {
     if (!req.file) {
       throw new errors.UserError('Expect logs');
     }
-    const file = await DI.gridfs.putBlobAsync(fsp.createReadStream(req.file.path), {
-      contentType: 'text/plain',
-      metadata: {
-        type: 'match.log',
-        match: req.data.mid,
-        round: req.data.rid,
-      },
-    });
     try {
-      await fsp.remove(req.file.path);
-    } catch (err) {
-      DI.logger.error(err);
-    }
-    const mdoc = await DI.models.Match.judgeCompleteRoundAsync(
-      req.data.mid,
-      req.data.rid,
-      DI.models.Match.getStatusFromJudgeExitCode(req.data.exitCode),
-      {
-        summary: req.data.summary,
-        logBlob: file._id,
-        text: '',
+      let usedTime = 1 * 60 * 1000;
+      try {
+        const sdoc = JSON.parse(req.data.summary);
+        usedTime = sdoc.elapsedRoundTime[0];
+      } catch (err) {
+        // failed to extract elapsed round time
+        DI.logger.error(err.stack);
       }
-    );
-    res.json(mdoc);
+      const mdoc = await DI.models.Match.judgeCompleteRoundAsync(
+        req.data.mid,
+        req.data.rid,
+        DI.models.Match.getStatusFromJudgeExitCode(req.data.exitCode),
+        {
+          summary: req.data.summary,
+          usedTime,
+          logBlobStream: fsp.createReadStream(req.file.path),
+          text: '',
+        }
+      );
+      res.json(mdoc);
+    } finally {
+      try {
+        await fsp.remove(req.file.path);
+      } catch (err) {
+        DI.logger.error(err.stack);
+      }
+    }
   }
 
   @web.get('/refreshStatus')
@@ -99,6 +106,60 @@ export default class Handler {
     res.render('match_detail', {
       page_title: 'Match Detail',
       mdoc,
+      context: {
+        id: mdoc._id.toString(),
+      },
+    });
+  }
+
+  static async socketHandleMatchStatusUpdate(socket, mdocid) {
+    try {
+      const timestamp = Date.now();
+      const mdoc = await DI.models.Match.getMatchObjectByIdAsync(mdocid);
+      socket.emit('update_match_status', {
+        html: DI.webTemplate.render('partials/match_detail_match_status.html', { mdoc }),
+        tsKey: 'mdoc',
+        tsValue: timestamp,
+      });
+    } catch (err) {
+      DI.logger.error(err.stack);
+    }
+  }
+
+  static async socketHandleMatchRoundsUpdate(socket, mdocid, rdocid) {
+    try {
+      const timestamp = Date.now();
+      const mdoc = await DI.models.Match.getMatchObjectByIdAsync(mdocid);
+      const rdoc = mdoc.rounds ? mdoc.rounds.find(rdoc => rdoc._id.equals(rdocid)) : undefined;
+      if (!rdoc) {
+        return;
+      }
+      socket.emit('update_round_row', {
+        html: DI.webTemplate.render('partials/match_detail_round_row.html', { mdoc, rdoc }),
+        tsKey: `rdoc_${rdoc._id}`,
+        tsValue: timestamp,
+      });
+    } catch (err) {
+      DI.logger.error(err.stack);
+    }
+  }
+
+  @socket.namespace('/match_detail')
+  async socketMatchDetailConnect(socket, query, nsp) {
+    if (!DI.config.web.realtimePush) {
+      return;
+    }
+    socket.listenBus('match.status:updated', async mdoc => {
+      if (!mdoc._id.equals(query.id)) {
+        return;
+      }
+      await Handler.socketHandleMatchStatusUpdate(socket, mdoc._id);
+    });
+    socket.listenBus('match.rounds:updated', async (mdoc, rdoc) => {
+      if (!mdoc._id.equals(query.id)) {
+        return;
+      }
+      await Handler.socketHandleMatchRoundsUpdate(socket, mdoc._id, rdoc._id);
     });
   }
 

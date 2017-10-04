@@ -13,6 +13,32 @@
             My Profile
           </a>
         </li>
+        <li class="menu__item">
+          <a href="{{ url('/user/settings') }}" class="menu__link{% if page_name == 'user_settings' %} active{% endif %}">
+            <span class="icon icon-wrench"></span>
+            Settings
+          </a>
+        </li>
+      {%- if req.credential.hasPermission(permissions.VIEW_MANAGE_PORTAL) %}
+        <li class="menu__item">
+          <a href="{{ url('/manage/system') }}" class="menu__link{% if page_name == 'manage_system' %} active{% endif %}">
+            <span class="icon icon-settings"></span>
+            Manage: System
+          </a>
+        </li>
+        <li class="menu__item">
+          <a href="#" class="menu__link{% if page_name == 'manage_queues' %} active{% endif %}">
+            <span class="icon icon-settings"></span>
+            Manage: Queues
+          </a>
+        </li>
+        <li class="menu__item">
+          <a href="{{ url('/manage/matches') }}" class="menu__link{% if page_name == 'manage_matches' %} active{% endif %}">
+            <span class="icon icon-settings"></span>
+            Manage: Matches
+          </a>
+        </li>
+      {%- endif %}
         <li class="menu__seperator"></li>
         <li class="menu__item">
           <form action="{{ url('/logout') }}" method="post">
