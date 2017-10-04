@@ -40,10 +40,34 @@ base:
       width: 20
       height: 20
       winningStones: 5
-    openings:                 # note: opening content will be cached until restart
+    rounds: 3
+    openings:
       - opening1
       - opening2
       - opening3
+      - opening4
+      - opening5
+      - opening6
+      - opening7
+      - opening8
+      - opening9
+      - opening10
+      - opening11
+      - opening12
+      - opening13
+      - opening14
+      - opening15
+      - opening16
+      - opening17
+      - opening18
+      - opening19
+      - opening20
+      - opening21
+      - opening22
+      - opening23
+      - opening24
+      - opening25
+      - opening26
   profiling:
     eventBus: false
     addMatches: false

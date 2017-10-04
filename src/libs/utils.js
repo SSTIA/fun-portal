@@ -72,7 +72,12 @@ utils.substitute = (str, obj) => {
 utils.url = (s, absolute = false, obj = null) => {
   let url = `${DI.config.urlPrefix}${s}`;
   if (absolute) {
-    url = `http://${DI.config.host}${url}`;
+    if (DI.config.port === 80 || DI.config.port === 443) {
+      url = `${DI.config.host}${url}`;
+    }
+    else {
+      url = `${DI.config.host}:${DI.config.port}${url}`;
+    }
   }
   if (obj === null) {
     return url;

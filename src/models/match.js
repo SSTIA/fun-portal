@@ -187,7 +187,12 @@ export default () => {
    */
   function generateRoundDocs() {
     const rounds = [];
-    for (const openingId of DI.config.match.openings) {
+	const ran_openings = [];
+	for (let opening_i = 0; opening_i < DI.config.match.rounds; opening_i++) {
+	  const ran = Math.floor(Math.random() * DI.config.match.openings.length);
+	  ran_openings.push(DI.config.match.openings[ran]);
+	}
+    for (const openingId of ran_openings) {
       for (const u1Black of [true, false]) {
         rounds.push({
           _id: mongoose.Types.ObjectId(),
