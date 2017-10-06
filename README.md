@@ -23,7 +23,41 @@ There are some warnings:
 4. Do not submit C++ source code. Only C language is supported.
 5. Do not abuse our cloud execution service, such as intentionally trying to shutdown our judge machine.
 
-## Compilation
+## Deployment
+
+(WIP)
+
+Dependencies:
+
+* Node.js
+* npm
+* MongoDB
+* Redis
+* Docker
+
+Run the following command to create configuration scripts for both debug and in-production deployments:
+
+`$ cp config.yaml config.debug.yaml; cp config.yaml config.production.yaml`
+
+Excecute the following command to build the package:
+
+`$ npm install; npm run build:server; npm run build:ui`
+
+Then, set up the MongoDB and Redis servers. Normally this is done by:
+
+`$ sudo service mongod start; redis-server`
+
+We also need to set up RabbitMQ for server-side communication:
+
+`$ docker run -d --name amqp.test =p 5672:5672 rabbitmq`
+
+Finally, run
+
+`$ npm run start`
+
+to start the server.
+
+## Gomoku AI Compilation
 
 The compile command is shown below (Under Windows Platform):
 
@@ -41,7 +75,7 @@ Position.x represents column and Position.y represents row on the Judge System.
 
 **Important: This part is only for reference, you may not consider it anymore in your brain.**
 
-Black (the player who makes the first move) was long known to have a big advantage, so we will specify the beginning of the game so that both players will get the same advantage to make the game fair. 
+Black (the player who makes the first move) was long known to have a big advantage, so we will specify the beginning of the game so that both players will get the same advantage to make the game fair.
 
 We assume the openings are exactly the displayed 5x5 square in the center, x represents black and o represents white
 
