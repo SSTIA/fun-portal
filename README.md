@@ -39,7 +39,7 @@ Run the following command to create configuration scripts for both debug and in-
 
 `$ cp config.yaml config.debug.yaml; cp config.yaml config.production.yaml`
 
-Excecute the following command to build the package:
+Edit the configuration according to the comments given. Then, excecute the following command to build the package:
 
 `$ npm install; npm run build:server; npm run build:ui`
 
@@ -49,7 +49,7 @@ Then, set up the MongoDB and Redis servers. Normally this is done by:
 
 We also need to set up RabbitMQ for server-side communication:
 
-`$ docker run -d --name amqp.test =p 5672:5672 rabbitmq`
+`$ docker run -d --name amqp.test -p 5672:5672 rabbitmq`
 
 Finally, run
 
@@ -73,7 +73,7 @@ Position.x represents column and Position.y represents row on the Judge System.
 
 ## Opening
 
-**Important: This part is only for reference, you may not consider it anymore in your brain.**
+**Important: This part is only for reference, you may not dismiss these when developing your own AI.**
 
 Black (the player who makes the first move) was long known to have a big advantage, so we will specify the beginning of the game so that both players will get the same advantage to make the game fair.
 

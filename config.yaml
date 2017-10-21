@@ -7,7 +7,10 @@ base:
   cspReportUrl: /
   urlPrefix: ''
   cdnPrefix: ''
-  ssoUrl: http://127.0.0.1:20212   # false to enable debug mode and bypass SSO
+  ssoUrl: false   # legacy sso needs to be bypassed (?)
+  sso:
+    id: # fill in your SJTU OAuth2 ID
+    secret: #fill in your SJTU OAuth2 secret
   scoreboard:
     cacheDuration: 600000     # 10 minutes
   web:
