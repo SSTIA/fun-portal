@@ -30,9 +30,15 @@ let sjtuOAuth2 = new OAuth2(DI.config.sso.id,
 
 oauth2.constructAuthUrl = () => sjtuOAuth2.getAuthorizeUrl({
   redirect_uri: utils.url('/sso/sjtu/redirect', true),
-  scope: 'basic essential',
+  //scope: 'basic essential',
   response_type: 'code',
 });
+
+oauth2.constructLogoutUrl = () => {
+  let uri = 'https://jaccount.sjtu.edu.cn/oauth2/logout';
+  uri += `?post_logout_redirect_uri=${utils.url('/', true)}`;
+  return uri;
+};
 
 oauth2.getToken = (code) => {
   let options = {
