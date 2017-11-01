@@ -10,7 +10,7 @@ const DIRECTORY_COOKIE = 'iPlanetDirectoryPro';
 
 @web.controller('/')
 export default class Handler {
-  
+
   @web.get('/login')
   async getLoginAction(req, res) {
     const errors = {};
@@ -91,8 +91,9 @@ export default class Handler {
   @web.middleware(utils.checkPermission(permissions.PROFILE))
   async postLogoutAction(req, res) {
     req.session.destroy();
-    res.clearCookie(DIRECTORY_COOKIE, { domain: '.tongji.edu.cn' });
-    res.redirect(utils.url('/'));
+    //res.clearCookie(DIRECTORY_COOKIE, { domain: '.tongji.edu.cn' });
+    console.log(oauth2.constructLogoutUrl());
+    res.redirect(oauth2.constructLogoutUrl());
   }
 
 }
