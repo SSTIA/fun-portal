@@ -8,30 +8,31 @@ import errors from 'libs/errors';
 export default function() {
   const MatchSchema = new mongoose.Schema({
     status: String,
-    u1: { type: mongoose.Schema.Types.ObjectId, ref: 'User' },
-    u2: { type: mongoose.Schema.Types.ObjectId, ref: 'User' },
-    u1Submission: { type: mongoose.Schema.Types.ObjectId, ref: 'Submission' },
-    u2Submission: { type: mongoose.Schema.Types.ObjectId, ref: 'Submission' },
-    rounds: [{
-      _id: mongoose.Schema.Types.ObjectId,
-      status: String,
-      u1Black: Boolean,
-      u2Black: Boolean, // !u1Black
-      openingId: String,
-      beginJudgeAt: Date,
-      endJudgeAt: Date,
-      logBlob: mongoose.Schema.Types.ObjectId,  // grid fs
-      text: String,
-      summary: String,
-      usedTime: Number,   // extracted from summary by controller
-    }],
+    u1: {type: mongoose.Schema.Types.ObjectId, ref: 'User'},
+    u2: {type: mongoose.Schema.Types.ObjectId, ref: 'User'},
+    u1Submission: {type: mongoose.Schema.Types.ObjectId, ref: 'Submission'},
+    u2Submission: {type: mongoose.Schema.Types.ObjectId, ref: 'Submission'},
+    rounds: [
+      {
+        _id: mongoose.Schema.Types.ObjectId,
+        status: String,
+        u1Black: Boolean,
+        u2Black: Boolean, // !u1Black
+        openingId: String,
+        beginJudgeAt: Date,
+        endJudgeAt: Date,
+        logBlob: mongoose.Schema.Types.ObjectId,  // grid fs
+        text: String,
+        summary: String,
+        usedTime: Number,   // extracted from summary by controller
+      }],
   }, {
     timestamps: true,
-    toObject: { virtuals: true },
-    toJSON: { virtuals: true },
+    toObject: {virtuals: true},
+    toJSON: {virtuals: true},
   });
 
-  MatchSchema.virtual('usedTime').get(function () {
+  MatchSchema.virtual('usedTime').get(function() {
     return _.sumBy(this.rounds, 'usedTime');
   });
 
@@ -53,10 +54,14 @@ export default function() {
   MatchSchema.statics.JUDGE_EXITCODE_MIN = 33;
 
   MatchSchema.statics.JUDGE_EXITCODE_STATUS = {
-    [MatchSchema.statics.JUDGE_EXITCODE_MIN + 0]: MatchSchema.statics.STATUS_U1WIN,
-    [MatchSchema.statics.JUDGE_EXITCODE_MIN + 1]: MatchSchema.statics.STATUS_U2WIN,
-    [MatchSchema.statics.JUDGE_EXITCODE_MIN + 2]: MatchSchema.statics.STATUS_DRAW,
-    [MatchSchema.statics.JUDGE_EXITCODE_MIN + 3]: MatchSchema.statics.STATUS_SYSTEM_ERROR,
+    [MatchSchema.statics.JUDGE_EXITCODE_MIN +
+    0]: MatchSchema.statics.STATUS_U1WIN,
+    [MatchSchema.statics.JUDGE_EXITCODE_MIN +
+    1]: MatchSchema.statics.STATUS_U2WIN,
+    [MatchSchema.statics.JUDGE_EXITCODE_MIN +
+    2]: MatchSchema.statics.STATUS_DRAW,
+    [MatchSchema.statics.JUDGE_EXITCODE_MIN +
+    3]: MatchSchema.statics.STATUS_SYSTEM_ERROR,
   };
 
   MatchSchema.statics.STATUS_TEXT = {
@@ -72,23 +77,26 @@ export default function() {
 
   MatchSchema.statics.ROUND_STATUS_TEXT = MatchSchema.statics.STATUS_TEXT;
 
-  MatchSchema.pre('save', function (next) {
+  MatchSchema.pre('save', function(next) {
     this.__lastModifiedPaths = this.modifiedPaths();
     next();
   });
 
-  MatchSchema.post('save', function () {
+  MatchSchema.post('save', function() {
     const mdoc = this.toObject();
     Promise.all(this.__lastModifiedPaths.map(async (path) => {
       let m;
       if (path === 'status') {
-        await DI.eventBus.emitAsyncWithProfiling('match.status:updated::**', mdoc);
+        await DI.eventBus.emitAsyncWithProfiling('match.status:updated::**',
+          mdoc);
       } else if (m = path.match(/^rounds\.(\d+)$/)) {
         const rdoc = mdoc.rounds[m[1]];
-        await DI.eventBus.emitAsyncWithProfiling('match.rounds:updated::**', mdoc, rdoc);
+        await DI.eventBus.emitAsyncWithProfiling('match.rounds:updated::**',
+          mdoc, rdoc);
       } else if (m = path.match(/^rounds\.(\d+)\.status$/)) {
         const rdoc = mdoc.rounds[m[1]];
-        await DI.eventBus.emitAsyncWithProfiling('match.rounds.status:updated::**', mdoc, rdoc);
+        await DI.eventBus.emitAsyncWithProfiling(
+          'match.rounds.status:updated::**', mdoc, rdoc);
       }
     }));
   });
@@ -113,7 +121,7 @@ export default function() {
    * @param  {String}  matchStatus
    * @return {Boolean}
    */
-  MatchSchema.statics.isEffectiveStatus = function (matchStatus) {
+  MatchSchema.statics.isEffectiveStatus = function(matchStatus) {
     return matchStatus === Match.STATUS_U1WIN ||
       matchStatus === Match.STATUS_U2WIN ||
       matchStatus === Match.STATUS_DRAW;
@@ -124,7 +132,8 @@ export default function() {
    *
    * @return {Match} Mongoose match object
    */
-  MatchSchema.statics.getMatchObjectByIdAsync = async function (id, projection = {}, throwWhenNotFound = true) {
+  MatchSchema.statics.getMatchObjectByIdAsync = async function(
+    id, projection = {}, throwWhenNotFound = true) {
     if (!objectId.isValid(id)) {
       if (throwWhenNotFound) {
         throw new errors.UserError('Match not found');
@@ -132,7 +141,7 @@ export default function() {
         return null;
       }
     }
-    const s = await Match.findOne({ _id: id }, projection).exec();
+    const s = await Match.findOne({_id: id}, projection).exec();
     if (s === null && throwWhenNotFound) {
       throw new errors.UserError('Match not found');
     }
@@ -144,7 +153,7 @@ export default function() {
    *
    * @return {[Match, Round]}
    */
-  MatchSchema.statics.getRoundObjectByIdAsync = async function (mdocid, rdocid) {
+  MatchSchema.statics.getRoundObjectByIdAsync = async function(mdocid, rdocid) {
     const mdoc = await Match.getMatchObjectByIdAsync(mdocid);
     const rdoc = mdoc.rounds.find(rdoc => rdoc._id.equals(rdocid));
     if (rdoc === undefined) {
@@ -158,7 +167,7 @@ export default function() {
    * @param  {Number} exitCode
    * @return {String}
    */
-  MatchSchema.statics.getStatusFromJudgeExitCode = function (exitCode) {
+  MatchSchema.statics.getStatusFromJudgeExitCode = function(exitCode) {
     if (Match.JUDGE_EXITCODE_STATUS[exitCode] !== undefined) {
       return Match.JUDGE_EXITCODE_STATUS[exitCode];
     }
@@ -172,7 +181,7 @@ export default function() {
    * @param  {String} openingId
    * @return {String}
    */
-  MatchSchema.statics.getOpeningFromIdAsync = async function (openingId) {
+  MatchSchema.statics.getOpeningFromIdAsync = async function(openingId) {
     if (!openingCache[openingId]) {
       const filePath = `./openings/${openingId}.json`;
       const content = await fsp.readFile(filePath);
@@ -231,13 +240,15 @@ export default function() {
    * @param {User} u1
    * @param {[{_id: User, sdocid: Submission}]} s2u2docs
    */
-  MatchSchema.statics.addMatchesForSubmissionAsync = async function (s1, u1, s2u2docs) {
-    await Match.remove({ u1Submission: s1 });
+  MatchSchema.statics.addMatchesForSubmissionAsync = async function(
+    s1, u1, s2u2docs) {
+    await Match.remove({u1Submission: s1});
     if (s2u2docs.length === 0) {
       return [];
     }
 
-    const endProfile = utils.profile('Match.addMatchesForSubmissionAsync', DI.config.profiling.addMatches);
+    const endProfile = utils.profile('Match.addMatchesForSubmissionAsync',
+      DI.config.profiling.addMatches);
 
     const mdocs = [];
     await Promise.all(s2u2docs.map(async s2u2doc => {
@@ -252,7 +263,8 @@ export default function() {
       });
       await mdoc.save();
       // push each round of each match into the queue
-      await Promise.all(mdoc.rounds.map(rdoc => publishRoundTaskAsync(mdoc, rdoc)));
+      await Promise.all(
+        mdoc.rounds.map(rdoc => publishRoundTaskAsync(mdoc, rdoc)));
       mdocs.push(mdoc);
     }));
 
@@ -264,24 +276,25 @@ export default function() {
   /**
    * Reset match and regenerate rounds for a match.
    */
-  MatchSchema.statics.rejudgeMatchAsync = async function (mdocid) {
+  MatchSchema.statics.rejudgeMatchAsync = async function(mdocid) {
     const mdoc = await Match.getMatchObjectByIdAsync(mdocid);
     mdoc.status = Match.STATUS_PENDING;
     mdoc.rounds = generateRoundDocs();
     await mdoc.save();
-    await Promise.all(mdoc.rounds.map(rdoc => publishRoundTaskAsync(mdoc, rdoc)));
+    await Promise.all(
+      mdoc.rounds.map(rdoc => publishRoundTaskAsync(mdoc, rdoc)));
     return mdoc;
   };
 
   /**
    * Rejudge system error matches
    */
-  MatchSchema.statics.rejudgeErrorMatchAsync = async function () {
-    const mdocCursor = Match
-      .find({ status: Match.STATUS_SYSTEM_ERROR })
-      .sort({ _id: 1 })
-      .cursor();
-    for (let mdoc = await mdocCursor.next(); mdoc !== null; mdoc = await mdocCursor.next()) {
+  MatchSchema.statics.rejudgeErrorMatchAsync = async function() {
+    const mdocCursor = Match.find({status: Match.STATUS_SYSTEM_ERROR}).
+      sort({_id: 1}).
+      cursor();
+    for (let mdoc = await mdocCursor.next(); mdoc !==
+    null; mdoc = await mdocCursor.next()) {
       DI.logger.debug('Match.rejudgeErrorMatchAsync: %s', mdoc._id);
       await DI.models.Match.rejudgeMatchAsync(mdoc._id);
     }
@@ -295,7 +308,7 @@ export default function() {
    * @param  {Boolean} isU1
    * @return {String}
    */
-  MatchSchema.statics.getRelativeStatus = function (status, isU1 = true) {
+  MatchSchema.statics.getRelativeStatus = function(status, isU1 = true) {
     if (status !== Match.STATUS_U1WIN && status !== Match.STATUS_U2WIN) {
       return status;
     }
@@ -317,7 +330,7 @@ export default function() {
   /**
    * Update match status according to round status
    */
-  MatchSchema.methods.updateStatus = function () {
+  MatchSchema.methods.updateStatus = function() {
     const statusStat = {
       [Match.STATUS_PENDING]: 0,
       [Match.STATUS_RUNNING]: 0,
@@ -337,21 +350,23 @@ export default function() {
       this.status = Match.STATUS_SYSTEM_ERROR;
       return;
     }
-    if (statusStat[Match.STATUS_RUNNING] > 0 || statusStat[Match.STATUS_PENDING] > 0) {
+    if (statusStat[Match.STATUS_RUNNING] > 0 ||
+      statusStat[Match.STATUS_PENDING] > 0) {
       // some pending, or some running
       this.status = Match.STATUS_RUNNING;
       return;
     }
     if (statusStat[Match.STATUS_U1WIN] > statusStat[Match.STATUS_U2WIN]) {
       this.status = Match.STATUS_U1WIN;
-    } else if (statusStat[Match.STATUS_U1WIN] < statusStat[Match.STATUS_U2WIN]) {
+    } else if (statusStat[Match.STATUS_U1WIN] <
+      statusStat[Match.STATUS_U2WIN]) {
       this.status = Match.STATUS_U2WIN;
     } else {
       this.status = Match.STATUS_DRAW;
     }
   };
 
-  MatchSchema.statics.updateMatchStatusAsync = async function (mdocid) {
+  MatchSchema.statics.updateMatchStatusAsync = async function(mdocid) {
     const mdoc = await Match.getMatchObjectByIdAsync(mdocid);
     mdoc.updateStatus();
     await mdoc.save();
@@ -364,7 +379,7 @@ export default function() {
    * @param  {MongoId} rid Round Id
    * @return {Match}
    */
-  MatchSchema.statics.judgeStartRoundAsync = async function (mdocid, rid) {
+  MatchSchema.statics.judgeStartRoundAsync = async function(mdocid, rid) {
     const [mdoc, rdoc] = await Match.getRoundObjectByIdAsync(mdocid, rid);
     rdoc.status = Match.STATUS_RUNNING;
     rdoc.beginJudgeAt = new Date();
@@ -381,7 +396,8 @@ export default function() {
    * @param  {Object} extra Extra fields to be added to the round
    * @return {Match}
    */
-  MatchSchema.statics.judgeCompleteRoundAsync = async function (mdocid, rid, status, extra = {}) {
+  MatchSchema.statics.judgeCompleteRoundAsync = async function(
+    mdocid, rid, status, extra = {}) {
     if (
       status !== Match.STATUS_U1WIN
       && status !== Match.STATUS_U2WIN
@@ -419,43 +435,43 @@ export default function() {
    * @param  {MongoId} sid
    * @return {[Cursor]}
    */
-  MatchSchema.statics.getMatchesForSubmissionCursor = function (sid) {
-    return Match
-      .find({
-        $or: [
-          { u1Submission: sid },
-          { u2Submission: sid },
-        ],
-      })
-      .sort({ _id: -1 });
+  MatchSchema.statics.getMatchesForSubmissionCursor = function(sid) {
+    return Match.find({
+      $or: [
+        {u1Submission: sid},
+        {u2Submission: sid},
+      ],
+    }).sort({_id: -1});
+  };
+
+  MatchSchema.statics.getAllMatches = function() {
+    return Match.find().sort({updatedAt: -1});
   };
 
   /**
    * Get all pending, running or system_error matches
    */
-  MatchSchema.statics.getPendingMatchesAsync = async function (includePending = true) {
+  MatchSchema.statics.getPendingMatchesAsync = async function(includePending = true) {
     const $in = [Match.STATUS_RUNNING, Match.STATUS_SYSTEM_ERROR];
     if (includePending) {
       $in.push(Match.STATUS_PENDING);
     }
-    return await Match
-      .find({
-        status: { $in },
-      })
-      .sort({ _id: -1 })
-      .exec();
+    return await Match.find({
+      status: {$in},
+    }).sort({_id: -1}).exec();
   };
 
   /**
    * Update status of all matches
    */
-  MatchSchema.statics.refreshAllMatchesAsync = async function () {
+  MatchSchema.statics.refreshAllMatchesAsync = async function() {
     let ret = {
       updated: 0,
       all: 0,
     };
-    const cursor = Match.find().sort({ _id: 1 }).cursor();
-    for (let mdoc = await cursor.next(); mdoc !== null; mdoc = await cursor.next()) {
+    const cursor = Match.find().sort({_id: 1}).cursor();
+    for (let mdoc = await cursor.next(); mdoc !==
+    null; mdoc = await cursor.next()) {
       ret.all++;
       mdoc.updateStatus();
       if (mdoc.isModified('status')) {
@@ -469,32 +485,36 @@ export default function() {
   /**
    * Get pairwise matches for the given submissions
    */
-  MatchSchema.statics.getPairwiseMatchesAsync = async function (sids) {
-    return await Match
-      .find({
-        u1Submission: { $in: sids },
-        u2Submission: { $in: sids },
-        status: { $in: [Match.STATUS_U1WIN, Match.STATUS_U2WIN, Match.STATUS_DRAW] },
-      })
-      .sort({ _id: -1 })
-      .exec();
+  MatchSchema.statics.getPairwiseMatchesAsync = async function(sids) {
+    return await Match.find({
+      u1Submission: {$in: sids},
+      u2Submission: {$in: sids},
+      status: {
+        $in: [
+          Match.STATUS_U1WIN,
+          Match.STATUS_U2WIN,
+          Match.STATUS_DRAW],
+      },
+    }).sort({_id: -1}).exec();
   };
-  MatchSchema.statics.getPairwiseMatchesCursor = function (sids) {
-    return Match
-      .find({
-        u1Submission: { $in: sids },
-        u2Submission: { $in: sids },
-        status: { $in: [Match.STATUS_U1WIN, Match.STATUS_U2WIN, Match.STATUS_DRAW] },
-      })
-      .sort({ _id: -1 })
-      .cursor();
+  MatchSchema.statics.getPairwiseMatchesCursor = function(sids) {
+    return Match.find({
+      u1Submission: {$in: sids},
+      u2Submission: {$in: sids},
+      status: {
+        $in: [
+          Match.STATUS_U1WIN,
+          Match.STATUS_U2WIN,
+          Match.STATUS_DRAW],
+      },
+    }).sort({_id: -1}).cursor();
   };
 
-
-  MatchSchema.index({ u1Submission: 1, u2Submission: -1, status: 1, _id: -1 }, { unique: true });
-  MatchSchema.index({ u1Submission: 1, _id: -1 });
-  MatchSchema.index({ u2Submission: 1, _id: -1 });
-  MatchSchema.index({ status: 1, _id: -1 });
+  MatchSchema.index({u1Submission: 1, u2Submission: -1, status: 1, _id: -1},
+    {unique: true});
+  MatchSchema.index({u1Submission: 1, _id: -1});
+  MatchSchema.index({u2Submission: 1, _id: -1});
+  MatchSchema.index({status: 1, _id: -1});
 
   Match = mongoose.model('Match', MatchSchema);
   return Match;

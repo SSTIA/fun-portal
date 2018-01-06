@@ -21,18 +21,26 @@ base:
       password: bar
   compile:
     display:
-      gcc51c11:     TDM-GCC 5.1.0 (Release, 32-bit, with C11)
-      gcc49:        TDM-GCC 4.9.2 (Release, 32-bit)
-      gcc49c11:     TDM-GCC 4.9.2 (Release, 32-bit, with C11)
-      msvc2015:     Visual C++ 2015 (Release, x86)
-      clang37:      Apple clang 3.7.0 (Xcode 7.0+, i386)
-      clang38:      Apple clang 3.8.0 (Xcode 7.3+, i386)
-      clang39:      Apple clang 3.9.0 (Xcode 8.0+, i386)
+      gcc99:        GNU C 7.2.0 (-O3 -std=c99)
+      gcc11:        GNU C 7.2.0 (-O3 -std=c11)
+      clang99:      LLVM / Clang 4.0.1 (-O3 -std=c99)
+      clang11:      LLVM / Clang 4.0.1 (-O3 -std=c11)
+      g++98:        GNU C++ 7.2.0 (-O3 -std=c++98)
+      g++11:        GNU C++ 7.2.0 (-O3 -std=c++11)
+      g++14:        GNU C++ 7.2.0 (-O3 -std=c++14)
+      g++17:        GNU C++ 7.2.0 (-O3 -std=c++17)
+      clang++98:    LLVM / Clang 4.0.1 (-O3 -std=c++98)
+      clang++11:    LLVM / Clang 4.0.1 (-O3 -std=c++11)
+      clang++14:    LLVM / Clang 4.0.1 (-O3 -std=c++14)
+      clang++17:    LLVM / Clang 4.0.1 (-O3 -std=c++17)
+      py2:          Python 2.7.14
+      py3:          Python 3.6.3
+      node:         Node.js >= 8.9.3
     limits:
       sizeOfCode: 1048576     # 1 MB
       sizeOfBin: 1048576      # 1 MB
       sizeOfText: 102400      # 100 KB
-      submitInterval: 86400000 # 1 day
+      submitInterval: 60000 # 1 minute
       minSubmitInterval: 60000 # 1 minute
       maxExecQuota: 36000000  # 10 hours
   match:
@@ -40,8 +48,8 @@ base:
       moveTimeout: 5000       # 5 s
       roundTimeout: 180000    # 180 s
       memoryLimit: 367001600  # 350 MB
-      width: 20
-      height: 20
+      width: 15
+      height: 15
       winningStones: 5
     rounds: 3
     openings:

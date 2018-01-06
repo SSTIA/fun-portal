@@ -1,0 +1,46 @@
+.page--match_list
+  .col--status
+    width: rem(150px)
+
+  .col--challenger, .col--challengee
+    width: rem(150px)
+
+  .col--at
+    width: rem(120px)
+
+  td.col--rounds
+    padding: 0 !important
+    height: rem(35px)
+    line-height: rem(35px)
+
+    .round-status--cell
+      box-sizing: border-box
+      padding: rem(0 5px)
+      white-space: nowrap
+      overflow: hidden
+      text-overflow: ellipsis
+
+      &:hover
+        text-decoration: none
+
+  .col--challenger, .col--rounds
+    border-left: 1px solid $table-border-color
+
+  +mobile()
+    .col--rounds
+      display: none
+
+    .col--status
+      width: rem(70px)
+
+      .icon
+        display: none
+
+    .col--at
+      width: rem(100px)
+
+    .col--challenger, .col--challengee
+      width: auto
+
+      .s_version
+        display: none

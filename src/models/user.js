@@ -25,6 +25,9 @@ export default () => {
       initial: Boolean,
     },
     submissionNumber: Number,
+    rating: {
+      score: Number,
+    },
   }, {
     timestamps: true,
   });

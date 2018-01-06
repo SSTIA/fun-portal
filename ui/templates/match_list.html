@@ -1,0 +1,38 @@
+{% extends "layout/basic.html" %}
+{% block content %}
+<div class="row">
+  <div class="columns">
+    <div class="section">
+      <div class="section__header">
+        <h1 class="section__title">Match List</h1>
+      </div>
+      <div class="section__body no-padding">
+        <table class="data-table">
+          <colgroup>
+            <col class="col--status match-status--border">
+            <col class="col--at">
+            <col class="col--challenger">
+            <col class="col--challengee">
+            <col class="col--rounds">
+          </colgroup>
+          <thead>
+          <tr>
+            <th class="col--status match-status--border">Status</th>
+            <th class="col--at">At</th>
+            <th class="col--challenger">Challenger</th>
+            <th class="col--challengee">Opponent</th>
+            <th class="col--rounds">Round Statistics</th>
+          </tr>
+          </thead>
+          <tbody id="match_row_container">
+          {%- for mdoc in mdocs %}
+          {%- include "partials/match_list_row.html" -%}
+          {%- endfor %}
+          </tbody>
+        </table>
+        {{ paginator.render(page, pages, url('/submission/{0}/{page}', false, [sdoc._id])) }}
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}

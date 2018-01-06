@@ -12,9 +12,17 @@ const logUpload = multer({
   storage: multer.diskStorage({}),
 });
 
+const MATCHES_PER_PAGE = 2;
+
 @socket.enable()
 @web.controller('/match')
 export default class Handler {
+
+  @web.use()
+  async navType(req, res, next) {
+    res.locals.nav_type = 'match';
+    next();
+  }
 
   @web.post('/api/roundBegin')
   @web.middleware(utils.sanitizeBody({
@@ -25,7 +33,7 @@ export default class Handler {
   async apiRoundBegin(req, res) {
     const mdoc = await DI.models.Match.judgeStartRoundAsync(
       req.data.mid,
-      req.data.rid
+      req.data.rid,
     );
     res.json(mdoc);
   }
@@ -44,7 +52,7 @@ export default class Handler {
       DI.models.Match.STATUS_SYSTEM_ERROR,
       {
         text: req.data.text,
-      }
+      },
     );
     res.json(mdoc);
   }
@@ -80,7 +88,7 @@ export default class Handler {
           usedTime,
           logBlobStream: fsp.createReadStream(req.file.path),
           text: '',
-        }
+        },
       );
       res.json(mdoc);
     } finally {
@@ -90,6 +98,41 @@ export default class Handler {
         DI.logger.error(err.stack);
       }
     }
+  }
+
+  @web.get('/')
+  @web.middleware(utils.sanitizeParam({
+    page: sanitizers.pageNumber().optional(1),
+  }))
+  async getMatchList(req, res) {
+    //const sdoc = await DI.models.Submission.getSubmissionObjectByIdAsync(req.data.id);
+    //await sdoc.populate('user').execPopulate();
+    const [mdocs, pages] = await utils.pagination(
+      DI.models.Match.getAllMatches(),
+      req.data.page,
+      MATCHES_PER_PAGE,
+    );
+    await DI.models.User.populate(mdocs, 'u1 u2');
+    //await DI.models.Submission.populate(mdocs, 'u1Submission u2Submission');
+    //const udoc = req.credential;
+    //console.log(udoc);
+    //console.log(mdocs[0]);
+    //console.log(req.credential.equals(mdocs[0].u1));
+    //console.log(req.credential.equals(mdocs[0].u2));
+
+    res.render('match_list', {
+      page_title: 'Match List',
+      udoc: req.credential,
+      mdocs,
+      pages,
+      page: req.data.page,
+      getRelativeStatus: (status, mdoc) => DI.models.Match.getRelativeStatus(
+        status),
+      context: {
+        //id: sdoc._id,
+        page: req.data.page,
+      },
+    });
   }
 
   @web.get('/refreshStatus')
@@ -117,7 +160,8 @@ export default class Handler {
       const timestamp = Date.now();
       const mdoc = await DI.models.Match.getMatchObjectByIdAsync(mdocid);
       socket.emit('update_match_status', {
-        html: DI.webTemplate.render('partials/match_detail_match_status.html', { mdoc }),
+        html: DI.webTemplate.render('partials/match_detail_match_status.html',
+          {mdoc}),
         tsKey: 'mdoc',
         tsValue: timestamp,
       });
@@ -130,12 +174,14 @@ export default class Handler {
     try {
       const timestamp = Date.now();
       const mdoc = await DI.models.Match.getMatchObjectByIdAsync(mdocid);
-      const rdoc = mdoc.rounds ? mdoc.rounds.find(rdoc => rdoc._id.equals(rdocid)) : undefined;
+      const rdoc = mdoc.rounds ? mdoc.rounds.find(
+        rdoc => rdoc._id.equals(rdocid)) : undefined;
       if (!rdoc) {
         return;
       }
       socket.emit('update_round_row', {
-        html: DI.webTemplate.render('partials/match_detail_round_row.html', { mdoc, rdoc }),
+        html: DI.webTemplate.render('partials/match_detail_round_row.html',
+          {mdoc, rdoc}),
         tsKey: `rdoc_${rdoc._id}`,
         tsValue: timestamp,
       });
@@ -167,7 +213,8 @@ export default class Handler {
   async getMatchRoundDetailAction(req, res) {
     const mdoc = await DI.models.Match.getMatchObjectByIdAsync(req.params.id);
     await mdoc.populate('u1 u2 u1Submission u2Submission').execPopulate();
-    const rdocIndex = mdoc.rounds.findIndex(rdoc => rdoc._id.equals(req.params.rid));
+    const rdocIndex = mdoc.rounds.findIndex(
+      rdoc => rdoc._id.equals(req.params.rid));
     if (rdocIndex === -1) {
       throw new errors.UserError('Round not found');
     }

@@ -30,48 +30,52 @@ There are some warnings:
 Dependencies:
 
 * Node.js
-* npm
 * MongoDB
 * Redis
-* Docker
+* rabbitMQ
+
+Install dependencies on Debien/Ubuntu
+```
+$ curl -o- https://raw.githubusercontent.com/creationix/nvm/v0.33.8/install.sh | bash
+$ nvm install 9 && nvm use 9
+$ sudo apt-get install mongodb redis-server rabbitmq-server
+```
+
+If you are in Mainland China, it's recommended to use registry by `taobao` (or use `cnpm`)
+
+```
+$ npm config set registry https://registry.npm.taobao.org
+```
 
 Run the following command to create configuration scripts for both debug and in-production deployments:
 
-`$ cp config.yaml config.debug.yaml; cp config.yaml config.production.yaml`
+```
+$ touch config.debug.yaml
+$ touch config.production.yaml
+```
 
 Edit the configuration according to the comments given. Then, excecute the following command to build the package:
 
-`$ npm install; npm run build:server; npm run build:ui`
+```
+$ npm install
+$ run build:server
+$ run build:ui
+```
 
-Then, set up the MongoDB and Redis servers. Normally this is done by:
-
-`$ sudo service mongod start; redis-server`
-
-We also need to set up RabbitMQ for server-side communication:
-
-`$ docker run -d --name amqp.test -p 5672:5672 rabbitmq`
 
 Finally, run
 
-`$ npm run start`
+```
+$ npm run start
+```
 
 to start the server.
 
-## Gomoku AI Compilation
-
-The compile command is shown below (Under Windows Platform):
-
-`gcc -O2 -s -Wall -std=c11 -o foo.exe foo.c -lm -Wl,--stack=134217728`
-
 ## Matching
 
-Once you submit a brain, it will make a competition of 6 rounds with all others' on the judge system, and you will get 3 points if you win or 1 point if you draw (3:3).
 
-The total points will decide your position on the scoreboard.
 
-Position.x represents column and Position.y represents row on the Judge System.
-
-## Opening
+## Openings
 
 **Important: This part is only for reference, you may not dismiss these when developing your own AI.**
 
@@ -488,6 +492,9 @@ The followings are all of the opening situations (on the Judge System):
 
 ---
 Online Judge System by [GomokuFun](https://github.com/sse2016-gomoku-fun/)
-Server by Luke Lazurite and Liu Yihao
+
+Server by Luke Lazurite, Liu Yihao and Shen zheyu
+
 Manual written by Liu Yihao
+
 JI-SSTIA All Right Reverved

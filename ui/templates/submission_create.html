@@ -7,11 +7,13 @@
   <div class="section__body typo">
     <blockquote class="warn">
       <ul>
-        <li class="text-red">Do not copy others' source code. All the code you submitted will be checked for plagiarism. Copycats will fail this project!</li>
+        <li class="text-red">Do not copy others' source code. All the code you submitted will be checked for plagiarism. Copycats will be submitted to the honor council if they claimed it as a progress of their academic work for certain courses (eg. VG101)!</li>
         <li>Do not share your source code with others. Similar submissions will be treated as plagiarism.</li>
         <li>Do not use alternative account to submit your code, otherwise you will be recognized as a copycat.</li>
-        <li>Do not submit C++ source code. Only C language is supported.</li>
+        <!--<li>Do not submit C++ source code. Only C language is supported.</li>-->
         <li>Do not abuse our cloud execution service, such as intentionally trying to shutdown our judge machine.</li>
+        <li>Your C / C++ program will be compiled on Linux, linking libm (so you can use math.h or cmath), but without linking pthread (so you can't use multi-threading library).</li>
+        <li>If you prefer languages and tools not listed, please contact us and we'll add support for it if reasonable. But notice that we will NEVER support MSVC (Microsoft Visual C++) because it doesn't have support on C/C++.</li>
       </ul>
     </blockquote>
   {%- if hotStatus == DI('models.Submission.HOT_STATUS_TIME_LIMIT') %}
@@ -25,19 +27,19 @@
   {%- elif hotStatus == DI('models.Submission.HOT_STATUS_GLOBAL_LIMIT') %}
     <p>Sorry, code submission is disabled currently. Reason: {{ nextSubmitRemaining }}</p>
   {%- else %}
-    <p>Please paste your C source code of your brain in the text box below. Your code will be automatically compiled and judged by the system.</p>
+    <p>Please paste your C / C++ / Python / Javascript source code of your brain in the text box below. Your code will be automatically judged (and compiled if necessary) by the system.</p>
   </div>
   <div class="section__body">
     <form method="post">
       <div class="row">
         <div class="columns">
-          <label>C Source Code:</label>
+          <label>Source Code:</label>
           <textarea name="code" class="monospace textbox" autofocus required></textarea>
         </div>
       </div>
       <div class="row">
         <div class="medium-5 columns">
-          <label>Compiler:</label>
+          <label>Environment:</label>
           <select class="select" name="compiler">
           {% for name, label in DI("config.compile.display") %}
             <option value="{{ name }}"{% if req.credential.settings.compiler == name %} selected{% endif %}>{{ label }}</option>
