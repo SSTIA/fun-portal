@@ -25,8 +25,11 @@ export default () => {
       initial: Boolean,
     },
     submissionNumber: Number,
-    rating: {
-      score: Number,
+    rating: {type: mongoose.Schema.Types.ObjectId, ref: 'Rating'},
+    match: {
+      streak: Number,
+      change: Number,
+      priority: Number,
     },
   }, {
     timestamps: true,
@@ -318,6 +321,30 @@ export default () => {
       }
     }
     return true;
+  };
+
+  UserSchema.statics.updateRatingAsync = async function(uid, rdoc) {
+    const user = await User.getUserObjectByIdAsync(uid);
+    user.rating = rdoc;
+    if (rdoc.status === DI.models.Rating.STATUS_WIN) {
+      if (user.match.streak > 0) {
+        user.match.streak++;
+        user.match.change += rdoc.change;
+      } else {
+        user.match.streak = 1;
+        user.match.change = rdoc.change;
+      }
+    } else if (rdoc.status === DI.models.Rating.STATUS_LOSE) {
+      if (user.match.streak < 0) {
+        user.match.streak--;
+        user.match.change += rdoc.change;
+      } else {
+        user.match.streak = -1;
+        user.match.change = rdoc.change;
+      }
+    }
+    user.match.priority = Math.abs(user.match.streak * user.match.change);
+    await user.save();
   };
 
   UserSchema.index({ userName_std: 1 }, { unique: true });

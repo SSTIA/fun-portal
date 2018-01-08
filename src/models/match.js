@@ -12,6 +12,8 @@ export default function() {
     u2: {type: mongoose.Schema.Types.ObjectId, ref: 'User'},
     u1Submission: {type: mongoose.Schema.Types.ObjectId, ref: 'Submission'},
     u2Submission: {type: mongoose.Schema.Types.ObjectId, ref: 'Submission'},
+    u1Rating: {type: mongoose.Schema.Types.ObjectId, ref: 'Rating'},
+    u2Rating: {type: mongoose.Schema.Types.ObjectId, ref: 'Rating'},
     rounds: [
       {
         _id: mongoose.Schema.Types.ObjectId,
@@ -67,7 +69,7 @@ export default function() {
   MatchSchema.statics.STATUS_TEXT = {
     'pending': 'Pending',
     'running': 'Running',
-    'se': 'Error',
+    'se': 'System Error',
     'win': 'Win',
     'lose': 'Lose',
     'u1win': 'Challenger Win',
@@ -116,7 +118,8 @@ export default function() {
   });
 
   /**
-   * Determine whether a match status is one of running status (pending / running)
+   * Determine whether a match status is one of effective status
+   * u1win, u2win, draw
    *
    * @param  {String}  matchStatus
    * @return {Boolean}
@@ -125,6 +128,19 @@ export default function() {
     return matchStatus === Match.STATUS_U1WIN ||
       matchStatus === Match.STATUS_U2WIN ||
       matchStatus === Match.STATUS_DRAW;
+  };
+
+  /**
+   * Determine whether a match status is one of finish status
+   * u1win, u2win, draw, error
+   * @param matchStatus
+   * @returns {boolean}
+   */
+  MatchSchema.statics.isFinishStatus = function(matchStatus) {
+    return matchStatus === Match.STATUS_U1WIN ||
+      matchStatus === Match.STATUS_U2WIN ||
+      matchStatus === Match.STATUS_DRAW ||
+      matchStatus === Match.STATUS_SYSTEM_ERROR;
   };
 
   /**
@@ -240,43 +256,84 @@ export default function() {
    * @param {User} u1
    * @param {[{_id: User, sdocid: Submission}]} s2u2docs
    */
-  MatchSchema.statics.addMatchesForSubmissionAsync = async function(
-    s1, u1, s2u2docs) {
-    await Match.remove({u1Submission: s1});
-    if (s2u2docs.length === 0) {
-      return [];
+  /*  MatchSchema.statics.addMatchesForSubmissionAsync = async function(
+      s1, u1, s2u2docs) {
+      await Match.remove({u1Submission: s1});
+      if (s2u2docs.length === 0) {
+        return [];
+      }
+
+      const endProfile = utils.profile('Match.addMatchesForSubmissionAsync',
+        DI.config.profiling.addMatches);
+
+      const mdocs = [];
+      await Promise.all(s2u2docs.map(async s2u2doc => {
+        const mdoc = new Match({
+          status: Match.STATUS_PENDING,
+          u1,
+          u2: s2u2doc._id,
+          u1Submission: s1,
+          u2Submission: s2u2doc.sdocid,
+          usedTime: 0,
+          rounds: generateRoundDocs(),
+        });
+        await mdoc.save();
+        // push each round of each match into the queue
+        await Promise.all(
+          mdoc.rounds.map(rdoc => publishRoundTaskAsync(mdoc, rdoc)));
+        mdocs.push(mdoc);
+      }));
+
+      endProfile();
+
+      return mdocs;
+    };*/
+
+  /**
+   * Create a new match between two users
+   * @param u1
+   * @param u2
+   * @returns {Promise<*>}
+   */
+  MatchSchema.statics.createMatchAsync = async function(u1, u2) {
+    if (await DI.models.Rating.isUserBusyAsync(u1)) {
+      throw new Error(`${u1._id} is busy, unable to match`);
     }
-
-    const endProfile = utils.profile('Match.addMatchesForSubmissionAsync',
-      DI.config.profiling.addMatches);
-
-    const mdocs = [];
-    await Promise.all(s2u2docs.map(async s2u2doc => {
-      const mdoc = new Match({
-        status: Match.STATUS_PENDING,
-        u1,
-        u2: s2u2doc._id,
-        u1Submission: s1,
-        u2Submission: s2u2doc.sdocid,
-        usedTime: 0,
-        rounds: generateRoundDocs(),
-      });
-      await mdoc.save();
-      // push each round of each match into the queue
-      await Promise.all(
-        mdoc.rounds.map(rdoc => publishRoundTaskAsync(mdoc, rdoc)));
-      mdocs.push(mdoc);
-    }));
-
-    endProfile();
-
-    return mdocs;
+    if (await DI.models.Rating.isUserBusyAsync(u2)) {
+      throw new Error(`${u2._id} is busy, unable to match`);
+    }
+    const s1 = await DI.models.Submission.getLastSubmissionByUserAsync(u1);
+    if (s1 === null) {
+      throw new Error(`${u1._id} doesn't have a valid submission`);
+    }
+    const s2 = await DI.models.Submission.getLastSubmissionByUserAsync(u2);
+    if (s2 === null) {
+      throw new Error(`${u2._id} doesn't have a valid submission`);
+    }
+    const mdoc = new Match({
+      status: Match.STATUS_PENDING,
+      u1,
+      u2,
+      u1Submission: s1,
+      u2Submission: s2,
+      usedTime: 0,
+      rounds: generateRoundDocs(),
+    });
+    await mdoc.save();
+    mdoc.u1Rating = await DI.models.Rating.createRatingAsync(mdoc, u1);
+    mdoc.u2Rating = await DI.models.Rating.createRatingAsync(mdoc, u2);
+    await mdoc.save();
+    await s1.addMatchAsync(mdoc);
+    await s2.addMatchAsync(mdoc);
+    await Promise.all(
+      mdoc.rounds.map(rdoc => publishRoundTaskAsync(mdoc, rdoc)));
+    return mdoc;
   };
 
   /**
    * Reset match and regenerate rounds for a match.
    */
-  MatchSchema.statics.rejudgeMatchAsync = async function(mdocid) {
+  /*MatchSchema.statics.rejudgeMatchAsync = async function(mdocid) {
     const mdoc = await Match.getMatchObjectByIdAsync(mdocid);
     mdoc.status = Match.STATUS_PENDING;
     mdoc.rounds = generateRoundDocs();
@@ -284,22 +341,24 @@ export default function() {
     await Promise.all(
       mdoc.rounds.map(rdoc => publishRoundTaskAsync(mdoc, rdoc)));
     return mdoc;
-  };
+  };*/
 
   /**
    * Rejudge system error matches
    */
-  MatchSchema.statics.rejudgeErrorMatchAsync = async function() {
-    const mdocCursor = Match.find({status: Match.STATUS_SYSTEM_ERROR}).
-      sort({_id: 1}).
-      cursor();
-    for (let mdoc = await mdocCursor.next(); mdoc !==
-    null; mdoc = await mdocCursor.next()) {
-      DI.logger.debug('Match.rejudgeErrorMatchAsync: %s', mdoc._id);
-      await DI.models.Match.rejudgeMatchAsync(mdoc._id);
-    }
-    DI.logger.debug('Match.rejudgeErrorMatchAsync: done');
-  };
+  /*
+    MatchSchema.statics.rejudgeErrorMatchAsync = async function() {
+      const mdocCursor = Match.find({status: Match.STATUS_SYSTEM_ERROR}).
+        sort({_id: 1}).
+        cursor();
+      for (let mdoc = await mdocCursor.next(); mdoc !==
+      null; mdoc = await mdocCursor.next()) {
+        DI.logger.debug('Match.rejudgeErrorMatchAsync: %s', mdoc._id);
+        await DI.models.Match.rejudgeMatchAsync(mdoc._id);
+      }
+      DI.logger.debug('Match.rejudgeErrorMatchAsync: done');
+    };
+  */
 
   /**
    * Translate MatchStatus into RelativeStatus
@@ -330,7 +389,7 @@ export default function() {
   /**
    * Update match status according to round status
    */
-  MatchSchema.methods.updateStatus = function() {
+  MatchSchema.methods.updateStatusAsync = async function() {
     const statusStat = {
       [Match.STATUS_PENDING]: 0,
       [Match.STATUS_RUNNING]: 0,
@@ -339,36 +398,60 @@ export default function() {
       [Match.STATUS_U2WIN]: 0,
       [Match.STATUS_DRAW]: 0,
     };
-    this.rounds.forEach(rdoc => statusStat[rdoc.status]++);
+    let finishCount = 0;
+    this.rounds.forEach(rdoc => {
+      if (Match.isFinishStatus(rdoc.status)) {
+        finishCount++;
+      }
+      statusStat[rdoc.status]++;
+    });
     if (statusStat[Match.STATUS_PENDING] === this.rounds.length) {
       // all pending
       this.status = Match.STATUS_PENDING;
-      return;
-    }
-    if (statusStat[Match.STATUS_SYSTEM_ERROR] > 0) {
+    } else if (statusStat[Match.STATUS_SYSTEM_ERROR] > 0) {
       // some system error
       this.status = Match.STATUS_SYSTEM_ERROR;
-      return;
-    }
-    if (statusStat[Match.STATUS_RUNNING] > 0 ||
+    } else if (statusStat[Match.STATUS_RUNNING] > 0 ||
       statusStat[Match.STATUS_PENDING] > 0) {
       // some pending, or some running
       this.status = Match.STATUS_RUNNING;
-      return;
     }
-    if (statusStat[Match.STATUS_U1WIN] > statusStat[Match.STATUS_U2WIN]) {
-      this.status = Match.STATUS_U1WIN;
-    } else if (statusStat[Match.STATUS_U1WIN] <
-      statusStat[Match.STATUS_U2WIN]) {
-      this.status = Match.STATUS_U2WIN;
-    } else {
-      this.status = Match.STATUS_DRAW;
+
+    // match end, calculate rating
+    if (finishCount === this.rounds.length) {
+      // match end, calculate rating
+      await DI.models.Rating.populate(this, 'u1Rating u2Rating');
+      if (this.status === Match.STATUS_SYSTEM_ERROR) {
+        // system error
+        await this.u1Rating.setErrorAsync();
+        await this.u2Rating.setErrorAsync();
+      } else if (statusStat[Match.STATUS_U1WIN] >
+        statusStat[Match.STATUS_U2WIN]) {
+        // u1win
+        this.status = Match.STATUS_U1WIN;
+        await this.u1Rating.setWinAsync(this.u2Rating.before);
+        await this.u2Rating.setLoseAsync(this.u1Rating.before);
+      } else if (statusStat[Match.STATUS_U1WIN] <
+        statusStat[Match.STATUS_U2WIN]) {
+        // u2win
+        this.status = Match.STATUS_U2WIN;
+        await this.u1Rating.setLoseAsync(this.u2Rating.before);
+        await this.u2Rating.setWinAsync(this.u1Rating.before);
+      } else {
+        // draw
+        this.status = Match.STATUS_DRAW;
+        await this.u1Rating.setDrawAsync();
+        await this.u2Rating.setDrawAsync();
+      }
+      await DI.models.User.updateRatingAsync(this.u1, this.u1Rating);
+      await DI.models.User.updateRatingAsync(this.u2, this.u2Rating);
     }
+
   };
 
   MatchSchema.statics.updateMatchStatusAsync = async function(mdocid) {
     const mdoc = await Match.getMatchObjectByIdAsync(mdocid);
-    mdoc.updateStatus();
+    await mdoc.updateStatusAsync();
     await mdoc.save();
   };
 
@@ -398,12 +481,7 @@ export default function() {
    */
   MatchSchema.statics.judgeCompleteRoundAsync = async function(
     mdocid, rid, status, extra = {}) {
-    if (
-      status !== Match.STATUS_U1WIN
-      && status !== Match.STATUS_U2WIN
-      && status !== Match.STATUS_DRAW
-      && status !== Match.STATUS_SYSTEM_ERROR
-    ) {
+    if (!Match.isFinishStatus(status)) {
       throw new Error(`judgeCompleteRoundAsync: status ${status} is invalid`);
     }
     const [mdoc, rdoc] = await Match.getRoundObjectByIdAsync(mdocid, rid);
@@ -473,7 +551,7 @@ export default function() {
     for (let mdoc = await cursor.next(); mdoc !==
     null; mdoc = await cursor.next()) {
       ret.all++;
-      mdoc.updateStatus();
+      await mdoc.updateStatusAsync();
       if (mdoc.isModified('status')) {
         ret.updated++;
         await mdoc.save();

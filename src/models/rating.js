@@ -4,6 +4,7 @@ import mongoose from 'mongoose';
 import utils from 'libs/utils';
 import objectId from 'libs/objectId';
 import errors from 'libs/errors';
+import EloRank from 'elo-rank';
 
 export default function() {
   const RatingSchema = new mongoose.Schema({
@@ -21,7 +22,26 @@ export default function() {
   let Rating;
 
   RatingSchema.statics.STATUS_PENDING = 'pending';
-  RatingSchema.statics.STATUS_FINISH = 'finish';
+  RatingSchema.statics.STATUS_WIN = 'win';
+  RatingSchema.statics.STATUS_LOSE = 'lose';
+  RatingSchema.statics.STATUS_DRAW = 'draw';
+  RatingSchema.statics.STATUS_ERROR = 'error';
+
+  RatingSchema.statics.getRatingObjectByIdAsync = async function(
+    id, projection = {}, throwWhenNotFound = true) {
+    if (!objectId.isValid(id)) {
+      if (throwWhenNotFound) {
+        throw new errors.UserError('Rating not found');
+      } else {
+        return null;
+      }
+    }
+    const s = await Rating.findOne({_id: id}, projection).exec();
+    if (s === null && throwWhenNotFound) {
+      throw new errors.UserError('Rating not found');
+    }
+    return s;
+  };
 
   /**
    * Find whether a user is busy by his pending state
@@ -36,7 +56,7 @@ export default function() {
     return rating !== null;
   };
 
-  RatingSchema.statics.initRatingAsync = async function(match, user) {
+  RatingSchema.statics.createRatingAsync = async function(match, user) {
     const rating = new this({
       status: Rating.STATUS_PENDING,
       user,
@@ -47,6 +67,38 @@ export default function() {
     });
     await rating.save();
     return rating;
+  };
+
+  RatingSchema.methods.setWinAsync = async function (opponentScore) {
+    const elo = new EloRank(24);
+    const expect = elo.getExpected(this.before, opponentScore);
+    this.after = elo.updateRating(expect, 1, this.before);
+    this.change = this.after - this.before;
+    this.status = Rating.STATUS_WIN;
+    await this.save();
+  };
+
+  RatingSchema.methods.setLoseAsync = async function (opponentScore) {
+    const elo = new EloRank(24);
+    const expect = elo.getExpected(this.before, opponentScore);
+    this.after = elo.updateRating(expect, -1, this.before);
+    this.change = this.after - this.before;
+    this.status = Rating.STATUS_LOSE;
+    await this.save();
+  };
+
+  RatingSchema.methods.setDrawAsync = async function () {
+    this.after = this.before;
+    this.change = 0;
+    this.status = Rating.STATUS_DRAW;
+    await this.save();
+  };
+
+  RatingSchema.methods.setErrorAsync = async function () {
+    this.after = this.before;
+    this.change = 0;
+    this.status = Rating.STATUS_ERROR;
+    await this.save();
   };
 
   //RatingSchema.index({ userName_std: 1 }, { unique: true });

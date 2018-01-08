@@ -28,7 +28,7 @@ export default class Handler {
     // rejudge from distant time
     mdocs.reverse();
     for (const mdoc of mdocs) {
-      await DI.models.Match.rejudgeMatchAsync(mdoc._id);
+      //await DI.models.Match.rejudgeMatchAsync(mdoc._id);
     }
     res.redirect(utils.url('/manage/matches'));
   }
