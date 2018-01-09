@@ -3,16 +3,16 @@ import mongoose from 'mongoose';
 import objectId from 'libs/objectId';
 import errors from 'libs/errors';
 import roles from 'libs/roles';
-import sso from 'libs/sso';
-import {oauth2} from 'libs/sso';
+import utils from 'libs/utils';
+import OAuthJaccount from 'oauth-jaccount';
 
 export default () => {
   const UserSchema = new mongoose.Schema({
     userName: String,
     userName_std: String,
-    isSsoAccount: Boolean,
+    isOAuthAccount: Boolean,
     role: String,
-    hash: String,   // only for isSsoAccount=false
+    hash: String,   // only for isOAuthAccount=false
     settings: {
       compiler: String,
       hideId: Boolean,
@@ -39,28 +39,41 @@ export default () => {
   let User;
 
   /**
-   * Normalize the userName
+   * Normalize the userName to form a userName_std
+   * @param userName
    * @return {String}
    */
-  UserSchema.statics.normalizeUserName = function (userName) {
+  UserSchema.statics.normalizeUserName = function(userName) {
     return String(userName).toLowerCase().trim();
   };
 
   /**
-   * Build userName for SSO account
+   * Return whether it is a valid userName
+   * @param userName
+   * @returns {boolean}
+   */
+  UserSchema.statics.isValidUserName = function(userName) {
+    return userName && User.normalizeUserName(userName)[0] !== '_';
+  };
+
+  /**
+   * Build userName for OAuth account
+   * @param type  the OAuth type (eg. jaccount)
+   * @param id    the unique id of this OAuth provider (eg. student id)
    * @return {String}
    */
-  UserSchema.statics.buildSsoUserName = function ({studentId}) {
-    return `sso_${studentId}`;
+  UserSchema.statics.buildOAuthUserName = function(type, id) {
+    return `_${type}_${id}`;
   };
 
   /**
    * Get user object by userName
    * @return {User} Mongoose user object
    */
-  UserSchema.statics.getUserObjectByUserNameAsync = async function (userName, throwWhenNotFound = true) {
+  UserSchema.statics.getUserObjectByUserNameAsync = async function(
+    userName, throwWhenNotFound = true) {
     const userNameNormalized = User.normalizeUserName(userName);
-    const user = await User.findOne({ userName_std: userNameNormalized });
+    const user = await User.findOne({userName_std: userNameNormalized});
     if (user === null && throwWhenNotFound) {
       throw new errors.UserError('User not found');
     }
@@ -71,7 +84,8 @@ export default () => {
    * Get the user object by userId
    * @return {User} Mongoose user object
    */
-  UserSchema.statics.getUserObjectByIdAsync = async function (id, throwWhenNotFound = true) {
+  UserSchema.statics.getUserObjectByIdAsync = async function(
+    id, throwWhenNotFound = true) {
     if (!objectId.isValid(id)) {
       if (throwWhenNotFound) {
         throw new errors.UserError('User not found');
@@ -79,7 +93,7 @@ export default () => {
         return null;
       }
     }
-    const user = await User.findOne({ _id: id });
+    const user = await User.findOne({_id: id});
     if (user === null && throwWhenNotFound) {
       throw new errors.UserError('User not found');
     }
@@ -90,8 +104,8 @@ export default () => {
    * Get all users, order by _id
    * @return {[User]}
    */
-  UserSchema.statics.getAllUsersAsync = async function () {
-    return await User.find().sort({ _id: 1 });
+  UserSchema.statics.getAllUsersAsync = async function() {
+    return await User.find().sort({_id: 1});
   };
 
   /**
@@ -100,36 +114,41 @@ export default () => {
    * @param  {MongoId} id User Id
    * @return {Number} Submission counter
    */
-  UserSchema.statics.incAndGetSubmissionNumberAsync = async function (id) {
+  UserSchema.statics.incAndGetSubmissionNumberAsync = async function(id) {
     if (!objectId.isValid(id)) {
       throw new errors.UserError('User not found');
     }
     const udoc = await User.findByIdAndUpdate(
       id,
-      { $inc: { submissionNumber: 1 } },
-      { new: true, select: { submissionNumber: 1 } }
+      {$inc: {submissionNumber: 1}},
+      {new: true, select: {submissionNumber: 1}},
     ).exec();
     return udoc.submissionNumber;
   };
 
   /**
-   * Insert a new SSO account
+   * Insert a new OAuth account
    * @return {User} Newly created user object
    */
-  UserSchema.statics.createSsoUserAsync = async function ({realName, studentId}) {
-    const userName = User.buildSsoUserName({ studentId });
+  UserSchema.statics.createOAuthUserAsync = async function(
+    {oauthName, realName, studentId, displayName}) {
+    const userName = User.buildOAuthUserName(oauthName, studentId);
     if (await User.getUserObjectByUserNameAsync(userName, false) !== null) {
       throw new errors.UserError('Username already taken');
     }
     const newUser = new this({
-      isSsoAccount: true,
+      isOAuthAccount: true,
       role: 'student',
       profile: {
         realName,
         studentId,
-        displayName: studentId,
+        displayName,
         teacher: '',
         initial: true,
+      },
+      settings: {
+        compiler: '',
+        hideId: false,
       },
       submissionNumber: 0,
     });
@@ -144,19 +163,21 @@ export default () => {
         throw e;
       }
     }
+    newUser.rating = await DI.models.Rating.initUserRatingAsync(newUser);
+    await newUser.save();
     return newUser;
   };
 
   /**
-   * Insert a new non-SSO account
+   * Insert a new non-OAuth account
    * @return {User} Newly created user object
    */
-  UserSchema.statics.createNonSsoUserAsync = async function ({userName, password}) {
+  UserSchema.statics.createNonOAuthUserAsync = async function({userName, password}) {
     if (await User.getUserObjectByUserNameAsync(userName, false) !== null) {
       throw new errors.UserError('Username already taken');
     }
     const newUser = new this({
-      isSsoAccount: false,
+      isOAuthAccount: false,
       role: 'student',
       profile: {
         realName: '',
@@ -167,6 +188,7 @@ export default () => {
       },
       settings: {
         compiler: '',
+        hideId: false,
       },
       submissionNumber: 0,
     });
@@ -189,7 +211,7 @@ export default () => {
    * Retrive an user object and verify its credential
    * @return {User} The user object if password matches
    */
-  UserSchema.statics.authenticateAsync = async function (userName, password) {
+  UserSchema.statics.authenticateAsync = async function(userName, password) {
     const user = await User.getUserObjectByUserNameAsync(userName);
     const match = await user.testPasswordAsync(password);
     if (!match) {
@@ -199,43 +221,30 @@ export default () => {
   };
 
   /**
-   * Verify an SSO sign
-   * @return {User} The user object if the sso token is valid
+   * SJTU Jaccount login with node-oauth-jaccount
+   * @param code
+   * @returns {Promise<*>}
    */
-  UserSchema.statics.authenticateSsoAsync = async function (directory) {
-    const resp = await sso.getPropertiesAsync(directory);
-    if (resp.ok !== true) {
-      throw new errors.UserError('Session expired. Please sign in again.');
-    }
-    const studentId = resp.properties.UserToken;
-    const userName = User.buildSsoUserName({ studentId });
-    const user = await User.getUserObjectByUserNameAsync(userName, false);
-    if (user === null) {
-      // not signed in before. create a new account
-      // realname API is not working anymore :(
-      return await User.createSsoUserAsync({ realName: '', studentId });
-    }
-    return user;
-  };
+  UserSchema.statics.authenticateJaccountAsync = async function(code) {
+    const jaccount = new OAuthJaccount(DI.config.jaccount);
+    const oauthName = 'jaccount';
 
-  UserSchema.statics.authenticateOAuthAsync = async function(code) {
-    let resp = await oauth2.getToken(code);
-
-    if (! resp.access_token) {
-      throw new errors.UserError('Session expired. Please sign in again.');
+    const redirect_url = utils.url('/oauth/jaccount/redirect', true);
+    const resp = await jaccount.getToken(code, redirect_url);
+    if (resp.e) {
+      throw new errors.UserError(`Error: ${resp.e}. Please sign in again.`);
     }
 
-    const profile = (await oauth2.getInfo(resp.access_token)).entities[0];
-
+    const profile = (await jaccount.getProfile(resp.access_token)).entities[0];
     const studentId = profile.code;
-    const userName = User.buildSsoUserName({studentId});
+    const userName = User.buildOAuthUserName(oauthName, studentId);
 
     const user = await User.getUserObjectByUserNameAsync(userName, false);
-
     if (user === null) {
       const realName = profile.name;
-
-      return await User.createSsoUserAsync({realName, studentId});
+      const displayName = profile.account;
+      return await User.createOAuthUserAsync(
+        {oauthName, realName, studentId, displayName});
     }
 
     return user;
@@ -244,16 +253,18 @@ export default () => {
   /**
    * For debug purpose only.
    */
-  UserSchema.statics.authenticateFakeSsoAsync = async function (studentId) {
-    if (DI.config.ssoUrl !== false) {
+  UserSchema.statics.authenticateFakeOAuthAsync = async function(studentId) {
+    if (DI.config.oauthDebug !== false) {
       throw new errors.PermissionError();
     }
-    const userName = User.buildSsoUserName({ studentId });
+    const oauthName = 'fake';
+    const userName = User.buildOAuthUserName(oauthName, studentId);
     const user = await User.getUserObjectByUserNameAsync(userName, false);
     if (user === null) {
       // not signed in before. create a new account
       // realname API is not working anymore :(
-      return await User.createSsoUserAsync({ realName: '', studentId });
+      return await User.createOAuthUserAsync(
+        {oauthName, realName: '', studentId, displayName: studentId});
     }
     return user;
   };
@@ -262,7 +273,7 @@ export default () => {
    * Update the profile of a user
    * @return {User} The new user object
    */
-  UserSchema.statics.updateProfileAsync = async function (userId, profile) {
+  UserSchema.statics.updateProfileAsync = async function(userId, profile) {
     if (profile !== Object(profile)) {
       throw new Error('Parameter `profile` should be an object');
     }
@@ -282,7 +293,7 @@ export default () => {
    * Check whether a user has some permissions
    * @return {Boolean}
    */
-  UserSchema.methods.hasPermission = function (perm) {
+  UserSchema.methods.hasPermission = function(perm) {
     if (this.role === undefined) {
       return false;
     }
@@ -295,7 +306,7 @@ export default () => {
   /**
    * Set the userName and userName_std
    */
-  UserSchema.methods.setUserName = function (userName) {
+  UserSchema.methods.setUserName = function(userName) {
     this.userName = userName;
     this.userName_std = UserSchema.statics.normalizeUserName(userName);
   };
@@ -303,14 +314,14 @@ export default () => {
   /**
    * Set the password hash
    */
-  UserSchema.methods.setPasswordAsync = async function (plain) {
+  UserSchema.methods.setPasswordAsync = async function(plain) {
     this.hash = await bcrypt.hash(plain, 10);
   };
 
   /**
    * Test whether a password matches the hash
    */
-  UserSchema.methods.testPasswordAsync = async function (password) {
+  UserSchema.methods.testPasswordAsync = async function(password) {
     try {
       await bcrypt.compare(password, this.hash);
     } catch (e) {
@@ -347,7 +358,7 @@ export default () => {
     await user.save();
   };
 
-  UserSchema.index({ userName_std: 1 }, { unique: true });
+  UserSchema.index({userName_std: 1}, {unique: true});
 
   User = mongoose.model('User', UserSchema);
   return User;

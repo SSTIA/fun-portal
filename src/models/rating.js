@@ -26,6 +26,7 @@ export default function() {
   RatingSchema.statics.STATUS_LOSE = 'lose';
   RatingSchema.statics.STATUS_DRAW = 'draw';
   RatingSchema.statics.STATUS_ERROR = 'error';
+  RatingSchema.statics.STATUS_INIT = 'init';
 
   RatingSchema.statics.getRatingObjectByIdAsync = async function(
     id, projection = {}, throwWhenNotFound = true) {
@@ -41,6 +42,26 @@ export default function() {
       throw new errors.UserError('Rating not found');
     }
     return s;
+  };
+
+  RatingSchema.statics.getUserRatingsAsync = async function(user) {
+    return Rating.find({user}).sort({_id: 1});
+  };
+
+  RatingSchema.statics.initUserRatingAsync = async function(user) {
+    const data = await Rating.getUserRatingsAsync(user);
+    if (data.length > 0) {
+      throw new Error('not init');
+    }
+    const rating = new this({
+      status: Rating.STATUS_INIT,
+      user,
+      before: 1500,
+      after: 1500,
+      change: 0,
+    });
+    await rating.save();
+    return rating;
   };
 
   /**
@@ -69,7 +90,7 @@ export default function() {
     return rating;
   };
 
-  RatingSchema.methods.setWinAsync = async function (opponentScore) {
+  RatingSchema.methods.setWinAsync = async function(opponentScore) {
     const elo = new EloRank(24);
     const expect = elo.getExpected(this.before, opponentScore);
     this.after = elo.updateRating(expect, 1, this.before);
@@ -78,7 +99,7 @@ export default function() {
     await this.save();
   };
 
-  RatingSchema.methods.setLoseAsync = async function (opponentScore) {
+  RatingSchema.methods.setLoseAsync = async function(opponentScore) {
     const elo = new EloRank(24);
     const expect = elo.getExpected(this.before, opponentScore);
     this.after = elo.updateRating(expect, -1, this.before);
@@ -87,14 +108,14 @@ export default function() {
     await this.save();
   };
 
-  RatingSchema.methods.setDrawAsync = async function () {
+  RatingSchema.methods.setDrawAsync = async function() {
     this.after = this.before;
     this.change = 0;
     this.status = Rating.STATUS_DRAW;
     await this.save();
   };
 
-  RatingSchema.methods.setErrorAsync = async function () {
+  RatingSchema.methods.setErrorAsync = async function() {
     this.after = this.before;
     this.change = 0;
     this.status = Rating.STATUS_ERROR;

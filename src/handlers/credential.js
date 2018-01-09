@@ -2,9 +2,9 @@ import * as web from 'express-decorators';
 import utils from 'libs/utils';
 import sanitizers from 'libs/sanitizers';
 import errors from 'libs/errors';
-import {oauth2} from 'libs/sso';
 import credential from 'libs/credential';
 import permissions from 'libs/permissions';
+import OAuthJaccount from 'oauth-jaccount';
 
 const DIRECTORY_COOKIE = 'iPlanetDirectoryPro';
 
@@ -38,19 +38,19 @@ export default class Handler {
     });
   }
 
-  @web.get('/sso/:id/login')
-  async getSSOLoginAction(req, res) {
+  @web.get('/oauth/:id/login')
+  async getOAuthLoginAction(req, res) {
     const errors = {};
 
-    // Only SJTU oauth2 is implemented yet
-    if (DI.config.sso.type !== 'oauth2') {
-      errors.msg = 'SSO is not supported currently.';
-    }
-
-    if (req.params.id == 'sjtu') {
-      res.redirect(oauth2.constructAuthUrl());
+    if (req.params.id === 'jaccount') {
+      const jaccount = new OAuthJaccount(DI.config.jaccount);
+      console.log(utils.url('/oauth/jaccount/redirect'));
+      res.redirect(
+        jaccount.getAuthorizeURL(utils.url('/oauth/jaccount/redirect', true)));
     }
     else {
+      // Only SJTU oauth2 is implemented yet
+      errors.msg = 'SSO is not supported currently.';
       res.render('error', {
         page_title: 'Sign In',
         nav_type: 'error',
@@ -59,10 +59,24 @@ export default class Handler {
     }
   }
 
-  @web.get('/sso/:id/redirect')
-  async getSSORedirectAction(req, res) {
-    const user = await DI.models.User.authenticateOAuthAsync(req.query.code);
-    await credential.setCredential(req, user._id);
+  @web.get('/oauth/:id/redirect')
+  async getOAuthRedirectAction(req, res) {
+    const errors = {};
+    let user;
+
+    if (req.params.id === 'jaccount') {
+      user = await DI.models.User.authenticateJaccountAsync(req.query.code);
+      await credential.setCredential(req, user._id);
+    } else {
+      // Only SJTU oauth2 is implemented yet
+      errors.msg = 'SSO is not supported currently.';
+      res.render('error', {
+        page_title: 'Sign In',
+        nav_type: 'error',
+        error: errors,
+      });
+      return;
+    }
 
     if (user.profile.initial) {
       res.redirect(utils.url('/user/profile'));
@@ -82,7 +96,8 @@ export default class Handler {
     if (DI.config.ssoUrl !== false) {
       throw new errors.PermissionError();
     }
-    const user = await DI.models.User.authenticateFakeSsoAsync(req.data.studentId);
+    const user = await DI.models.User.authenticateFakeSsoAsync(
+      req.data.studentId);
     await credential.setCredential(req, user._id);
     res.redirect(utils.url('/'));
   }
@@ -92,8 +107,9 @@ export default class Handler {
   async postLogoutAction(req, res) {
     req.session.destroy();
     //res.clearCookie(DIRECTORY_COOKIE, { domain: '.tongji.edu.cn' });
-    console.log(oauth2.constructLogoutUrl());
-    res.redirect(oauth2.constructLogoutUrl());
+    const jaccount = new OAuthJaccount(DI.config.jaccount);
+    const redirect_url = utils.url('/', true);
+    res.redirect(jaccount.getLogoutURL(redirect_url));
   }
 
 }

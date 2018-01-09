@@ -7,10 +7,7 @@ base:
   cspReportUrl: /
   urlPrefix: ''
   cdnPrefix: ''
-  ssoUrl: false   # legacy sso needs to be bypassed (?)
-  sso:
-    id: # fill in your SJTU OAuth2 ID
-    secret: #fill in your SJTU OAuth2 secret
+  oauthDebug: false   # legacy sso needs to be bypassed (?)
   scoreboard:
     cacheDuration: 600000     # 10 minutes
   web:
@@ -97,3 +94,6 @@ base:
             queue: gomoku_compile
           judge:
             queue: gomoku_judge
+  jaccount:
+    client_id: # fill in your SJTU OAuth2 ID
+    client_secret: #fill in your SJTU OAuth2 secret
