@@ -17,8 +17,9 @@ export default () => {
     exeBlob: mongoose.Schema.Types.ObjectId,  // grid fs
     status: String,
     text: String,
-    taskToken: String,    // A unique token for each task, so that duplicate tasks
-                          // won't be judged multiple times
+    taskToken: String,
+    // A unique token for each task, so that
+    // duplicate tasks won't be judged multiple times
     rejudge: Boolean,
     matches: [
       {

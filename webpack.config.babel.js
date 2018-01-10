@@ -10,8 +10,9 @@ import stylusRupturePlugin from 'rupture';
 
 import responsiveCutoff from './ui/responsive.inc.js';
 
-const extractProjectCSS = new ExtractTextPlugin('main.css', { allChunks: true });
-const extractVendorCSS = new ExtractTextPlugin('vendors.css', { allChunks: true });
+const extractProjectCSS = new ExtractTextPlugin('main.css', {allChunks: true});
+const extractVendorCSS = new ExtractTextPlugin('vendors.css',
+  {allChunks: true});
 
 function root(fn) {
   return path.resolve(__dirname, fn);
@@ -37,61 +38,93 @@ module.exports = {
     chunkFilename: '[name].chunk.js',
   },
   resolve: {
-    modulesDirectories: [root('node_modules'), root('ui')],
-    extensions: ['.js', ''],
+    modules: [
+      root('node_modules'),
+      root('ui'),
+    ],
+    extensions: ['.js'],
   },
   module: {
-    preLoaders: [
+    rules: [
       {
+        enforce: 'pre',
         test: /\.js$/,
-        loader: 'eslint',
         exclude: /node_modules\//,
-      }
-    ],
-    loaders: [
+        use: {
+          loader: 'eslint-loader',
+          options: {
+            configFile: root('.eslintrc.yml'),
+          },
+        },
+      },
       {
         // fonts
         test: /\.(svg|ttf|eot|woff|woff2)/,
-        loader: 'file',
-        query: {
-          name: '[path][name].[ext]?[sha512:hash:base62:7]',
+        use: {
+          loader: 'file-loader',
+          options: {
+            name: '[path][name].[ext]?[sha512:hash:base62:7]',
+          },
         },
       },
       {
         // images
         test: /\.(png|jpg)/,
-        loader: 'url',
-        query: {
-          limit: 4024,
-          name: '[path][name].[ext]?[sha512:hash:base62:7]',
-        }
+        use: {
+          loader: 'url-loader',
+          options: {
+            limit: 4024,
+            name: '[path][name].[ext]?[sha512:hash:base62:7]',
+          },
+        },
       },
       {
-        // ES2015 scripts
+        // babel
         test: /\.js$/,
         exclude: /node_modules\//,
-        loader: 'babel',
-        query: {
-          'presets': ['es2015', 'stage-0'],
-          'plugins': ['lodash', 'transform-runtime'],
-        },
+        use: [
+          {
+            loader: 'babel-loader',
+            options: {
+              'presets': ['env', 'stage-0'],
+              'plugins': ['lodash', 'transform-runtime'],
+            },
+          },
+        ],
       },
       {
         // project stylus stylesheets
         test: /\.styl$/,
-        loader: extractProjectCSS.extract(['css', 'postcss', 'stylus?resolve url']),
+        use: extractProjectCSS.extract(
+          [
+            'css-loader',
+            'postcss-loader',
+            {
+              loader: 'stylus-loader',
+              options: {
+                'resolve url': true,
+                use: [
+                  vjResponsivePlugin(),
+                  stylusRupturePlugin(),
+                ],
+                import: [
+                  '~common/common.inc.styl',
+                ],
+              },
+            },
+          ]),
       },
       {
         // vendors stylesheets
         test: /\.css$/,
         include: /node_modules\//,
-        loader: extractVendorCSS.extract(['css']),
+        use: extractVendorCSS.extract(['css-loader']),
       },
       {
         // project stylesheets
         test: /\.css$/,
         exclude: /node_modules\//,
-        loader: extractProjectCSS.extract(['css', 'postcss']),
+        use: extractProjectCSS.extract(['css-loader', 'postcss-loader']),
       },
     ],
   },
@@ -122,20 +155,6 @@ module.exports = {
     }),
 
     // copy static assets
-    new CopyWebpackPlugin([{ from: root('ui/static') }]),
-
+    new CopyWebpackPlugin([{from: root('ui/static')}]),
   ],
-  postcss: () => [postcssAutoprefixerPlugin],
-  stylus: {
-    use: [
-      vjResponsivePlugin(),
-      stylusRupturePlugin(),
-    ],
-    import: [
-      '~common/common.inc.styl',
-    ]
-  },
-  eslint: {
-    configFile: root('.eslintrc.yml'),
-  },
 };

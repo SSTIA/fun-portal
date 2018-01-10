@@ -22,11 +22,13 @@ sso.getPropertiesAsync = directory => {
   return requestAsync('/session/properties', directory);
 };
 
-let sjtuOAuth2 = new OAuth2(DI.config.sso.id,
-                    DI.config.sso.secret,
-                    'https://jaccount.sjtu.edu.cn/oauth2/',
-                    'authorize',
-                    'token');
+let sjtuOAuth2 = new OAuth2(
+  DI.config.sso.id,
+  DI.config.sso.secret,
+  'https://jaccount.sjtu.edu.cn/oauth2/',
+  'authorize',
+  'token',
+);
 
 oauth2.constructAuthUrl = () => sjtuOAuth2.getAuthorizeUrl({
   redirect_uri: utils.url('/sso/sjtu/redirect', true),
