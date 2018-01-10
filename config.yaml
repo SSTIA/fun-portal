@@ -2,7 +2,8 @@ base:
   db: mongodb://localhost/portal
   redis: redis://localhost
   secret: your_secret
-  port: 80
+  displayPort: false
+  port: 3000
   host: http://127.0.0.1
   cspReportUrl: /
   urlPrefix: ''
