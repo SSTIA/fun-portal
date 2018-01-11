@@ -23,7 +23,7 @@ globals:
   DI: true
   application: true
 rules:
-  babel/object-shorthand: 1
+  object-shorthand: 1
   no-cond-assign: 0
   indent:
     - 2

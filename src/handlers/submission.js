@@ -340,8 +340,9 @@ export default class Handler {
   }))
   @web.middleware(utils.checkPermission(permissions.REJUDGE_SUBMISSION))
   async postSubmissionRejudgeAction(req, res) {
-    const sdoc = await DI.models.Submission.recompileAsync(req.data.id);
-    res.redirect(utils.url('/submission/{0}', false, [sdoc._id]));
+    // We don't need rejudge in JI Gomoku
+    //const sdoc = await DI.models.Submission./recompileAsync(req.data.id);
+    //res.redirect(utils.url('/submission/{0}', false, [sdoc._id]));
   }
 
 }

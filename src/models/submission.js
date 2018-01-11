@@ -17,16 +17,11 @@ export default () => {
     exeBlob: mongoose.Schema.Types.ObjectId,  // grid fs
     status: String,
     text: String,
-    taskToken: String,
-    // A unique token for each task, so that
-    // duplicate tasks won't be judged multiple times
+    taskToken: String, // A unique token for compile task
     rejudge: Boolean,
-    matches: [
-      {
-        _id: mongoose.Schema.Types.ObjectId,
-        status: String,
-        usedTime: Number,
-      }],
+    matches: [{type: mongoose.Schema.Types.ObjectId, ref: 'Match'}],
+    matchStatus: String,
+    totalUsedTime: Number,
     startRating: {type: mongoose.Schema.Types.ObjectId, ref: 'Rating'},
     endRating: {type: mongoose.Schema.Types.ObjectId, ref: 'Rating'},
     matchLogCleared: Boolean,
@@ -34,13 +29,6 @@ export default () => {
     timestamps: true,
     toObject: {virtuals: true},
     toJSON: {virtuals: true},
-  });
-
-  /**
-   * Get total used time based on used time of each match
-   */
-  SubmissionSchema.virtual('totalUsedTime').get(function() {
-    return _.sumBy(this.matches, 'usedTime');
   });
 
   // Submission Model
@@ -86,14 +74,12 @@ export default () => {
         }
       })(),
       ...this.__lastModifiedPaths.map(async (path) => {
-        let m;
         if (path === 'status') {
           await DI.eventBus.emitAsyncWithProfiling(
             'submission.status:updated::**', sdoc);
-        } else if (m = path.match(/^matches\.(\d+)\.status$/)) {
-          const smdoc = sdoc.matches[m[1]];
+        } else if (path === 'matchStatus') {
           await DI.eventBus.emitAsyncWithProfiling(
-            'submission.matches.status:updated::**', sdoc, smdoc);
+            'submission.match.status:updated::**', sdoc);
         }
       }),
     ]);
@@ -109,12 +95,8 @@ export default () => {
     },
   });
 
-  DI.eventBus.on('submission.matches.status:updated', sdoc => {
-    updateStatusQueue.push(String(sdoc._id));
-  });
-
   /**
-   * Update corresponding smdoc status when a match status is updated
+   * Update matchStatus when a match status is updated
    */
   DI.eventBus.on('match.status:updated', async mdoc => {
     try {
@@ -125,81 +107,18 @@ export default () => {
   });
 
   /**
-   * Update today's quota when a submission status is updated
-   * Notice that there is a window between submission_status_updated and quota_updated
+   * Enqueue submission status change when last match status is updated
    */
-  DI.eventBus.on('submission.status:updated', async sdoc => {
-    if (sdoc.status === Submission.STATUS_EFFECTIVE && !sdoc.rejudge) {
-      Submission.incrUsedSubmissionQuotaAsync(sdoc.user, sdoc.totalUsedTime);
+  DI.eventBus.on('submission.match.status:updated', async sdoc => {
+    try {
+      updateStatusQueue.push(String(sdoc._id));
+    } catch (err) {
+      DI.logger.error(err.stack);
     }
   });
 
   /**
-   *
-   * @param mdoc
-   * @returns Object
-   */
-  SubmissionSchema.methods.getSelfRating = function(mdoc) {
-    if (this.user.equals(mdoc.u1)) {
-      return mdoc.u1Rating;
-    } else if (this.user.equals(mdoc.u2)) {
-      return mdoc.u2Rating;
-    }
-    throw new Error(`Both users not found in mdoc: ${mdoc._id}`);
-  };
-
-  /**
-   * JI Gomoku: add a match for the submission
-   * @param mdoc
-   * @returns {Promise<void>}
-   */
-  SubmissionSchema.methods.addMatchAsync = async function(mdoc) {
-    this.matches.push({
-      _id: mdoc._id,
-      status: mdoc.status,
-      usedTime: 0,
-    });
-    if (this.matches.length === 1) {
-      this.startRating = this.getSelfRating(mdoc);
-    }
-    await this.save();
-  };
-
-  /**
-   * Update the status of the submission based on status of matches.
-   * Status will be changed only from `running` to `effective`, or reversed.
-   */
-  SubmissionSchema.methods.updateStatusAsync = async function() {
-    if (this.status !== Submission.STATUS_RUNNING &&
-      this.status !== Submission.STATUS_EFFECTIVE) {
-      return;
-    }
-    if (!this.matches) {
-      return;
-    }
-    // Each submission can only have one match active (the last match)
-    const mdoc = this.matches[this.matches.length - 1];
-    if (DI.models.Match.isFinishStatus(mdoc.status)) {
-      const sdoc = await Submission.getLastSubmissionByUserAsync(this.user);
-      if (sdoc.equals(this)) {
-        this.status = Submission.STATUS_EFFECTIVE;
-      } else {
-        this.status = Submission.STATUS_INACTIVE;
-      }
-    } else {
-      this.status = Submission.STATUS_RUNNING;
-    }
-  };
-
-  SubmissionSchema.statics.updateSubmissionStatusAsync = async function(sdocid) {
-    const sdoc = await Submission.getSubmissionObjectByIdAsync(sdocid);
-    await sdoc.updateStatusAsync();
-    await sdoc.save();
-  };
-
-  /**
-   * Get the submission object by userId
-   *
+   * Get the submission object by submission id
    * @return {Submission} Mongoose submission object
    */
   SubmissionSchema.statics.getSubmissionObjectByIdAsync = async function(
@@ -219,14 +138,14 @@ export default () => {
   };
 
   /**
-   * Get all submissions
+   * Get all submissions sorted by id desc
    */
   SubmissionSchema.statics.getAllSubmissionsCursor = function() {
     return Submission.find({}).sort({_id: -1});
   };
 
   /**
-   * Get all submissions of a user
+   * Get all submissions of a user sorted by id desc
    */
   SubmissionSchema.statics.getUserSubmissionsCursor = function(uid) {
     return Submission.find({user: uid}).sort({_id: -1});
@@ -299,7 +218,7 @@ export default () => {
   };
 
   /**
-   * Submit new code and create tasks
+   * Submit new code and create compile task
    *
    * @return {Submission}
    */
@@ -322,15 +241,16 @@ export default () => {
       status: Submission.STATUS_PENDING,
       text: '',
       rejudge: false,
+      totalUsedTime: 0,
     });
-    await Submission._compileForMatchAsync(sdoc);
+    await Submission.createCompileTaskAsync(sdoc);
     return sdoc;
   };
 
   /**
    * Recompile a submission
    */
-  SubmissionSchema.statics.recompileAsync = async function(sid) {
+  /*SubmissionSchema.statics.recompileAsync = async function(sid) {
     const sdoc = await Submission.getSubmissionObjectByIdAsync(sid);
     const csdocs = await Submission.find(
       {
@@ -340,7 +260,7 @@ export default () => {
       {_id: 1},
     );
     if (csdocs.length !== 0) {
-      const csids = _.map(csdocs, csdoc => csdoc._id.toString());
+      const csids = _.map(csdocs, csdoc =_compileForMatchAsync> csdoc._id.toString());
       throw new Error(
         `Those submissions should be recompiled first: ${csids.join(', ')}`);
     }
@@ -348,20 +268,18 @@ export default () => {
     sdoc.taskToken = null;
     sdoc.matches = null;
     sdoc.rejudge = true;
-    await Submission._compileForMatchAsync(sdoc);
+    await Submission.createCompileTaskAsync(sdoc);
     return sdoc;
-  };
+  };*/
 
   /**
-   * Reset status of a submission and push it to the task queue
-   *
-   * @param  {MongoId|Submission} sidOrSubmission Submission id or Submission object
+   * Create a compile task for the submission
    * @return {Submission} The new submission object
    */
-  SubmissionSchema.statics._compileForMatchAsync = async function(sdoc) {
+  SubmissionSchema.statics.createCompileTaskAsync = async function(sdoc) {
     if (sdoc.taskToken) {
       const error = new Error(
-        '_compileForMatchAsync: Expect taskToken is undefined');
+        'createCompileTaskAsync: Expect taskToken is undefined');
       DI.logger.error(error.stack);
     }
     sdoc.exeBlob = null;
@@ -600,42 +518,126 @@ export default () => {
   /**
    * Create related matches for specified submission
    */
-  SubmissionSchema.statics._createMatchAsync = async function(sdoc) {
-    const lsdocs = await Submission.getLastSubmissionsByUserAsync(false,
-      sdoc._id.getTimestamp());
-    const mdocs = await DI.models.Match.addMatchesForSubmissionAsync(
-      sdoc._id,
-      sdoc.user,
-      _.filter(lsdocs, lsdoc => !lsdoc._id.equals(sdoc.user)),
-    );
-    if (mdocs.length === 0) {
-      // no matches are added, mark sdoc as effective
-      sdoc.status = Submission.STATUS_EFFECTIVE;
-      await sdoc.save();
+  /*  SubmissionSchema.statics._createMatchAsync = async function(sdoc) {
+      const lsdocs = await Submission.getLastSubmissionsByUserAsync(false,
+        sdoc._id.getTimestamp());
+      const mdocs = await DI.models.Match.addMatchesForSubmissionAsync(
+        sdoc._id,
+        sdoc.user,
+        _.filter(lsdocs, lsdoc => !lsdoc._id.equals(sdoc.user)),
+      );
+      if (mdocs.length === 0) {
+        // no matches are added, mark sdoc as effective
+        sdoc.status = Submission.STATUS_EFFECTIVE;
+        await sdoc.save();
+      }
+      return mdocs;
+    };*/
+
+  /**
+   * Update the status of the submission based on status of matches.
+   * Status will be changed only from `running` to `effective`, or reversed.
+   */
+  SubmissionSchema.methods.updateStatusAsync = async function() {
+    if (this.status !== Submission.STATUS_RUNNING &&
+      this.status !== Submission.STATUS_EFFECTIVE) {
+      return;
     }
-    return mdocs;
+    if (!this.matches || !this.matches.length) {
+      return;
+    }
+    // Each submission can only have one match active (the last match)
+    const mdoc = DI.models.Match.getMatchObjectByIdAsync(_.last(this.matches));
+    if (DI.models.Match.isFinishStatus(mdoc.status)) {
+      await Submission.incrUsedSubmissionQuotaAsync(this.user, mdoc.usedTime);
+      const sdoc = await Submission.getLastSubmissionByUserAsync(this.user);
+      // if the submission isn't last effective submission, set it to inactive
+      if (sdoc.equals(this)) {
+        this.status = Submission.STATUS_EFFECTIVE;
+      } else {
+        this.status = Submission.STATUS_INACTIVE;
+      }
+    } else {
+      this.status = Submission.STATUS_RUNNING;
+    }
   };
 
   /**
-   * Update the status of a smdoc according to the status of mdoc
-   *
-   * @param  {ObjectId} mdocid
+   * Called one by one after a match ends
+   * @param sdocid
+   * @returns {Promise<void>}
    */
-  SubmissionSchema.statics.updateSubmissionMatchAsync = async function(mdocid) {
-    const mdoc = await DI.models.Match.getMatchObjectByIdAsync(mdocid);
-    const sdoc = await Submission.getSubmissionObjectByIdAsync(
-      mdoc.u1Submission);
+  SubmissionSchema.statics.updateSubmissionStatusAsync = async function(sdocid) {
+    const sdoc = await Submission.getSubmissionObjectByIdAsync(sdocid);
+    await sdoc.updateStatusAsync();
+    await sdoc.save();
+  };
+
+  /**
+   * JI Gomoku: Get the submission user's latest rating
+   * @param mdoc
+   * @returns Object
+   */
+  SubmissionSchema.methods.getSelfRating = function(mdoc) {
+    if (this.user.equals(mdoc.u1)) {
+      return mdoc.u1Rating;
+    } else if (this.user.equals(mdoc.u2)) {
+      return mdoc.u2Rating;
+    }
+    throw new Error(`Both users not found in mdoc: ${mdoc._id}`);
+  };
+
+  /**
+   * JI Gomoku: add a match for the submission
+   * @param mdoc
+   * @returns {Promise<void>}
+   */
+  SubmissionSchema.methods.addMatchAsync = async function(mdoc) {
+    if (this.status !== Submission.STATUS_EFFECTIVE) {
+      throw new Error('Submission not effective, unable to add match');
+    }
+    if (this.matches.length === 0) {
+      this.startRating = this.getSelfRating(mdoc);
+    } else {
+      const _mdoc = await DI.models.Match.getMatchObjectByIdAsync(
+        _.last(this.matches));
+      if (!DI.models.Match.isFinishStatus(_mdoc.status)) {
+        throw new Error('Previous match not finished, unable to add match');
+      }
+    }
+    this.matches.push(mdoc);
+    this.matchStatus = mdoc.status;
+    await this.save();
+  };
+
+  /**
+   * Update a submission according to the match
+   * @param sdocid
+   * @param mdoc
+   */
+  SubmissionSchema.methods.updateByMatchAsync = async function(sdocid, mdoc) {
+    const sdoc = await Submission.getSubmissionObjectByIdAsync(sdocid);
     if (!sdoc.matches) {
       // Only compiled submission contains `matches`
       return;
     }
-    const smdoc = sdoc.matches.find(smdoc => smdoc._id.equals(mdocid));
-    if (smdoc === undefined) {
-      return;
+    const lastMatch = _.last(sdoc.matches);
+    if (!mdoc.equals(lastMatch)) {
+      // not the latest match
+      throw new Error('not the latest match');
     }
-    smdoc.status = mdoc.status;
-    smdoc.usedTime = mdoc.usedTime;
-    await sdoc.save();
+    sdoc.matchStatus = mdoc.status;
+    sdoc.save();
+  };
+
+  /**
+   * Update the status of a smdoc according to the status of mdoc
+   * @param  {ObjectId} mdocid
+   */
+  SubmissionSchema.statics.updateSubmissionMatchAsync = async function(mdocid) {
+    const mdoc = await DI.models.Match.getMatchObjectByIdAsync(mdocid);
+    await Submission.updateByMatchAsync(mdoc.u1Submission, mdoc);
+    await Submission.updateByMatchAsync(mdoc.u2Submission, mdoc);
   };
 
   /**
