@@ -80,27 +80,35 @@ export default function() {
   MatchSchema.statics.ROUND_STATUS_TEXT = MatchSchema.statics.STATUS_TEXT;
 
   MatchSchema.pre('save', function(next) {
+    this.__lastIsNew = this.isNew;
     this.__lastModifiedPaths = this.modifiedPaths();
     next();
   });
 
   MatchSchema.post('save', function() {
     const mdoc = this.toObject();
-    Promise.all(this.__lastModifiedPaths.map(async (path) => {
-      let m;
-      if (path === 'status') {
-        await DI.eventBus.emitAsyncWithProfiling('match.status:updated::**',
-          mdoc);
-      } else if (m = path.match(/^rounds\.(\d+)$/)) {
-        const rdoc = mdoc.rounds[m[1]];
-        await DI.eventBus.emitAsyncWithProfiling('match.rounds:updated::**',
-          mdoc, rdoc);
-      } else if (m = path.match(/^rounds\.(\d+)\.status$/)) {
-        const rdoc = mdoc.rounds[m[1]];
-        await DI.eventBus.emitAsyncWithProfiling(
-          'match.rounds.status:updated::**', mdoc, rdoc);
-      }
-    }));
+    Promise.all([
+      (async () => {
+        if (this.__lastIsNew) {
+          await DI.eventBus.emitAsyncWithProfiling('match:created::**',
+            mdoc);
+        }
+      })(),
+      ...this.__lastModifiedPaths.map(async (path) => {
+        let m;
+        if (path === 'status') {
+          await DI.eventBus.emitAsyncWithProfiling('match.status:updated::**',
+            mdoc);
+        } else if (m = path.match(/^rounds\.(\d+)$/)) {
+          const rdoc = mdoc.rounds[m[1]];
+          await DI.eventBus.emitAsyncWithProfiling('match.rounds:updated::**',
+            mdoc, rdoc);
+        } else if (m = path.match(/^rounds\.(\d+)\.status$/)) {
+          const rdoc = mdoc.rounds[m[1]];
+          await DI.eventBus.emitAsyncWithProfiling(
+            'match.rounds.status:updated::**', mdoc, rdoc);
+        }
+      })]);
   });
 
   /**
@@ -296,6 +304,12 @@ export default function() {
    * @returns {Promise<*>}
    */
   MatchSchema.statics.createMatchAsync = async function(u1, u2) {
+    if (u1.isBusy()) {
+      throw new Error(`${u1._id} is busy, unable to match`);
+    }
+    if (u2.isBusy()) {
+      throw new Error(`${u2._id} is busy, unable to match`);
+    }
     if (await DI.models.Rating.isUserBusyAsync(u1)) {
       throw new Error(`${u1._id} is busy, unable to match`);
     }
@@ -303,20 +317,21 @@ export default function() {
       throw new Error(`${u2._id} is busy, unable to match`);
     }
     const s1 = await DI.models.Submission.getLastSubmissionByUserAsync(u1);
-    if (s1 === null) {
+    if (s1 === null || s1.status !== DI.models.Submission.STATUS_EFFECTIVE) {
       throw new Error(`${u1._id} doesn't have a valid submission`);
     }
     const s2 = await DI.models.Submission.getLastSubmissionByUserAsync(u2);
-    if (s2 === null) {
+    if (s2 === null || s2.status !== DI.models.Submission.STATUS_EFFECTIVE) {
       throw new Error(`${u2._id} doesn't have a valid submission`);
     }
+    await u1.setBusyAsync();
+    await u2.setBusyAsync();
     const mdoc = new Match({
       status: Match.STATUS_PENDING,
       u1,
       u2,
       u1Submission: s1,
       u2Submission: s2,
-      usedTime: 0,
       rounds: generateRoundDocs(),
     });
     await mdoc.save();
@@ -420,31 +435,32 @@ export default function() {
     // match end, calculate rating
     if (finishCount === this.rounds.length) {
       // match end, calculate rating
-      await DI.models.Rating.populate(this, 'u1Rating u2Rating');
+      const u1Rating = await DI.models.Rating.getRatingObjectByIdAsync(this.u1Rating);
+      const u2Rating = await DI.models.Rating.getRatingObjectByIdAsync(this.u2Rating);
       if (this.status === Match.STATUS_SYSTEM_ERROR) {
         // system error
-        await this.u1Rating.setErrorAsync();
-        await this.u2Rating.setErrorAsync();
+        await u1Rating.setErrorAsync();
+        await u2Rating.setErrorAsync();
       } else if (statusStat[Match.STATUS_U1WIN] >
         statusStat[Match.STATUS_U2WIN]) {
         // u1win
         this.status = Match.STATUS_U1WIN;
-        await this.u1Rating.setWinAsync(this.u2Rating.before);
-        await this.u2Rating.setLoseAsync(this.u1Rating.before);
+        await u1Rating.setWinAsync(this.u2Rating.before);
+        await u2Rating.setLoseAsync(this.u1Rating.before);
       } else if (statusStat[Match.STATUS_U1WIN] <
         statusStat[Match.STATUS_U2WIN]) {
         // u2win
         this.status = Match.STATUS_U2WIN;
-        await this.u1Rating.setLoseAsync(this.u2Rating.before);
-        await this.u2Rating.setWinAsync(this.u1Rating.before);
+        await u1Rating.setLoseAsync(this.u2Rating.before);
+        await u2Rating.setWinAsync(this.u1Rating.before);
       } else {
         // draw
         this.status = Match.STATUS_DRAW;
-        await this.u1Rating.setDrawAsync();
-        await this.u2Rating.setDrawAsync();
+        await u1Rating.setDrawAsync();
+        await u2Rating.setDrawAsync();
       }
-      await DI.models.User.updateRatingAsync(this.u1, this.u1Rating);
-      await DI.models.User.updateRatingAsync(this.u2, this.u2Rating);
+      await DI.models.User.updateRatingAsync(this.u1, u1Rating);
+      await DI.models.User.updateRatingAsync(this.u2, u2Rating);
     }
 
   };

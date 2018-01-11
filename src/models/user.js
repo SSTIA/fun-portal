@@ -354,8 +354,17 @@ export default () => {
         user.match.change = rdoc.change;
       }
     }
-    user.match.priority = Math.abs(user.match.streak * user.match.change);
+    user.match.priority = Math.abs(user.match.streak * user.match.change) + 1;
     await user.save();
+  };
+
+  UserSchema.methods.isBusy = async function() {
+    return this.match.priority > 0;
+  };
+
+  UserSchema.methods.setBusyAsync = async function() {
+    this.match.priority = 0;
+    await this.save();
   };
 
   UserSchema.index({userName_std: 1}, {unique: true});

@@ -1,0 +1,34 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Events Flow Chart</title>
+</head>
+<body>
+<div id="diagram"></div>
+<div id="code" style="display: none">
+  st=>start: match.status:updated
+  e=>end
+  op1=>operation: Update Submission.matchStatus
+  op2=>operation: Push into updateStatusQueue
+  op3=>operation: set status Effective
+  sub1=>subroutine: submission.match.status:updated
+  cond1=>condition: changed?
+  cond2=>condition: changed?
+  st->op1->cond1
+  cond1(yes)->sub1->op2->cond2
+  cond2(yes)->op3->e
+  cond1(no)->e
+  cond2(no)->e
+</div>
+<script src="../node_modules/raphael/raphael.min.js"></script>
+<script src="../node_modules/jquery/dist/jquery.min.js"></script>
+<script src="../node_modules/flowchart.js/release/flowchart.js"></script>
+<script type="text/javascript">
+  $(document).ready(function() {
+    flowchart.parse($("#code").text()).drawSVG('diagram');
+  });
+</script>
+</body>
+</html>
+

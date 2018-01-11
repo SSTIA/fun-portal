@@ -557,6 +557,8 @@ export default () => {
       } else {
         this.status = Submission.STATUS_INACTIVE;
       }
+      sdoc.endRating = this.getSelfRating(mdoc);
+
     } else {
       this.status = Submission.STATUS_RUNNING;
     }
