@@ -459,10 +459,9 @@ export default function() {
         await u1Rating.setDrawAsync();
         await u2Rating.setDrawAsync();
       }
-      await DI.models.User.updateRatingAsync(this.u1, u1Rating);
-      await DI.models.User.updateRatingAsync(this.u2, u2Rating);
+      await u1Rating.save();
+      await u2Rating.save();
     }
-
   };
 
   MatchSchema.statics.updateMatchStatusAsync = async function(mdocid) {
@@ -534,6 +533,15 @@ export default function() {
       $or: [
         {u1Submission: sid},
         {u2Submission: sid},
+      ],
+    }).sort({_id: -1});
+  };
+
+  MatchSchema.statics.getUserMatches = function (uid) {
+    return Match.find({
+      $or: [
+        {u1: uid},
+        {u2: uid},
       ],
     }).sort({_id: -1});
   };

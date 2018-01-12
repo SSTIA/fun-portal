@@ -499,6 +499,11 @@ export default () => {
     // Set all of pending and effective submission to inactive if success
     if (success) {
       await Submission.markSubmissionByUserInactiveAsync(sdoc.user);
+      try {
+        await DI.models.Rating.initUserRatingAsync(sdoc.user);
+      } catch (e) {
+        (e => e)(); // is it interesting ?
+      }
     }
     await sdoc.save();
 
@@ -557,8 +562,10 @@ export default () => {
       } else {
         this.status = Submission.STATUS_INACTIVE;
       }
-      sdoc.endRating = this.getSelfRating(mdoc);
-
+      const rdoc = this.getSelfRating(mdoc);
+      sdoc.endRating = rdoc;
+      await sdoc.save();
+      await DI.model.User.updateRatingAsync(rdoc.user, rdoc);
     } else {
       this.status = Submission.STATUS_RUNNING;
     }

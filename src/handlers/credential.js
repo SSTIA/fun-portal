@@ -44,7 +44,6 @@ export default class Handler {
 
     if (req.params.id === 'jaccount') {
       const jaccount = new OAuthJaccount(DI.config.jaccount);
-      console.log(utils.url('/oauth/jaccount/redirect'));
       res.redirect(
         jaccount.getAuthorizeURL(utils.url('/oauth/jaccount/redirect', true)));
     }

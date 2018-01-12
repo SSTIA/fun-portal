@@ -61,6 +61,7 @@ export default function() {
       change: 0,
     });
     await rating.save();
+    await DI.models.User.updateRatingAsync(user, rating);
     return rating;
   };
 

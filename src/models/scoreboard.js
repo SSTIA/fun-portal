@@ -17,6 +17,8 @@ export default () => {
 
     const endProfile = utils.profile('Scoreboard.flushCache');
 
+    const udocs = await DI.models.User.getEffectiveUsersAsync();
+
     const lsdocs = await DI.models.Submission.getLastSubmissionsByUserAsync();
     await DI.models.Submission.populate(lsdocs, {
       path: 'sdocid',
@@ -29,6 +31,7 @@ export default () => {
     const _mdocs = await DI.models.LeaderPair.getAllAsync();
     const mdocs = _.uniqBy(_mdocs, mdoc => [mdoc.u1.toString(), mdoc.u2.toString()].sort().join('_'));
 
+    cache.udocs = udocs;
     cache.lsdocs = lsdocs;
     cache.mdocs = mdocs;
     cache.available = true;

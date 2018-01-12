@@ -25,7 +25,7 @@ export default () => {
       initial: Boolean,
     },
     submissionNumber: Number,
-    rating: {type: mongoose.Schema.Types.ObjectId, ref: 'Rating'},
+    rating: Number,
     match: {
       streak: Number,
       change: Number,
@@ -108,6 +108,12 @@ export default () => {
     return await User.find().sort({_id: 1});
   };
 
+  UserSchema.statics.getEffectiveUsersAsync = async function() {
+    return await User.find({
+      rating: {$gt: 0},
+    }).sort({_id: 1});
+  };
+
   /**
    * Increase the submission counter of a user and return its new value
    *
@@ -150,6 +156,12 @@ export default () => {
         compiler: '',
         hideId: false,
       },
+      rating: 0,
+      match: {
+        streak: 0,
+        change: 0,
+        priority: 0,
+      },
       submissionNumber: 0,
     });
     newUser.setUserName(userName);
@@ -163,7 +175,7 @@ export default () => {
         throw e;
       }
     }
-    newUser.rating = await DI.models.Rating.initUserRatingAsync(newUser);
+    //newUser.rating = await DI.models.Rating.initUserRatingAsync(newUser);
     await newUser.save();
     return newUser;
   };
@@ -189,6 +201,12 @@ export default () => {
       settings: {
         compiler: '',
         hideId: false,
+      },
+      rating: 0,
+      match: {
+        streak: 0,
+        change: 0,
+        priority: 0,
       },
       submissionNumber: 0,
     });
@@ -336,7 +354,7 @@ export default () => {
 
   UserSchema.statics.updateRatingAsync = async function(uid, rdoc) {
     const user = await User.getUserObjectByIdAsync(uid);
-    user.rating = rdoc;
+    user.rating = rdoc.after;
     if (rdoc.status === DI.models.Rating.STATUS_WIN) {
       if (user.match.streak > 0) {
         user.match.streak++;
@@ -365,6 +383,12 @@ export default () => {
   UserSchema.methods.setBusyAsync = async function() {
     this.match.priority = 0;
     await this.save();
+  };
+
+  UserSchema.statics.getHighestPriorityAsync = async function() {
+    return await this.findOne({
+      'match.priority': {$gt: 0},
+    }).sort({'match.priority': -1}).exec();
   };
 
   UserSchema.index({userName_std: 1}, {unique: true});
