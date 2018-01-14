@@ -499,7 +499,7 @@ export default () => {
     // Set all of pending and effective submission to inactive if success
     if (success) {
       await Submission.markSubmissionByUserInactiveAsync(sdoc.user);
-      await DI.models.User.setMatchPriorityInitialAsync(sdoc.user, true);
+      await DI.models.User.setMatchPriorityInitialAsync(sdoc.user, sdoc);
       try {
         await DI.models.Rating.initUserRatingAsync(sdoc.user);
       } catch (e) {
@@ -625,7 +625,7 @@ export default () => {
    * @param sdocid
    * @param mdoc
    */
-  SubmissionSchema.methods.updateByMatchAsync = async function(sdocid, mdoc) {
+  SubmissionSchema.statics.updateByMatchAsync = async function(sdocid, mdoc) {
     const sdoc = await Submission.getSubmissionObjectByIdAsync(sdocid);
     if (!sdoc.matches) {
       // Only compiled submission contains `matches`
@@ -646,8 +646,10 @@ export default () => {
    */
   SubmissionSchema.statics.updateSubmissionMatchAsync = async function(mdocid) {
     const mdoc = await DI.models.Match.getMatchObjectByIdAsync(mdocid);
-    await Submission.updateByMatchAsync(mdoc.u1Submission, mdoc);
-    await Submission.updateByMatchAsync(mdoc.u2Submission, mdoc);
+    if (mdoc.status !== DI.models.Match.STATUS_PENDING) {
+      await Submission.updateByMatchAsync(mdoc.u1Submission, mdoc);
+      await Submission.updateByMatchAsync(mdoc.u2Submission, mdoc);
+    }
   };
 
   /**

@@ -12,6 +12,20 @@ export default class Handler {
     next();
   }
 
+  @web.get('/test_match')
+  async testMatch(req, res) {
+    const u1 = await DI.models.User.getHighestPriorityAsync();
+    if (u1 === null) return;
+    const u2 = await DI.models.User.getBestOpponentAsync(u1, u1.match.streak >=
+      0);
+    if (u2 === null) return;
+    await DI.models.Match.createMatchAsync(u1, u2);
+    console.log(u1, u2);
+    res.send({
+      u1, u2,
+    });
+  }
+
   @web.get('/matches')
   @web.middleware(utils.checkPermission(permissions.VIEW_MANAGE_PORTAL))
   async getMatches(req, res) {

@@ -56,39 +56,39 @@
             </tr>
           </thead>
           <tbody>
-          {%- for rdoc in sbdoc %}
+          {%- for udoc in udocs %}
             <tr>
-              <td class="col--rank">#{{ rdoc.rank }}</td>
+              <td class="col--rank">#{{ udoc.rank }}</td>
               <td class="col--user"><div layout="row center-start">
-              {%- if rdoc.badge %}
-                <span class="badge {{ rdoc.badge.style }}">{{ rdoc.badge.text }}</span>
+              {%- if udoc.badge %}
+                <span class="badge {{ udoc.badge.style }}">{{ udoc.badge.text }}</span>
               {%- endif %}
-                <a href="{{ url('/submission/user/{0}', false, [rdoc.udoc._id]) }}">{{ rdoc.udoc.profile.displayName }}</a>
+                <a href="{{ url('/submission/user/{0}', false, [udoc._id]) }}">{{ udoc.profile.displayName }}</a>
               </div></td>
             {% if showDetail %}
               <td class="col--student_id">
-                {{ rdoc.udoc.profile.studentId }}
+                {{ udoc.profile.studentId }}
               </td>
               <td class="col--real_name">
-                {{ rdoc.udoc.profile.realName }}
+                {{ udoc.profile.realName }}
               </td>
             {% endif %}
-              <td class="col--score">{{ rdoc.score }}</td>
-              <td class="col--wins">{{ rdoc.win }}</td>
-              <td class="col--loses">{{ rdoc.lose }}</td>
-              <td class="col--draws">{{ rdoc.draw }}</td>
+              <td class="col--score">{{ udoc.rating.score }}</td>
+              <td class="col--wins">{{ udoc.rating.win }}</td>
+              <td class="col--loses">{{ udoc.rating.lose }}</td>
+              <td class="col--draws">{{ udoc.rating.draw }}</td>
               <td class="col--submission">
-              {%- if rdoc.lsdoc %}
-                <a class="typo-a" href="{{ url('/submission/{0}', false, [rdoc.lsdoc._id]) }}">
-                  #{{ rdoc.lsdoc.version }}: View
+              {%- if udoc.submission %}
+                <a class="typo-a" href="{{ url('/submission/{0}', false, [udoc.submission._id]) }}">
+                  #{{ udoc.submission.version }}: View
                 </a>
               {%- else %}
                 --
               {%- endif %}
               </td>
               <td class="col--submit-at">
-              {%- if rdoc.lsdoc %}
-                {{ rdoc.lsdoc.createdAt|datetime }}
+              {%- if udoc.submission %}
+                {{ udoc.submission.createdAt|datetime }}
               {%- else %}
                 --
               {%- endif %}

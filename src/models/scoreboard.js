@@ -18,18 +18,29 @@ export default () => {
     const endProfile = utils.profile('Scoreboard.flushCache');
 
     const udocs = await DI.models.User.getEffectiveUsersAsync();
+    await DI.models.Submission.populate(udocs, 'submission');
+    let last_rank = 1;
+    for (let i = 0; i < udocs.length; i++) {
+      if (i > 0 && udocs[i].rating.score === udocs[i - 1].rating.score) {
+        udocs[i].rank = last_rank;
+      } else {
+        udocs[i].rank = last_rank = i + 1;
+      }
+    }
+    //console.log(udocs);
 
     const lsdocs = await DI.models.Submission.getLastSubmissionsByUserAsync();
     await DI.models.Submission.populate(lsdocs, {
       path: 'sdocid',
-      select: { code: 0, matches: 0 },
+      select: {code: 0, matches: 0},
     });
 
     // All effective and deduplicated matches related to those submissions
     //const _mdocs = await DI.models.Match.getPairwiseMatchesAsync(_.map(lsdocs, 'sdocid._id'));
     //const mdocs = _.uniqBy(_mdocs, mdoc => _.orderBy([mdoc.u1, mdoc.u2], '_id').join('_'));
     const _mdocs = await DI.models.LeaderPair.getAllAsync();
-    const mdocs = _.uniqBy(_mdocs, mdoc => [mdoc.u1.toString(), mdoc.u2.toString()].sort().join('_'));
+    const mdocs = _.uniqBy(_mdocs,
+      mdoc => [mdoc.u1.toString(), mdoc.u2.toString()].sort().join('_'));
 
     cache.udocs = udocs;
     cache.lsdocs = lsdocs;
@@ -54,14 +65,15 @@ export default () => {
    *
    * @return {[rows, cacheAt]}
    */
-  ScoreboardModel.calculate = async function () {
+  ScoreboardModel.calculate = async function() {
     if (!cache.available) {
       return [false];
     }
-    let { lsdocs, mdocs } = cache;
+    let {lsdocs, mdocs} = cache;
 
     // Badges
-    const badgesByStudentId = _.keyBy(await DI.models.Badge.getBadgesAsync(), 'studentId');
+    const badgesByStudentId = _.keyBy(await DI.models.Badge.getBadgesAsync(),
+      'studentId');
 
     // Results
     const _rdocs = _.map(await DI.models.User.getAllUsersAsync(), udoc => ({
@@ -77,7 +89,8 @@ export default () => {
     const uid2rdocidx = _.invertBy(_rdocs, 'udoc._id');
 
     // Fill sdoc for results
-    lsdocs.forEach(lsdoc => _rdocs[uid2rdocidx[lsdoc._id]].lsdoc = lsdoc.sdocid);
+    lsdocs.forEach(
+      lsdoc => _rdocs[uid2rdocidx[lsdoc._id]].lsdoc = lsdoc.sdocid);
 
     // Fill score, win, lose, draw
     mdocs.forEach(mdoc => {
@@ -101,7 +114,7 @@ export default () => {
     const rdocs = _.orderBy(
       _rdocs,
       ['score', 'win', 'draw', 'lose', 'sdoc._id', 'udoc._id'],
-      ['desc',  'desc','desc', 'asc',  'asc',      'asc']
+      ['desc', 'desc', 'desc', 'asc', 'asc', 'asc'],
     );
     let lastRank = 0, lastScore = -1;
     rdocs.forEach((rdoc, idx) => {
@@ -114,7 +127,7 @@ export default () => {
       }
     });
 
-    return [rdocs, cache.at];
+    return [cache.udocs, cache.at];
   };
 
   return {

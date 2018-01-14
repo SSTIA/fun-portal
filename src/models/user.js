@@ -25,6 +25,7 @@ export default () => {
       initial: Boolean,
     },
     submissionNumber: Number,
+    submission: {type: mongoose.Schema.Types.ObjectId, ref: 'Submission'},
     rating: {
       score: Number,
       win: Number,
@@ -116,8 +117,8 @@ export default () => {
 
   UserSchema.statics.getEffectiveUsersAsync = async function() {
     return await User.find({
-      rating: {$gt: 0},
-    }).sort({_id: 1});
+      'rating.score': {$gt: 0},
+    }).sort({'rating.score': -1});
   };
 
   /**
@@ -398,14 +399,26 @@ export default () => {
     await user.save();
   };
 
-  UserSchema.statics.setMatchPriorityInitialAsync = async function(uid, init = true) {
+  /**
+   * if sdoc is set, it is a new submission
+   * @param uid
+   * @param sdoc
+   * @returns {Promise<void>}
+   */
+  UserSchema.statics.setMatchPriorityInitialAsync = async function(
+    uid, sdoc = null) {
     const user = await User.getUserObjectByIdAsync(uid);
-    user.match.initial = init;
+    if (sdoc) {
+      user.match.initial = true;
+      user.submission = sdoc;
+    } else {
+      user.match.initial = false;
+    }
     await user.save();
   };
 
-  UserSchema.methods.isBusy = async function() {
-    return this.match.priority > 0;
+  UserSchema.methods.isBusy = function() {
+    return this.match.priority <= 0;
   };
 
   UserSchema.methods.setBusyAsync = async function() {
@@ -417,6 +430,22 @@ export default () => {
     return await this.findOne({
       'match.priority': {$gt: 0},
     }).sort({'match.priority': -1}).exec();
+  };
+
+  UserSchema.statics.getBestOpponentAsync = async function (u1, higher) {
+    if (higher) {
+      return await this.findOne({
+        'match.priority': {$gt: 0},
+        '_id': {$ne: u1._id},
+        'rating.score': {$gte: u1.rating.score},
+      }).sort({'rating.score': 1}).exec();
+    } else {
+      return await this.findOne({
+        'match.priority': {$gt: 0},
+        '_id': {$ne: u1._id},
+        'rating.score': {$lte: u1.rating.score},
+      }).sort({'rating.score': -1}).exec();
+    }
   };
 
   UserSchema.index({userName_std: 1}, {unique: true});
