@@ -499,6 +499,7 @@ export default () => {
     // Set all of pending and effective submission to inactive if success
     if (success) {
       await Submission.markSubmissionByUserInactiveAsync(sdoc.user);
+      await DI.models.User.setMatchPriorityInitialAsync(sdoc.user, true);
       try {
         await DI.models.Rating.initUserRatingAsync(sdoc.user);
       } catch (e) {

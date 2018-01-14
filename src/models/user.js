@@ -25,11 +25,17 @@ export default () => {
       initial: Boolean,
     },
     submissionNumber: Number,
-    rating: Number,
+    rating: {
+      score: Number,
+      win: Number,
+      lose: Number,
+      draw: Number,
+    },
     match: {
       streak: Number,
       change: Number,
       priority: Number,
+      initial: Boolean,
     },
   }, {
     timestamps: true,
@@ -156,11 +162,17 @@ export default () => {
         compiler: '',
         hideId: false,
       },
-      rating: 0,
+      rating: {
+        score: 0,
+        win: 0,
+        lose: 0,
+        draw: 0,
+      },
       match: {
         streak: 0,
         change: 0,
         priority: 0,
+        initial: true,
       },
       submissionNumber: 0,
     });
@@ -202,11 +214,17 @@ export default () => {
         compiler: '',
         hideId: false,
       },
-      rating: 0,
+      rating: {
+        score: 0,
+        win: 0,
+        lose: 0,
+        draw: 0,
+      },
       match: {
         streak: 0,
         change: 0,
         priority: 0,
+        initial: true,
       },
       submissionNumber: 0,
     });
@@ -354,7 +372,7 @@ export default () => {
 
   UserSchema.statics.updateRatingAsync = async function(uid, rdoc) {
     const user = await User.getUserObjectByIdAsync(uid);
-    user.rating = rdoc.after;
+    user.rating.score = rdoc.after;
     if (rdoc.status === DI.models.Rating.STATUS_WIN) {
       if (user.match.streak > 0) {
         user.match.streak++;
@@ -363,6 +381,7 @@ export default () => {
         user.match.streak = 1;
         user.match.change = rdoc.change;
       }
+      user.rating.win++;
     } else if (rdoc.status === DI.models.Rating.STATUS_LOSE) {
       if (user.match.streak < 0) {
         user.match.streak--;
@@ -371,8 +390,17 @@ export default () => {
         user.match.streak = -1;
         user.match.change = rdoc.change;
       }
+      user.rating.lose++;
+    } else if (rdoc.status === DI.models.Rating.STATUS_DRAW) {
+      user.rating.draw++;
     }
     user.match.priority = Math.abs(user.match.streak * user.match.change) + 1;
+    await user.save();
+  };
+
+  UserSchema.statics.setMatchPriorityInitialAsync = async function(uid, init = true) {
+    const user = await User.getUserObjectByIdAsync(uid);
+    user.match.initial = init;
     await user.save();
   };
 
