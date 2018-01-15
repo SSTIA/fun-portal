@@ -438,13 +438,13 @@ export default () => {
       return await this.findOne({
         'match.priority': {$gt: 0},
         '_id': {$ne: u1._id},
-        'rating.score': {$gte: u1.rating.score},
+        //'rating.score': {$gte: u1.rating.score},
       }).sort({'rating.score': 1}).exec();
     } else {
       return await this.findOne({
         'match.priority': {$gt: 0},
         '_id': {$ne: u1._id},
-        'rating.score': {$lte: u1.rating.score},
+        //'rating.score': {$lte: u1.rating.score},
       }).sort({'rating.score': -1}).exec();
     }
   };

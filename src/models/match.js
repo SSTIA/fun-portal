@@ -434,32 +434,32 @@ export default function() {
     // match end, calculate rating
     if (finishCount === this.rounds.length) {
       // match end, calculate rating
-      const u1Rating = await DI.models.Rating.getRatingObjectByIdAsync(this.u1Rating);
-      const u2Rating = await DI.models.Rating.getRatingObjectByIdAsync(this.u2Rating);
+      const u1rdoc = await DI.models.Rating.getRatingObjectByIdAsync(this.u1Rating);
+      const u2rdoc = await DI.models.Rating.getRatingObjectByIdAsync(this.u2Rating);
       if (this.status === Match.STATUS_SYSTEM_ERROR) {
         // system error
-        await u1Rating.setErrorAsync();
-        await u2Rating.setErrorAsync();
+        await u1rdoc.setErrorAsync();
+        await u2rdoc.setErrorAsync();
       } else if (statusStat[Match.STATUS_U1WIN] >
         statusStat[Match.STATUS_U2WIN]) {
         // u1win
         this.status = Match.STATUS_U1WIN;
-        await u1Rating.setWinAsync(this.u2Rating.before);
-        await u2Rating.setLoseAsync(this.u1Rating.before);
+        await u1rdoc.setWinAsync(u2rdoc.before);
+        await u2rdoc.setLoseAsync(u1rdoc.before);
       } else if (statusStat[Match.STATUS_U1WIN] <
         statusStat[Match.STATUS_U2WIN]) {
         // u2win
         this.status = Match.STATUS_U2WIN;
-        await u1Rating.setLoseAsync(this.u2Rating.before);
-        await u2Rating.setWinAsync(this.u1Rating.before);
+        await u1rdoc.setLoseAsync(u2rdoc.before);
+        await u2rdoc.setWinAsync(u1rdoc.before);
       } else {
         // draw
         this.status = Match.STATUS_DRAW;
-        await u1Rating.setDrawAsync();
-        await u2Rating.setDrawAsync();
+        await u1rdoc.setDrawAsync();
+        await u2rdoc.setDrawAsync();
       }
-      await u1Rating.save();
-      await u2Rating.save();
+      await u1rdoc.save();
+      await u2rdoc.save();
     }
   };
 

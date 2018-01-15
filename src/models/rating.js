@@ -91,8 +91,18 @@ export default function() {
     return rating;
   };
 
+  RatingSchema.methods.getEloRank = function() {
+    let k = 24;
+    _.forEach(DI.config.rating.factor, (value, key) => {
+      if (this.before > key) {
+        k = value;
+      }
+    });
+    return new EloRank(k);
+  };
+
   RatingSchema.methods.setWinAsync = async function(opponentScore) {
-    const elo = new EloRank(24);
+    const elo = this.getEloRank();
     const expect = elo.getExpected(this.before, opponentScore);
     this.after = elo.updateRating(expect, 1, this.before);
     this.change = this.after - this.before;
@@ -101,9 +111,9 @@ export default function() {
   };
 
   RatingSchema.methods.setLoseAsync = async function(opponentScore) {
-    const elo = new EloRank(24);
+    const elo = this.getEloRank();
     const expect = elo.getExpected(this.before, opponentScore);
-    this.after = elo.updateRating(expect, -1, this.before);
+    this.after = elo.updateRating(expect, 0, this.before);
     this.change = this.after - this.before;
     this.status = Rating.STATUS_LOSE;
     await this.save();

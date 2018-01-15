@@ -125,14 +125,14 @@ export default () => {
     id, projection = {}, throwWhenNotFound = true) {
     if (!objectId.isValid(id)) {
       if (throwWhenNotFound) {
-        throw new errors.UserError('Submission not found');
+        throw new Error(`Submission ${id} not valid`);
       } else {
         return null;
       }
     }
     const s = await Submission.findOne({_id: id}, projection);
     if (s === null && throwWhenNotFound) {
-      throw new errors.UserError('Submission not found');
+      throw new Error(`Submission ${id} not found`);
     }
     return s;
   };
@@ -564,12 +564,12 @@ export default () => {
       } else {
         this.status = Submission.STATUS_INACTIVE;
       }
-      const rdoc = DI.models.Rating.getRatingObjectByIdAsync(
+      const rdoc = await DI.models.Rating.getRatingObjectByIdAsync(
         this.getSelfRating(mdoc));
-      this.endRating = rdoc;
+      this.endRating = rdoc._id;
       await this.save();
       const udoc = await DI.models.User.updateRatingAsync(this.user, rdoc);
-      DI.logger(
+      DI.logger.info(
         `Submission ${this._id} by user ${udoc.profile.displayName}(${udoc._id})` +
         ` ended a match, rating ${rdoc.before}=>${rdoc.after}`,
       );

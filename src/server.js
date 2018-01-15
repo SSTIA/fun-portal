@@ -8,6 +8,7 @@ import path from 'path';
 // without ending slash!
 global.__codeRoot = path.join(__dirname, '.');
 global.__projectRoot = path.join(__dirname, '..');
+process.env.SUPPRESS_NO_CONFIG_WARNING = true;
 
 (async function start() {
 
@@ -41,8 +42,8 @@ global.__projectRoot = path.join(__dirname, '..');
 
   global.DI = application.DI;
 
-  application.start()
-    .then(() => DI.eventBus.emitAsyncWithProfiling('system.started'))
-    .catch(e => console.log(e.stack));
+  application.start().
+    then(() => DI.eventBus.emitAsyncWithProfiling('system.started')).
+    catch(e => console.log(e.stack));
 
 })();

@@ -7,6 +7,7 @@ import ExtractTextPlugin from 'extract-text-webpack-plugin';
 import CopyWebpackPlugin from 'copy-webpack-plugin';
 import postcssAutoprefixerPlugin from 'autoprefixer';
 import stylusRupturePlugin from 'rupture';
+import HappyPack from 'happypack';
 
 import responsiveCutoff from './ui/responsive.inc.js';
 
@@ -82,15 +83,7 @@ module.exports = {
         // babel
         test: /\.js$/,
         exclude: /node_modules\//,
-        use: [
-          {
-            loader: 'babel-loader',
-            options: {
-              'presets': ['env', 'stage-0'],
-              'plugins': ['lodash', 'transform-runtime'],
-            },
-          },
-        ],
+        use: 'happypack/loader',
       },
       {
         // project stylus stylesheets
@@ -129,6 +122,17 @@ module.exports = {
     ],
   },
   plugins: [
+    new HappyPack({
+      loaders: [
+        {
+          loader: 'babel-loader',
+          options: {
+            'presets': ['env', 'stage-0'],
+            'plugins': ['lodash', 'transform-runtime'],
+          },
+        },
+      ],
+    }),
 
     new webpack.ProvidePlugin({
       $: 'jquery',

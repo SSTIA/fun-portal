@@ -98,3 +98,8 @@ base:
   jaccount:
     client_id: # fill in your SJTU OAuth2 ID
     client_secret: #fill in your SJTU OAuth2 secret
+  rating:
+    factor:
+      0:    32
+      2100: 24
+      2400: 16

@@ -29,7 +29,7 @@ gulp.task('server', () => {
     .pipe(gulp.dest('./.dist'));
 });
 
-gulp.task('server:develop', ['server'], () => {
+gulp.task('server:develop', gulp.series('server', () => {
   nodemon({
     script: '.dist/server.js',
     watch: ['.'],
@@ -37,7 +37,7 @@ gulp.task('server:develop', ['server'], () => {
     ignore: ['node_modules/', 'ui/', '.uibuild/', '.dist/'],
     tasks: ['server'],
   });
-});
+}));
 
 const iconTimestamp = ~~(Date.now() / 1000);
 
@@ -63,4 +63,4 @@ gulp.task('fe:iconfont', () => {
     .pipe(gulp.dest('ui/misc/.iconfont'));
 });
 
-gulp.task('default', ['server:develop']);
+gulp.task('default', gulp.series('server:develop'));
