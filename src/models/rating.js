@@ -32,14 +32,14 @@ export default function() {
     id, projection = {}, throwWhenNotFound = true) {
     if (!objectId.isValid(id)) {
       if (throwWhenNotFound) {
-        throw new errors.UserError('Rating not found');
+        throw new Error(`Rating ${id} not found`);
       } else {
         return null;
       }
     }
     const s = await Rating.findOne({_id: id}, projection).exec();
     if (s === null && throwWhenNotFound) {
-      throw new errors.UserError('Rating not found');
+      throw new Error(`Rating ${id} not found`);
     }
     return s;
   };

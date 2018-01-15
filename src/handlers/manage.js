@@ -20,7 +20,7 @@ export default class Handler {
       0);
     if (u2 === null) return;
     await DI.models.Match.createMatchAsync(u1, u2);
-    console.log(u1, u2);
+    //console.log(u1, u2);
     res.send({
       u1, u2,
     });

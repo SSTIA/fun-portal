@@ -334,20 +334,13 @@ export default function() {
       u2Submission: s2._id,
       rounds: generateRoundDocs(),
     });
-    console.log(1);
-    mdoc.u1Rating = await DI.models.Rating.createRatingAsync(mdoc, u1)._id;
-    console.log(2);
-    mdoc.u2Rating = await DI.models.Rating.createRatingAsync(mdoc, u2)._id;
-    console.log(3);
+    mdoc.u1Rating = (await DI.models.Rating.createRatingAsync(mdoc, u1))._id;
+    mdoc.u2Rating = (await DI.models.Rating.createRatingAsync(mdoc, u2))._id;
     await mdoc.save();
-    console.log(4);
     await s1.addMatchAsync(mdoc);
-    console.log(5);
     await s2.addMatchAsync(mdoc);
-    console.log(6);
     await Promise.all(
       mdoc.rounds.map(rdoc => publishRoundTaskAsync(mdoc, rdoc)));
-    console.log(7);
     return mdoc;
   };
 

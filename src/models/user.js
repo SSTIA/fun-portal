@@ -95,14 +95,14 @@ export default () => {
     id, throwWhenNotFound = true) {
     if (!objectId.isValid(id)) {
       if (throwWhenNotFound) {
-        throw new errors.UserError('User not found');
+        throw new Error(`User ${id} not valid`);
       } else {
         return null;
       }
     }
     const user = await User.findOne({_id: id});
     if (user === null && throwWhenNotFound) {
-      throw new errors.UserError('User not found');
+      throw new Error(`User ${id} not found`);
     }
     return user;
   };
@@ -397,6 +397,7 @@ export default () => {
     }
     user.match.priority = Math.abs(user.match.streak * user.match.change) + 1;
     await user.save();
+    return user;
   };
 
   /**

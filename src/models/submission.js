@@ -553,7 +553,8 @@ export default () => {
       return;
     }
     // Each submission can only have one match active (the last match)
-    const mdoc = DI.models.Match.getMatchObjectByIdAsync(_.last(this.matches));
+    const mdoc = await DI.models.Match.getMatchObjectByIdAsync(
+      _.last(this.matches));
     if (DI.models.Match.isFinishStatus(mdoc.status)) {
       await Submission.incrUsedSubmissionQuotaAsync(this.user, mdoc.usedTime);
       const sdoc = await Submission.getLastSubmissionByUserAsync(this.user);
@@ -563,10 +564,15 @@ export default () => {
       } else {
         this.status = Submission.STATUS_INACTIVE;
       }
-      const rdoc = this.getSelfRating(mdoc);
-      sdoc.endRating = rdoc;
-      await sdoc.save();
-      await DI.model.User.updateRatingAsync(rdoc.user, rdoc);
+      const rdoc = DI.models.Rating.getRatingObjectByIdAsync(
+        this.getSelfRating(mdoc));
+      this.endRating = rdoc;
+      await this.save();
+      const udoc = await DI.models.User.updateRatingAsync(this.user, rdoc);
+      DI.logger(
+        `Submission ${this._id} by user ${udoc.profile.displayName}(${udoc._id})` +
+        ` ended a match, rating ${rdoc.before}=>${rdoc.after}`,
+      );
     } else {
       this.status = Submission.STATUS_RUNNING;
     }
