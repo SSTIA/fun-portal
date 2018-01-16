@@ -10,7 +10,7 @@ base:
   cdnPrefix: ''
   oauthDebug: false   # legacy sso needs to be bypassed (?)
   scoreboard:
-    cacheDuration: 600000     # 10 minutes
+    cacheDuration: 60000     # 10 minutes
   web:
     realtimePush: true        # disable realtime push if you have many judgers
   api:
