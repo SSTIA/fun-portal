@@ -113,7 +113,7 @@ export default class Handler {
       MATCHES_PER_PAGE,
     );
     await DI.models.User.populate(mdocs, 'u1 u2');
-    //await DI.models.Submission.populate(mdocs, 'u1Submission u2Submission');
+    await DI.models.Submission.populate(mdocs, 'u1Submission u2Submission');
     //const udoc = req.credential;
     //console.log(udoc);
     //console.log(mdocs[0]);
@@ -126,8 +126,7 @@ export default class Handler {
       mdocs,
       pages,
       page: req.data.page,
-      getRelativeStatus: (status, mdoc) => DI.models.Match.getRelativeStatus(
-        status),
+      getRelativeStatus: (status, mdoc) => status,
       context: {
         //id: sdoc._id,
         page: req.data.page,

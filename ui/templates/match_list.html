@@ -30,7 +30,7 @@
           {%- endfor %}
           </tbody>
         </table>
-        {{ paginator.render(page, pages, url('/submission/{0}/{page}', false, [sdoc._id])) }}
+        {{ paginator.render(page, pages, url('/match/{page}', false, [sdoc._id])) }}
       </div>
     </div>
   </div>

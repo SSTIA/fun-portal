@@ -11,23 +11,23 @@
   </td>
   <td class="col--challenger">
     <span class="s_version">#{{ mdoc.u1Submission.version }}: </span>
-  {%- if udoc.equals(mdoc.u1) %}
-    <span class="text-aqua">(Submitter)</span>
-  {%- else %}
-    <a href="{{ url('/submission/{0}', false, [mdoc.u1Submission]) }}">
-      {{ mdoc.u1.profile.displayName }}
+    <a href="{{ url('/submission/{0}', false, [mdoc.u1Submission._id]) }}">
+      {%- if udoc.equals(mdoc.u1) %}
+        <span class="text-aqua">(Submitter)</span>
+      {%- else %}
+        {{ mdoc.u1.profile.displayName }}
+      {%- endif %}
     </a>
-  {%- endif %}
   </td>
   <td class="col--challengee">
     <span class="s_version">#{{ mdoc.u2Submission.version }}: </span>
-  {%- if udoc.equals(mdoc.u2) %}
-    <span class="text-aqua">(Submitter)</span>
-  {%- else %}
-    <a href="{{ url('/submission/{0}', false, [mdoc.u2Submission]) }}">
-      {{ mdoc.u2.profile.displayName }}
+    <a href="{{ url('/submission/{0}', false, [mdoc.u2Submission._id]) }}">
+      {%- if udoc.equals(mdoc.u2) %}
+        <span class="text-aqua">(Submitter)</span>
+      {%- else %}
+        {{ mdoc.u2.profile.displayName }}
+      {%- endif %}
     </a>
-  {%- endif %}
   </td>
   <td class="col--rounds" layout="row stretch-left">
   {%- for status, rounds in mdoc.rounds | groupby('status') | dictsort %}

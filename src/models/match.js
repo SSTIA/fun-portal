@@ -73,7 +73,7 @@ export default function() {
     'win': 'Win',
     'lose': 'Lose',
     'u1win': 'Challenger Win',
-    'u2win': 'Challenger Lose',
+    'u2win': 'Opponent Win',
     'draw': 'Draw',
   };
 

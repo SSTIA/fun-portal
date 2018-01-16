@@ -172,11 +172,11 @@ export default () => {
     }
 
     // Submission quota limit?
-    const usedTime = await Submission.getUsedSubmissionQuotaAsync(uid);
+    /*const usedTime = await Submission.getUsedSubmissionQuotaAsync(uid);
     if (usedTime > DI.config.compile.limits.maxExecQuota &&
       !udoc.hasPermission(permissions.BYPASS_SUBMISSION_QUOTA)) {
       return [Submission.HOT_STATUS_QUOTA_LIMIT, usedTime];
-    }
+    }*/
 
     // No last submission?
     const sdocs = await Submission.getUserSubmissionsCursor(uid).
