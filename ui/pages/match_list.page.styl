@@ -3,9 +3,12 @@
     width: rem(150px)
 
   .col--challenger, .col--challengee
-    width: rem(150px)
+    width: rem(140px)
 
   .col--at
+    width: rem(120px)
+
+  .col--rating
     width: rem(120px)
 
   td.col--rounds
@@ -23,7 +26,7 @@
       &:hover
         text-decoration: none
 
-  .col--challenger, .col--rounds
+  .col--challenger, .col--challengee, .col--rounds
     border-left: 1px solid $table-border-color
 
   +mobile()
@@ -44,3 +47,6 @@
 
       .s_version
         display: none
+
+    .col--rating
+      display: none

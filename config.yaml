@@ -99,7 +99,58 @@ base:
     client_id: # fill in your SJTU OAuth2 ID
     client_secret: #fill in your SJTU OAuth2 secret
   rating:
-    factor:
-      0:    32
-      2100: 24
-      2400: 16
+    titles: # Based on Codeforces
+      -
+        title: Newbie
+        range: [-Infinity, 1200]
+        color: gray
+        factor: 32
+      -
+        title: Pupil
+        range: [1200, 1400]
+        color: green
+        factor: 32
+      -
+        title: Specialist
+        range: [1400, 1600]
+        color: '#03A89E'
+        factor: 32
+      -
+        title: Expert
+        range: [1600, 1900]
+        color: blue
+        factor: 32
+      -
+        title: Candidate Master
+        range: [1900, 2200]
+        color: '#a0a'
+        factor: 32
+      -
+        title: Master
+        range: [2200, 2300]
+        color: '#FF8C00'
+        factor: 24
+      -
+        title: International Master
+        range: [2300, 2400]
+        color: '#FF8C00'
+        factor: 24
+      -
+        title: Grandmaster
+        range: [2400, 2600]
+        color: red
+        factor: 16
+      -
+        title: International Grandmaster
+        range: [2600, 2900]
+        color: red
+        factor: 16
+      -
+        title: Legendary Grandmaster
+        range: [2900, Infinity]
+        color: red
+        factor: 16
+    unrated:
+      title: Unrated
+      color: black
+      factor: 32

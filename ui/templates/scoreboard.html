@@ -63,7 +63,9 @@
               {%- if udoc.badge %}
                 <span class="badge {{ udoc.badge.style }}">{{ udoc.badge.text }}</span>
               {%- endif %}
-                <a href="{{ url('/submission/user/{0}', false, [udoc._id]) }}">{{ udoc.profile.displayName }}</a>
+                <a href="{{ url('/submission/user/{0}', false, [udoc._id]) }}">
+                  {{ [udoc.profile.displayName,udoc.rating.score]|player }}
+                </a>
               </div></td>
             {% if showDetail %}
               <td class="col--student_id">
@@ -73,7 +75,7 @@
                 {{ udoc.profile.realName }}
               </td>
             {% endif %}
-              <td class="col--score">{{ udoc.rating.score }}</td>
+              <td class="col--score">{{ udoc.rating.score|rating }}</td>
               <td class="col--wins">{{ udoc.rating.win }}</td>
               <td class="col--loses">{{ udoc.rating.lose }}</td>
               <td class="col--draws">{{ udoc.rating.draw }}</td>

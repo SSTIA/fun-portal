@@ -91,14 +91,21 @@ export default function() {
     return rating;
   };
 
-  RatingSchema.methods.getEloRank = function() {
-    let k = 24;
-    _.forEach(DI.config.rating.factor, (value, key) => {
-      if (this.before > key) {
-        k = value;
+  RatingSchema.statics.getTitleData = function(score) {
+    let data = null;
+    _.forEach(DI.config.rating.titles, title => {
+      if (score >= title.range[0] && score < title.range[1]) {
+        data = title;
       }
     });
-    return new EloRank(k);
+    if (!data) {
+      return DI.config.rating.unrated;
+    }
+    return data;
+  };
+
+  RatingSchema.methods.getEloRank = function() {
+    return new EloRank(Rating.getTitleData(this.before).factor);
   };
 
   RatingSchema.methods.setWinAsync = async function(opponentScore) {

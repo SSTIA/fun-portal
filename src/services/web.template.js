@@ -16,7 +16,7 @@ export default (app) => {
     watch: true,
   });
 
-  Date.prototype.toJSON = function () {
+  Date.prototype.toJSON = function() {
     return this.getTime();
   };
 
@@ -32,6 +32,32 @@ export default (app) => {
         data-timestamp="${~~(date.getTime() / 1000)}"
       >
         ${moment(date).format('YYYY-MM-DD HH:mm:ss')}
+      </span>
+    `);
+  });
+  njenv.addFilter('rating', rating => {
+    const title = DI.models.Rating.getTitleData(rating);
+    return nunjucks.runtime.markSafe(`
+      <span 
+        class="rating" 
+        style="color:${title.color};font-weight:bold;"
+        data-title="${title.title}"
+      >
+        ${rating}
+      </span>
+    `);
+  });
+  njenv.addFilter('player', data => {
+    const name = data[0];
+    const rating = data[1];
+    const title = DI.models.Rating.getTitleData(rating);
+    return nunjucks.runtime.markSafe(`
+      <span
+        class="player" 
+        style="color:${title.color};font-weight:bold;"
+        data-title="${title.title}"
+      >
+        ${name}
       </span>
     `);
   });

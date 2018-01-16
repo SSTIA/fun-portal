@@ -12,7 +12,7 @@ const logUpload = multer({
   storage: multer.diskStorage({}),
 });
 
-const MATCHES_PER_PAGE = 2;
+const MATCHES_PER_PAGE = 20;
 
 @socket.enable()
 @web.controller('/match')
@@ -100,7 +100,7 @@ export default class Handler {
     }
   }
 
-  @web.get('/')
+  @web.get('/list/:page?')
   @web.middleware(utils.sanitizeParam({
     page: sanitizers.pageNumber().optional(1),
   }))
@@ -114,6 +114,7 @@ export default class Handler {
     );
     await DI.models.User.populate(mdocs, 'u1 u2');
     await DI.models.Submission.populate(mdocs, 'u1Submission u2Submission');
+    await DI.models.Rating.populate(mdocs, 'u1Rating u2Rating');
     //const udoc = req.credential;
     //console.log(udoc);
     //console.log(mdocs[0]);

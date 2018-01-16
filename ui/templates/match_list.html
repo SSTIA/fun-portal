@@ -12,7 +12,9 @@
             <col class="col--status match-status--border">
             <col class="col--at">
             <col class="col--challenger">
+            <col class="col--rating">
             <col class="col--challengee">
+            <col class="col--rating">
             <col class="col--rounds">
           </colgroup>
           <thead>
@@ -20,7 +22,9 @@
             <th class="col--status match-status--border">Status</th>
             <th class="col--at">At</th>
             <th class="col--challenger">Challenger</th>
+            <th class="col--rating">Rating</th>
             <th class="col--challengee">Opponent</th>
+            <th class="col--rating">Rating</th>
             <th class="col--rounds">Round Statistics</th>
           </tr>
           </thead>
@@ -30,7 +34,7 @@
           {%- endfor %}
           </tbody>
         </table>
-        {{ paginator.render(page, pages, url('/match/{page}', false, [sdoc._id])) }}
+        {{ paginator.render(page, pages, url('/match/list/{page}', false, [sdoc._id])) }}
       </div>
     </div>
   </div>

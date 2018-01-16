@@ -12,22 +12,34 @@
   <td class="col--challenger">
     <span class="s_version">#{{ mdoc.u1Submission.version }}: </span>
     <a href="{{ url('/submission/{0}', false, [mdoc.u1Submission._id]) }}">
-      {%- if udoc.equals(mdoc.u1) %}
-        <span class="text-aqua">(Submitter)</span>
-      {%- else %}
-        {{ mdoc.u1.profile.displayName }}
-      {%- endif %}
+      {{ [mdoc.u1.profile.displayName,mdoc.u1Rating.before]|player }}
     </a>
+  </td>
+  <td class="col--rating">
+    {{ mdoc.u1Rating.before|rating }}
+    {%- if mdoc.u1Rating.change > 0 %}
+      <span style="color:green;font-weight:bold;">(+{{ mdoc.u1Rating.change }})</span>
+    {%- elif mdoc.u1Rating.change < 0 %}
+      <span style="color:gray;font-weight:bold;">({{ mdoc.u1Rating.change }})</span>
+    {%- else %}
+      <span style="color:gray;font-weight:bold;">(--)</span>
+    {%- endif %}
   </td>
   <td class="col--challengee">
     <span class="s_version">#{{ mdoc.u2Submission.version }}: </span>
     <a href="{{ url('/submission/{0}', false, [mdoc.u2Submission._id]) }}">
-      {%- if udoc.equals(mdoc.u2) %}
-        <span class="text-aqua">(Submitter)</span>
-      {%- else %}
-        {{ mdoc.u2.profile.displayName }}
-      {%- endif %}
+      {{ [mdoc.u2.profile.displayName,mdoc.u2Rating.before]|player }}
     </a>
+  </td>
+  <td class="col--rating">
+    {{ mdoc.u2Rating.before|rating }}
+    {%- if mdoc.u2Rating.change > 0 %}
+      <span style="color:green;font-weight:bold;">(+{{ mdoc.u2Rating.change }})</span>
+    {%- elif mdoc.u2Rating.change < 0 %}
+      <span style="color:gray;font-weight:bold;">({{ mdoc.u2Rating.change }})</span>
+    {%- else %}
+      <span style="color:gray;font-weight:bold;">(--)</span>
+    {%- endif %}
   </td>
   <td class="col--rounds" layout="row stretch-left">
   {%- for status, rounds in mdoc.rounds | groupby('status') | dictsort %}
