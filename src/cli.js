@@ -7,6 +7,7 @@ import path from 'path';
 // without ending slash!
 global.__codeRoot = path.join(__dirname, '.');
 global.__projectRoot = path.join(__dirname, '..');
+process.env.SUPPRESS_NO_CONFIG_WARNING = true;
 
 (async function start() {
 

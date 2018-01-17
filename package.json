@@ -6,6 +6,7 @@
   "license": "AGPL-1.0",
   "scripts": {
     "start": "node .dist/server.js",
+    "match": "node .dist/cli.js DI.match",
     "cli": "node .dist/cli.js",
     "build:server": "gulp clean:server && gulp server",
     "build:ui:dev": "gulp fe:iconfont && webpack --progress --colors --display-error-details --bail",
