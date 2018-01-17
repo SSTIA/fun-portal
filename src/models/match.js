@@ -434,8 +434,10 @@ export default function() {
     // match end, calculate rating
     if (finishCount === this.rounds.length) {
       // match end, calculate rating
-      const u1rdoc = await DI.models.Rating.getRatingObjectByIdAsync(this.u1Rating);
-      const u2rdoc = await DI.models.Rating.getRatingObjectByIdAsync(this.u2Rating);
+      const u1rdoc = await DI.models.Rating.getRatingObjectByIdAsync(
+        this.u1Rating);
+      const u2rdoc = await DI.models.Rating.getRatingObjectByIdAsync(
+        this.u2Rating);
       if (this.status === Match.STATUS_SYSTEM_ERROR) {
         // system error
         await u1rdoc.setErrorAsync();
@@ -536,7 +538,7 @@ export default function() {
     }).sort({_id: -1});
   };
 
-  MatchSchema.statics.getUserMatches = function (uid) {
+  MatchSchema.statics.getUserMatches = function(uid) {
     return Match.find({
       $or: [
         {u1: uid},
@@ -547,6 +549,17 @@ export default function() {
 
   MatchSchema.statics.getAllMatches = function() {
     return Match.find().sort({updatedAt: -1});
+  };
+
+  MatchSchema.statics.getActiveMatchesAsync = async function() {
+    return await Match.find({
+      status: {
+        $in: [
+          Match.STATUS_PENDING,
+          Match.STATUS_RUNNING,
+        ],
+      },
+    }).exec();
   };
 
   /**

@@ -18,6 +18,7 @@
     "fsevents": "*"
   },
   "dependencies": {
+    "aigle": "^1.10.1",
     "app-module-path": "^2.0.0",
     "babel-runtime": "^6.11.6",
     "basic-auth": "^2.0.0",
