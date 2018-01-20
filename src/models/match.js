@@ -422,11 +422,11 @@ export default function() {
     if (statusStat[Match.STATUS_PENDING] === this.rounds.length) {
       // all pending
       this.status = Match.STATUS_PENDING;
-    } else if (statusStat[Match.STATUS_SYSTEM_ERROR] > 0) {
+    } else if (finishCount === this.rounds.length &&
+      statusStat[Match.STATUS_SYSTEM_ERROR] > 0) {
       // some system error
       this.status = Match.STATUS_SYSTEM_ERROR;
-    } else if (statusStat[Match.STATUS_RUNNING] > 0 ||
-      statusStat[Match.STATUS_PENDING] > 0) {
+    } else {
       // some pending, or some running
       this.status = Match.STATUS_RUNNING;
     }
