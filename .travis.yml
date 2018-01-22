@@ -7,6 +7,10 @@ cache:
 before_scripts:
   - touch config.debug.yaml
   - touch config.production.yaml
+before_install:
+  - npm install -g npminstall
+install:
+  - npminstall
 script:
   - npm run build:server
   - npm run build:ui

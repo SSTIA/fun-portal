@@ -58,7 +58,8 @@ $ touch config.production.yaml
 Edit the configuration according to the comments given. Then, excecute the following command to build the package:
 
 ```
-$ npm install
+$ npm install -g npminstall
+$ npminstall
 $ run build:server
 $ run build:ui
 ```
