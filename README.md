@@ -1,5 +1,7 @@
 # GOMOKU BRAIN COMPETITION
 
+[![Build Status](https://travis-ci.org/SSTIA/fun-portal.svg?branch=master)](https://travis-ci.org/SSTIA/fun-portal)
+
 ## Introduction
 
 > Gomoku is an abstract strategy board game. Also called Gobang or Five in a Row, it is traditionally played with Go pieces (black and white stones) on a go board with 19x19 (15x15) intersections; however, because pieces are not moved or removed from the board, gomoku may also be played as a paper and pencil game. This game is known in several countries under different names.
@@ -20,8 +22,7 @@ There are some warnings:
 1. Do not copy others' source code. All the code you submitted will be checked for plagiarism. Copycats will fail this project!
 2. Do not share your source code with others. Similar submissions will be treated as plagiarism.
 3. Do not use alternative account to submit your code, otherwise you will be recognized as a copycat.
-4. Do not submit C++ source code. Only C language is supported.
-5. Do not abuse our cloud execution service, such as intentionally trying to shutdown our judge machine.
+4. Do not abuse our cloud execution service, such as intentionally trying to shutdown our judge machine.
 
 ## Deployment
 

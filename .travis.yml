@@ -1,0 +1,16 @@
+language: node_js
+node_js:
+  - node
+cache:
+  directories:
+    - "node_modules"
+before_install:
+  - sudo apt-get -qq update
+  - sudo apt-get -y install mongodb redis-server rabbitmq-server
+before_scripts:
+  - touch config.debug.yaml
+  - touch config.production.yaml
+script:
+  - npm run build:server
+  - npm run build:ui
+
