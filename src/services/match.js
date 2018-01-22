@@ -1,10 +1,10 @@
 import Aigle from 'aigle';
 
-export default () => {
+export default async (_maxMatch = 5) => {
 
   let readyExit = false;
   let delay = 0;
-  let maxMatch = 5;
+  let maxMatch = _maxMatch;
 
   const match = async function() {
     const u1 = await DI.models.User.getHighestPriorityAsync();
@@ -49,14 +49,11 @@ export default () => {
     process.exit(0);
   };
 
-  return async function(_maxMatch = 5) {
-    maxMatch = _maxMatch;
-    DI.logger.info('Matching service started');
-    process.on('SIGINT', () => {
-      DI.logger.info('Matching service ready to exit');
-      readyExit = true;
-    });
-    await loop();
-  };
+  DI.logger.info('Matching service started');
+  process.on('SIGINT', () => {
+    DI.logger.info('Matching service received SIGINT, exiting');
+    readyExit = true;
+  });
+  await loop();
 
 };

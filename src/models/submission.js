@@ -151,6 +151,8 @@ export default () => {
     return Submission.find({user: uid}).sort({_id: -1});
   };
 
+  SubmissionSchema.statics.get
+
   /**
    * Check whether a user is allowed to submit new code
    *
