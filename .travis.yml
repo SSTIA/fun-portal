@@ -1,0 +1,17 @@
+language: node_js
+node_js:
+  - node
+cache:
+  directories:
+    - "node_modules"
+before_install:
+  - npm install -g npminstall
+install:
+  - npminstall
+before_script:
+  - touch config.debug.yaml
+  - touch config.production.yaml
+script:
+  - npm run build:server
+  - npm run build:ui
+

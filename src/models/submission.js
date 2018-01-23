@@ -151,7 +151,17 @@ export default () => {
     return Submission.find({user: uid}).sort({_id: -1});
   };
 
-  SubmissionSchema.statics.get
+  SubmissionSchema.statics.getExceptionSubmissionAsync = async function() {
+    return Submission.find({
+      status: {
+        $in: [
+          Submission.STATUS_RUNNING,
+          Submission.STATUS_PENDING,
+          Submission.STATUS_COMPILING,
+        ],
+      },
+    }).exec();
+  };
 
   /**
    * Check whether a user is allowed to submit new code
