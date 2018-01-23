@@ -1,6 +1,9 @@
 # GOMOKU BRAIN COMPETITION
 
 [![Build Status](https://travis-ci.org/SSTIA/fun-portal.svg?branch=master)](https://travis-ci.org/SSTIA/fun-portal)
+[![experimental](http://badges.github.io/stability-badges/dist/experimental.svg)](http://github.com/badges/stability-badges)
+[![GPL Licence](https://badges.frapsoft.com/os/gpl/gpl.svg?v=103)](https://opensource.org/licenses/GPL-3.0/)
+[![David](https://david-dm.org/SSTIA/fun-portal.svg)](https://david-dm.org/SSTIA/fun-portal)
 
 ## Introduction
 

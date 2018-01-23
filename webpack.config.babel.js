@@ -132,6 +132,7 @@ module.exports = {
           },
         },
       ],
+      threads: 4,
     }),
 
     new webpack.ProvidePlugin({

@@ -164,7 +164,7 @@ export default () => {
   };
 
   SubmissionSchema.methods.resetExceptionAsync = async function() {
-    
+
 
     if (this.status === Submission.STATUS_RUNNING) {
       // reset state to effective
