@@ -1,4 +1,5 @@
 import _ from 'lodash';
+import aigle from 'aigle';
 import fsp from 'fs-promise';
 import uuid from 'uuid';
 import moment from 'moment';
@@ -59,12 +60,14 @@ export default () => {
   };
 
   SubmissionSchema.pre('save', function(next) {
+    if (!DI.system.initialized) next();
     this.__lastIsNew = this.isNew;
     this.__lastModifiedPaths = this.modifiedPaths();
     next();
   });
 
   SubmissionSchema.post('save', function() {
+    if (!DI.system.initialized) return;
     const sdoc = this.toObject();
     Promise.all([
       (async () => {
@@ -88,8 +91,8 @@ export default () => {
   const compileTaskQueue = [];
 
   DI.eventBus.on('system.started', async () => {
-    _.forEach(compileTaskQueue, async data => {
-      await Submission.publishCompileTaskAsync(data.sdocid, data.token);
+    aigle.forEach(compileTaskQueue, async data => {
+      await Submission.publishCompileTaskAsync(data);
     });
   });
 
@@ -178,7 +181,7 @@ export default () => {
         _.last(this.matches));
       if (!DI.models.Match.isFinishStatus(mdoc.status)) {
         throw new Error(
-          `Match ${mdoc._id} status unespected in Submission ${this._id}`);
+          `Match ${mdoc._id} status unexpected in Submission ${this._id}`);
       }
       const sdoc = await Submission.getLastSubmissionByUserAsync(this.user);
       if (sdoc.equals(this)) {
@@ -618,6 +621,7 @@ export default () => {
       // if the submission isn't last effective submission, set it to inactive
       if (sdoc.equals(this)) {
         this.status = Submission.STATUS_EFFECTIVE;
+        await DI.models.User.setMatchPriorityInitialAsync(this.user);
       } else {
         this.status = Submission.STATUS_INACTIVE;
       }

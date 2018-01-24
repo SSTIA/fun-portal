@@ -428,25 +428,36 @@ export default () => {
   };
 
   UserSchema.statics.getHighestPriorityAsync = async function() {
-    return await this.findOne({
+    return await User.findOne({
       'match.priority': {$gt: 0},
     }).sort({'match.priority': -1}).exec();
   };
 
-  UserSchema.statics.getBestOpponentAsync = async function (u1, higher) {
+  UserSchema.statics.getBestOpponentAsync = async function(u1, higher) {
     if (higher) {
-      return await this.findOne({
+      return await User.findOne({
         'match.priority': {$gt: 0},
         '_id': {$ne: u1._id},
         //'rating.score': {$gte: u1.rating.score},
       }).sort({'rating.score': 1}).exec();
     } else {
-      return await this.findOne({
+      return await User.findOne({
         'match.priority': {$gt: 0},
         '_id': {$ne: u1._id},
         //'rating.score': {$lte: u1.rating.score},
       }).sort({'rating.score': -1}).exec();
     }
+  };
+
+  UserSchema.statics.getExceptionUserAsync = async function() {
+    return await User.find({
+      'match.priority': {$lte: 0},
+    }).exec();
+  };
+
+  UserSchema.methods.resetExceptionAsync = async function() {
+    this.match.priority = Math.abs(this.match.streak * this.match.change) + 1;
+    await this.save();
   };
 
   UserSchema.index({userName_std: 1}, {unique: true});

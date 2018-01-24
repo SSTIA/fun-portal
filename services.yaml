@@ -85,3 +85,6 @@ handlers:
     - webServer
     - webSocket
     - logger
+
+system:
+  path: system

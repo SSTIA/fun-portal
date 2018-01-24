@@ -1,21 +1,37 @@
 import _ from 'lodash';
+import aigle from 'aigle';
 
 export default async () => {
 
-  const initRating = async function() {
-    const rdocs = await DI.models.Rating.getExceptionRatingAsync();
-    _.forEach(rdocs, async rdoc => {
-      DI.logger.info(`Fixing Rating Object ${rdoc._id}`);
-      await rdoc.resetExceptionAsync();
+  const initModel = async function(name) {
+    const model = DI.models[name];
+    if (!model) {
+      throw new Error(`Model ${name} doesn't exist!`);
+    }
+    const func = model[`getException${name}Async`];
+    if (!func) {
+      throw new Error(`Model ${name} doesn't have getException function!`);
+    }
+    const docs = await func();
+    await aigle.forEach(docs, async doc => {
+      DI.logger.info(`Fixing ${name} Object ${doc._id}`);
+      await doc.resetExceptionAsync();
     });
   };
 
-  const initSubmission = async function() {
-    const sdocs = await DI.models.getExceptionSubmissionAsync();
-    _.forEach(sdocs, async sdoc => {
-      DI.logger.info(`Fixing Submission Object ${sdoc._id}`);
-      await sdoc.resetExceptionAsync();
-    });
+  let readyExit = false;
+  const onExit = async function () {
+    DI.logger.info('Server received SIGINT, exiting');
+    if (!readyExit) {
+      readyExit = true;
+      await DI.models.Sys.setAsync('readonly', true);
+      await DI.models.Sys.setAsync('lock_submission', true);
+      await DI.models.Sys.setAsync('lock_submission_reason', 'System rebooting');
+      setInterval(async () => {
+        // waiting for all process ending
+        process.exit(0);
+      }, 1000);
+    }
   };
 
   const system = {
@@ -23,36 +39,29 @@ export default async () => {
     init: async () => {
       DI.logger.info('Initialization started');
       system.initialized = false;
-      await DI.model.sys.setAsync('readonly', true);
+      await DI.models.Sys.setAsync('readonly', true);
+      await DI.models.Sys.setAsync('lock_submission', true);
+      await DI.models.Sys.setAsync('lock_submission_reason', 'System initializing');
 
       try {
-        await initRating();
-        await initSubmission();
-
+        await initModel('Rating');
+        await initModel('Match');
+        await initModel('Submission');
+        await initModel('User');
       } catch (e) {
         DI.logger.error(e.stack);
         DI.logger.info('Initialization failed!');
         process.exit(-1);
       }
 
+      await DI.models.Sys.setAsync('lock_submission', false);
+      await DI.models.Sys.setAsync('readonly', false);
       system.initialized = true;
-      await DI.model.sys.setAsync('readonly', false);
       DI.logger.info('Initialization succeeded');
+
+      process.on('SIGINT', onExit);
     },
   };
-
-  let readyExit = false;
-  process.on('SIGINT', async () => {
-    DI.logger.info('Server received SIGINT, exiting');
-    if (!readyExit) {
-      readyExit = true;
-      await DI.model.sys.setAsync('readonly', true);
-      setInterval(async () => {
-        // waiting for all process ending
-        process.exit(0);
-      }, 1000);
-    }
-  });
 
   return system;
 };

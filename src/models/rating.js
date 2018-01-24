@@ -140,6 +140,16 @@ export default function() {
     await this.save();
   };
 
+  RatingSchema.statics.getExceptionRatingAsync = async function() {
+    return await Rating.find({
+      status: Rating.STATUS_PENDING,
+    }).exec();
+  };
+
+  RatingSchema.methods.resetExceptionAsync = async function () {
+    await this.setErrorAsync();
+  };
+
   //RatingSchema.index({ userName_std: 1 }, { unique: true });
 
   Rating = mongoose.model('Rating', RatingSchema);
