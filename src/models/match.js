@@ -235,6 +235,7 @@ export default function() {
           u1Black,
           u2Black: !u1Black,
           openingId: String(openingId),
+          usedTime: 0,
         });
       }
     }
