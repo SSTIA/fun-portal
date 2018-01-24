@@ -163,6 +163,21 @@ export default () => {
     }).exec();
   };
 
+  SubmissionSchema.methods.resetExceptionAsync = async function() {
+
+
+    if (this.status === Submission.STATUS_RUNNING) {
+      // reset state to effective
+      this.status = Submission.STATUS_EFFECTIVE;
+      await this.save();
+    } else if (this.status === Submission.STATUS_PENDING ||
+      this.status === Submission.STATUS_COMPILING) {
+      // resend compile request
+      this.taskToken = null;
+      await Submission.createCompileTaskAsync(this);
+    }
+  };
+
   /**
    * Check whether a user is allowed to submit new code
    *
