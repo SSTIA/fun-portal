@@ -456,7 +456,12 @@ export default () => {
   };
 
   UserSchema.methods.resetExceptionAsync = async function() {
-    this.match.priority = Math.abs(this.match.streak * this.match.change) + 1;
+    const sdoc = await DI.models.Submission.getLastSubmissionByUserAsync(this._id);
+    if (sdoc) {
+      this.match.priority = Math.abs(this.match.streak * this.match.change) + 1;
+    } else {
+      this.match.priority = 0;
+    }
     await this.save();
   };
 
