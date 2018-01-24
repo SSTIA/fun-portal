@@ -452,7 +452,7 @@ export default () => {
   UserSchema.statics.getExceptionUserAsync = async function() {
     return await User.find({
       'match.priority': {$lte: 0},
-      'submission': null,
+      'submission': {$ne: null},
     }).exec();
   };
 
