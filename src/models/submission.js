@@ -85,6 +85,14 @@ export default () => {
     ]);
   });
 
+  const compileTaskQueue = [];
+
+  DI.eventBus.on('system.started', async () => {
+    _.forEach(compileTaskQueue, async data => {
+      await Submission.publishCompileTaskAsync(data.sdocid, data.token);
+    });
+  });
+
   /**
    * Update the submission status one by one when match status is updated
    */
@@ -164,11 +172,20 @@ export default () => {
   };
 
   SubmissionSchema.methods.resetExceptionAsync = async function() {
-
-
     if (this.status === Submission.STATUS_RUNNING) {
-      // reset state to effective
-      this.status = Submission.STATUS_EFFECTIVE;
+      // reset state
+      const mdoc = await DI.models.Match.getMatchObjectByIdAsync(
+        _.last(this.matches));
+      if (!DI.models.Match.isFinishStatus(mdoc.status)) {
+        throw new Error(
+          `Match ${mdoc._id} status unespected in Submission ${this._id}`);
+      }
+      const sdoc = await Submission.getLastSubmissionByUserAsync(this.user);
+      if (sdoc.equals(this)) {
+        this.status = Submission.STATUS_EFFECTIVE;
+      } else {
+        this.status = Submission.STATUS_INACTIVE;
+      }
       await this.save();
     } else if (this.status === Submission.STATUS_PENDING ||
       this.status === Submission.STATUS_COMPILING) {
@@ -314,12 +331,25 @@ export default () => {
     sdoc.text = '';
     sdoc.taskToken = uuid.v4();
     await sdoc.save();
-    await DI.mq.publish('compile', {
+    const mqData = {
       sdocid: String(sdoc._id),
       token: sdoc.taskToken,
+    };
+    if (DI.system.initialized) {
+      await Submission.publishCompileTaskAsync(mqData);
+    } else {
+      compileTaskQueue.push(mqData);
+    }
+    return sdoc;
+  };
+
+  SubmissionSchema.statics.publishCompileTaskAsync = async function(
+    {sdocid, token}) {
+    await DI.mq.publish('compile', {
+      sdocid,
+      token,
       limits: DI.config.compile.limits,
     });
-    return sdoc;
   };
 
   /**
