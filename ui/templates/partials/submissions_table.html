@@ -31,19 +31,18 @@
       <td class="col--time">{{ sdoc.createdAt|datetime }}</td>
       <td class="col--by">
         #{{ sdoc.version }}:
-        <a href="{{ url('/submission/user/{0}', false, [sdoc.user._id]) }}">{{ sdoc.user.profile.displayName }}</a>
+        <a href="{{ url('/submission/user/{0}', false, [sdoc.user._id]) }}">{{ [sdoc.user.profile.displayName, sdoc.endRating.after] | player }}</a>
       </td>
       <td class="col--compiler">{{ sdoc.compiler|default('Unknown') }}</td>
     {% if sdoc.matches %}
-      {%- set match_status = sdoc.matches | groupby('status') -%}
       <td class="col--wins">
-        {{ match_status.u1win | length | default(0) }}
+        {{ sdoc.win | default(0) }}
       </td>
       <td class="col--loses">
-        {{ match_status.u2win | length | default(0) }}
+        {{ sdoc.lose | default(0) }}
       </td>
       <td class="col--draws">
-        {{ match_status.draw | length | default(0) }}
+        {{ sdoc.draw | default(0) }}
       </td>
     {% else %}
       <td class="col--wins">--</td>

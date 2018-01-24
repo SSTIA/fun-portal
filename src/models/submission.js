@@ -26,6 +26,9 @@ export default () => {
     startRating: {type: mongoose.Schema.Types.ObjectId, ref: 'Rating'},
     endRating: {type: mongoose.Schema.Types.ObjectId, ref: 'Rating'},
     matchLogCleared: Boolean,
+    win: Number,
+    lose: Number,
+    draw: Number,
   }, {
     timestamps: true,
     toObject: {virtuals: true},
@@ -616,6 +619,15 @@ export default () => {
     const mdoc = await DI.models.Match.getMatchObjectByIdAsync(
       _.last(this.matches));
     if (DI.models.Match.isFinishStatus(mdoc.status)) {
+      const relativeStatus = DI.models.Match.getRelativeStatus(
+        mdoc.status, mdoc.u1 === this.user);
+      if (relativeStatus === DI.models.Match.RELATIVE_STATUS_WIN) {
+        this.win++;
+      } else if (relativeStatus === DI.models.Match.RELATIVE_STATUS_LOSE) {
+        this.lose++;
+      } else if (relativeStatus === DI.models.Match.STATUS_DRAW) {
+        this.draw++;
+      }
       await Submission.incrUsedSubmissionQuotaAsync(this.user, mdoc.usedTime);
       const sdoc = await Submission.getLastSubmissionByUserAsync(this.user);
       // if the submission isn't last effective submission, set it to inactive
