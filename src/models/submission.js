@@ -1,4 +1,5 @@
 import _ from 'lodash';
+import aigle from 'aigle';
 import fsp from 'fs-promise';
 import uuid from 'uuid';
 import moment from 'moment';
@@ -25,6 +26,9 @@ export default () => {
     startRating: {type: mongoose.Schema.Types.ObjectId, ref: 'Rating'},
     endRating: {type: mongoose.Schema.Types.ObjectId, ref: 'Rating'},
     matchLogCleared: Boolean,
+    win: Number,
+    lose: Number,
+    draw: Number,
   }, {
     timestamps: true,
     toObject: {virtuals: true},
@@ -59,12 +63,14 @@ export default () => {
   };
 
   SubmissionSchema.pre('save', function(next) {
+    if (!DI.system.initialized) next();
     this.__lastIsNew = this.isNew;
     this.__lastModifiedPaths = this.modifiedPaths();
     next();
   });
 
   SubmissionSchema.post('save', function() {
+    if (!DI.system.initialized) return;
     const sdoc = this.toObject();
     Promise.all([
       (async () => {
@@ -83,6 +89,14 @@ export default () => {
         }
       }),
     ]);
+  });
+
+  const compileTaskQueue = [];
+
+  DI.eventBus.on('system.started', async () => {
+    aigle.forEach(compileTaskQueue, async data => {
+      await Submission.publishCompileTaskAsync(data);
+    });
   });
 
   /**
@@ -164,11 +178,20 @@ export default () => {
   };
 
   SubmissionSchema.methods.resetExceptionAsync = async function() {
-
-
     if (this.status === Submission.STATUS_RUNNING) {
-      // reset state to effective
-      this.status = Submission.STATUS_EFFECTIVE;
+      // reset state
+      const mdoc = await DI.models.Match.getMatchObjectByIdAsync(
+        _.last(this.matches));
+      if (!DI.models.Match.isFinishStatus(mdoc.status)) {
+        throw new Error(
+          `Match ${mdoc._id} status unexpected in Submission ${this._id}`);
+      }
+      const sdoc = await Submission.getLastSubmissionByUserAsync(this.user);
+      if (sdoc.equals(this)) {
+        this.status = Submission.STATUS_EFFECTIVE;
+      } else {
+        this.status = Submission.STATUS_INACTIVE;
+      }
       await this.save();
     } else if (this.status === Submission.STATUS_PENDING ||
       this.status === Submission.STATUS_COMPILING) {
@@ -314,12 +337,25 @@ export default () => {
     sdoc.text = '';
     sdoc.taskToken = uuid.v4();
     await sdoc.save();
-    await DI.mq.publish('compile', {
+    const mqData = {
       sdocid: String(sdoc._id),
       token: sdoc.taskToken,
+    };
+    if (DI.system.initialized) {
+      await Submission.publishCompileTaskAsync(mqData);
+    } else {
+      compileTaskQueue.push(mqData);
+    }
+    return sdoc;
+  };
+
+  SubmissionSchema.statics.publishCompileTaskAsync = async function(
+    {sdocid, token}) {
+    await DI.mq.publish('compile', {
+      sdocid,
+      token,
       limits: DI.config.compile.limits,
     });
-    return sdoc;
   };
 
   /**
@@ -583,11 +619,21 @@ export default () => {
     const mdoc = await DI.models.Match.getMatchObjectByIdAsync(
       _.last(this.matches));
     if (DI.models.Match.isFinishStatus(mdoc.status)) {
+      const relativeStatus = DI.models.Match.getRelativeStatus(
+        mdoc.status, mdoc.u1 === this.user);
+      if (relativeStatus === DI.models.Match.RELATIVE_STATUS_WIN) {
+        this.win++;
+      } else if (relativeStatus === DI.models.Match.RELATIVE_STATUS_LOSE) {
+        this.lose++;
+      } else if (relativeStatus === DI.models.Match.STATUS_DRAW) {
+        this.draw++;
+      }
       await Submission.incrUsedSubmissionQuotaAsync(this.user, mdoc.usedTime);
       const sdoc = await Submission.getLastSubmissionByUserAsync(this.user);
       // if the submission isn't last effective submission, set it to inactive
       if (sdoc.equals(this)) {
         this.status = Submission.STATUS_EFFECTIVE;
+        await DI.models.User.setMatchPriorityInitialAsync(this.user);
       } else {
         this.status = Submission.STATUS_INACTIVE;
       }

@@ -159,6 +159,7 @@ export default class Handler {
       SUBMISSIONS_PER_PAGE
     );
     await DI.models.User.populate(sdocs, 'user');
+    await DI.models.Rating.populate(sdocs, 'endRating');
     res.render('submission_all', {
       page_title: 'All Submissions',
       sdocs,
@@ -179,6 +180,7 @@ export default class Handler {
       SUBMISSIONS_PER_PAGE
     );
     await DI.models.User.populate(sdocs, 'user');
+    await DI.models.Rating.populate(sdocs, 'endRating');
     res.render('submission_my', {
       page_title: 'My Submissions',
       sdocs,
@@ -201,6 +203,7 @@ export default class Handler {
       SUBMISSIONS_PER_PAGE
     );
     await DI.models.User.populate(sdocs, 'user');
+    await DI.models.Rating.populate(sdocs, 'endRating');
     res.render('submission_all', {
       page_title: 'User Submissions',
       udoc,

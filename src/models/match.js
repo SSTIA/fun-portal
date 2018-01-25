@@ -80,12 +80,14 @@ export default function() {
   MatchSchema.statics.ROUND_STATUS_TEXT = MatchSchema.statics.STATUS_TEXT;
 
   MatchSchema.pre('save', function(next) {
+    if (!DI.system.initialized) next();
     this.__lastIsNew = this.isNew;
     this.__lastModifiedPaths = this.modifiedPaths();
     next();
   });
 
   MatchSchema.post('save', function() {
+    if (!DI.system.initialized) return;
     const mdoc = this.toObject();
     Promise.all([
       (async () => {
@@ -233,6 +235,7 @@ export default function() {
           u1Black,
           u2Black: !u1Black,
           openingId: String(openingId),
+          usedTime: 0,
         });
       }
     }
@@ -573,6 +576,26 @@ export default function() {
     return await Match.find({
       status: {$in},
     }).sort({_id: -1}).exec();
+  };
+
+  MatchSchema.statics.getExceptionMatchAsync = async function() {
+    return Match.getActiveMatchesAsync();
+  };
+
+  MatchSchema.methods.resetExceptionAsync = async function() {
+    this.status = Match.STATUS_SYSTEM_ERROR;
+    _.forEach(this.rounds, rdoc => {
+      if (rdoc.status === Match.STATUS_PENDING ||
+        rdoc.status === Match.STATUS_RUNNING) {
+        rdoc.status = Match.STATUS_SYSTEM_ERROR;
+        rdoc.summary = JSON.stringify({
+          exitCausedBy: 'System error',
+          usedTime: 0,
+        });
+      }
+    });
+    await this.save();
+    // create a new match of same players here.
   };
 
   /**

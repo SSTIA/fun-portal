@@ -15,10 +15,16 @@ export default class Handler {
   @web.get('/test_match')
   async testMatch(req, res) {
     const u1 = await DI.models.User.getHighestPriorityAsync();
-    if (u1 === null) return;
+    if (u1 === null) {
+      res.send('No user with priority > 0 found.');
+      return;
+    }
     const u2 = await DI.models.User.getBestOpponentAsync(u1, u1.match.streak >=
       0);
-    if (u2 === null) return;
+    if (u2 === null) {
+      res.send(`No opponent of ${u1._id} found.`);
+      return;
+    }
     await DI.models.Match.createMatchAsync(u1, u2);
     //console.log(u1, u2);
     res.send({
