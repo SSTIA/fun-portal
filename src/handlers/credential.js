@@ -11,45 +11,51 @@ const DIRECTORY_COOKIE = 'iPlanetDirectoryPro';
 @web.controller('/')
 export default class Handler {
 
-  @web.get('/login')
-  async getLoginAction(req, res) {
-    const errors = {};
-    const directory = req.cookies[DIRECTORY_COOKIE];
-    if (req.query.success !== undefined && directory !== undefined) {
-      try {
-        const user = await DI.models.User.authenticateSsoAsync(directory);
-        await credential.setCredential(req, user._id);
-        if (user.profile.initial) {
-          res.redirect(utils.url('/user/profile'));
-        } else {
-          res.redirect(utils.url('/'));
-        }
-        return;
-      } catch (e) {
-        errors.error = e.message;
-      }
-    }
-    if (req.query.failure !== undefined) {
-      errors.error = 'Unable to login using Tongji account. Incorrect student ID or password.';
-    }
-    res.render('login', {
-      page_title: 'Sign In',
-      ...errors,
-    });
-  }
+  // @web.get('/login')
+  // async getLoginAction(req, res) {
+  //   const errors = {};
+  //   const directory = req.cookies[DIRECTORY_COOKIE];
+  //   if (req.query.success !== undefined && directory !== undefined) {
+  //     try {
+  //       const user = await DI.models.User.authenticateSsoAsync(directory);
+  //       await credential.setCredential(req, user._id);
+  //       if (user.profile.initial) {
+  //         res.redirect(utils.url('/user/profile'));
+  //       } else {
+  //         res.redirect(utils.url('/'));
+  //       }
+  //       return;
+  //     } catch (e) {
+  //       errors.error = e.message;
+  //     }
+  //   }
+  //   if (req.query.failure !== undefined) {
+  //     errors.error = 'Unable to login using Tongji account. Incorrect student ID or password.';
+  //   }
+  //   res.render('login', {
+  //     page_title: 'Sign In',
+  //     ...errors,
+  //   });
+  // }
 
   @web.get('/oauth/:id/login')
   async getOAuthLoginAction(req, res) {
     const errors = {};
 
-    if (req.params.id === 'jaccount') {
+    if (req.params.id === 'fake' && DI.config.oauthDebug) {
+      //res.redirect(utils.url('/oauth/fake/redirect'));
+      res.render('login', {
+        page_title: 'Sign In',
+        ...errors,
+      });
+    } else if (req.params.id === 'jaccount') {
       const jaccount = new OAuthJaccount(DI.config.jaccount);
       res.redirect(
         jaccount.getAuthorizeURL(utils.url('/oauth/jaccount/redirect', true)));
     }
     else {
       // Only SJTU oauth2 is implemented yet
-      errors.msg = 'SSO is not supported currently.';
+      errors.msg = `OAuth type ${req.params.id} is not supported currently.`;
       res.render('error', {
         page_title: 'Sign In',
         nav_type: 'error',
@@ -63,12 +69,26 @@ export default class Handler {
     const errors = {};
     let user;
 
-    if (req.params.id === 'jaccount') {
-      user = await DI.models.User.authenticateJaccountAsync(req.query.code);
-      await credential.setCredential(req, user._id);
-    } else {
-      // Only SJTU oauth2 is implemented yet
-      errors.msg = 'SSO is not supported currently.';
+    try {
+      if (req.params.id === 'fake' && DI.config.oauthDebug) {
+        let studentId = req.query.studentId;
+        if (studentId && studentId.length > 0) {
+          user = await DI.models.User.authenticateFakeOAuthAsync(studentId);
+          await credential.setCredential(req, user._id);
+        } else {
+          errors.msg = 'studentId not defined';
+        }
+      } else if (req.params.id === 'jaccount') {
+        user = await DI.models.User.authenticateJaccountAsync(req.query.code);
+        await credential.setCredential(req, user._id);
+      } else {
+        // Only SJTU oauth2 is implemented yet
+        errors.msg = `OAuth type ${req.params.id} is not supported currently.`;
+      }
+    } catch (e) {
+      errors.msg = e.message;
+    }
+    if (errors.msg) {
       res.render('error', {
         page_title: 'Sign In',
         nav_type: 'error',
@@ -87,19 +107,19 @@ export default class Handler {
 
   // for debug purpose only, only available when
   // ssoUrl === false
-  @web.post('/login')
-  @web.middleware(utils.sanitizeBody({
-    studentId: sanitizers.nonEmptyString(),
-  }))
-  async postLoginAction(req, res) {
-    if (DI.config.ssoUrl !== false) {
-      throw new errors.PermissionError();
-    }
-    const user = await DI.models.User.authenticateFakeSsoAsync(
-      req.data.studentId);
-    await credential.setCredential(req, user._id);
-    res.redirect(utils.url('/'));
-  }
+  // @web.post('/login')
+  // @web.middleware(utils.sanitizeBody({
+  //   studentId: sanitizers.nonEmptyString(),
+  // }))
+  // async postLoginAction(req, res) {
+  //   if (DI.config.ssoUrl !== false) {
+  //     throw new errors.PermissionError();
+  //   }
+  //   const user = await DI.models.User.authenticateFakeSsoAsync(
+  //     req.data.studentId);
+  //   await credential.setCredential(req, user._id);
+  //   res.redirect(utils.url('/'));
+  // }
 
   @web.post('/logout')
   @web.middleware(utils.checkPermission(permissions.PROFILE))

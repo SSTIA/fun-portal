@@ -9,8 +9,7 @@ export default async (_maxMatch = 5) => {
   const match = async function() {
     const u1 = await DI.models.User.getHighestPriorityAsync();
     if (u1 === null) return false;
-    const u2 = await DI.models.User.getBestOpponentAsync(u1, u1.match.streak >=
-      0);
+    const u2 = await DI.models.User.getBestOpponentAsync(u1);
     if (u2 === null) return false;
     await DI.models.Match.createMatchAsync(u1, u2);
     return true;

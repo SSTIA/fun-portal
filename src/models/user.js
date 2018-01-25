@@ -291,7 +291,7 @@ export default () => {
    * For debug purpose only.
    */
   UserSchema.statics.authenticateFakeOAuthAsync = async function(studentId) {
-    if (DI.config.oauthDebug !== false) {
+    if (DI.config.oauthDebug !== true) {
       throw new errors.PermissionError();
     }
     const oauthName = 'fake';
@@ -433,20 +433,43 @@ export default () => {
     }).sort({'match.priority': -1}).exec();
   };
 
-  UserSchema.statics.getBestOpponentAsync = async function(u1, higher) {
-    if (higher) {
-      return await User.findOne({
-        'match.priority': {$gt: 0},
-        '_id': {$ne: u1._id},
-        //'rating.score': {$gte: u1.rating.score},
-      }).sort({'rating.score': 1}).exec();
+  UserSchema.statics.getBestOpponentAsync = async function(u1) {
+    let higher = await User.findOne({
+      'match.priority': {$gt: 0},
+      '_id': {$ne: u1._id},
+      'rating.score': {$gte: u1.rating.score},
+    }).sort({'rating.score': 1}).exec();
+    let lower = await User.findOne({
+      'match.priority': {$gt: 0},
+      '_id': {$ne: u1._id},
+      'rating.score': {$lte: u1.rating.score},
+    }).sort({'rating.score': -1}).exec();
+    console.log(u1);
+    console.log(higher);
+    console.log(lower);
+    const diffHigher = higher ? higher.rating.score - u1.rating.score : Infinity;
+    const diffLower = lower ? u1.rating.score - lower.rating.score : Infinity;
+    if (diffHigher > 100 && diffLower > 100) {
+      return null;
+    } else if (diffHigher > diffLower) {
+      return lower;
     } else {
-      return await User.findOne({
-        'match.priority': {$gt: 0},
-        '_id': {$ne: u1._id},
-        //'rating.score': {$lte: u1.rating.score},
-      }).sort({'rating.score': -1}).exec();
+      return higher;
     }
+
+    // if (higher) {
+    //   return await User.findOne({
+    //     'match.priority': {$gt: 0},
+    //     '_id': {$ne: u1._id},
+    //     //'rating.score': {$gte: u1.rating.score},
+    //   }).sort({'rating.score': 1}).exec();
+    // } else {
+    //   return await User.findOne({
+    //     'match.priority': {$gt: 0},
+    //     '_id': {$ne: u1._id},
+    //     //'rating.score': {$lte: u1.rating.score},
+    //   }).sort({'rating.score': -1}).exec();
+    // }
   };
 
   UserSchema.statics.getExceptionUserAsync = async function() {

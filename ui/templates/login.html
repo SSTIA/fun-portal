@@ -38,7 +38,7 @@
           <p>DEBUG MODE: Input the student id you want to log in as.</p>
         </div>
       </div>
-      <div class="section__body"><form method="POST">
+      <div class="section__body"><form method="GET" action="/oauth/fake/redirect">
       {%- if error !== undefined %}
         <div class="typo">
           <blockquote class="warn"><p>{{ error }}</p></blockquote>
