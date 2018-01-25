@@ -51,7 +51,9 @@ If you are in Mainland China, it's recommended to use registry by `taobao` (or u
 $ npm config set registry https://registry.npm.taobao.org
 ```
 
-Run the following command to create configuration scripts for both debug and in-production deployments:
+Run the following command to create configuration scripts for both debug and in-production deployments.
+In DEBUG mode, `config.debug.yaml` overrides default settings;
+In PRODUCTION mode, `config.debug.yaml` and then `config.production.yaml` override default settings.
 
 ```
 $ touch config.debug.yaml
@@ -63,8 +65,8 @@ Edit the configuration according to the comments given. Then, excecute the follo
 ```
 $ npm install -g npminstall
 $ npminstall
-$ run build:server
-$ run build:ui
+$ npm run build:server
+$ npm run build:ui
 ```
 
 
