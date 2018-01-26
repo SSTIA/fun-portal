@@ -13,6 +13,7 @@ export default async () => {
       throw new Error(`Model ${name} doesn't have getException function!`);
     }
     const docs = await func();
+    //console.log(docs);
     await aigle.forEach(docs, async doc => {
       DI.logger.info(`Fixing ${name} Object ${doc._id}`);
       await doc.resetExceptionAsync();
@@ -35,10 +36,11 @@ export default async () => {
   };
 
   const system = {
-    initialized: false,
+    initialized: async () => {
+      return !(await DI.models.Sys.getAsync('readonly', true));
+    },
     init: async () => {
       DI.logger.info('Initialization started');
-      system.initialized = false;
       await DI.models.Sys.setAsync('readonly', true);
       await DI.models.Sys.setAsync('lock_submission', true);
       await DI.models.Sys.setAsync('lock_submission_reason', 'System initializing');
@@ -56,7 +58,6 @@ export default async () => {
 
       await DI.models.Sys.setAsync('lock_submission', false);
       await DI.models.Sys.setAsync('readonly', false);
-      system.initialized = true;
       DI.logger.info('Initialization succeeded');
 
       process.on('SIGINT', onExit);

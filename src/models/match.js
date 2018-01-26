@@ -1,6 +1,7 @@
 import _ from 'lodash';
 import fsp from 'fs-promise';
 import mongoose from 'mongoose';
+import aigle from 'aigle';
 import utils from 'libs/utils';
 import objectId from 'libs/objectId';
 import errors from 'libs/errors';
@@ -79,15 +80,13 @@ export default function() {
 
   MatchSchema.statics.ROUND_STATUS_TEXT = MatchSchema.statics.STATUS_TEXT;
 
-  MatchSchema.pre('save', function(next) {
-    if (!DI.system.initialized) next();
+  MatchSchema.pre('save', async function(next) {
     this.__lastIsNew = this.isNew;
     this.__lastModifiedPaths = this.modifiedPaths();
     next();
   });
 
-  MatchSchema.post('save', function() {
-    if (!DI.system.initialized) return;
+  MatchSchema.post('save', async function() {
     const mdoc = this.toObject();
     Promise.all([
       (async () => {
@@ -342,8 +341,8 @@ export default function() {
     await mdoc.save();
     await s1.addMatchAsync(mdoc);
     await s2.addMatchAsync(mdoc);
-    await Promise.all(
-      mdoc.rounds.map(rdoc => publishRoundTaskAsync(mdoc, rdoc)));
+    await aigle.forEach(mdoc.rounds,
+      async rdoc => publishRoundTaskAsync(mdoc, rdoc));
     return mdoc;
   };
 

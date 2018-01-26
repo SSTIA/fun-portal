@@ -11,24 +11,24 @@ import permissions from 'libs/permissions';
 
 export default () => {
   const SubmissionSchema = new mongoose.Schema({
-    user: {type: mongoose.Schema.Types.ObjectId, ref: 'User'},
-    version: Number,  // nth submission of this user
-    code: String,
-    compiler: String,
+    user: {type: mongoose.Schema.Types.ObjectId, ref: 'User', required: true},
+    version: {type: Number, required: true},  // nth submission of this user
+    code: {type: String, required: true},
+    compiler: {type: String, required: true},
     exeBlob: mongoose.Schema.Types.ObjectId,  // grid fs
-    status: String,
-    text: String,
+    status: {type: String, required: true},
+    text: {type: String, default: ''},
     taskToken: String, // A unique token for compile task
-    rejudge: Boolean,
+    rejudge: {type: Boolean, default: false},
     matches: [{type: mongoose.Schema.Types.ObjectId, ref: 'Match'}],
-    matchStatus: String,
-    totalUsedTime: Number,
+    matchStatus: {type: String, default: ''},
+    totalUsedTime: {type: Number, default: 0},
     startRating: {type: mongoose.Schema.Types.ObjectId, ref: 'Rating'},
     endRating: {type: mongoose.Schema.Types.ObjectId, ref: 'Rating'},
-    matchLogCleared: Boolean,
-    win: Number,
-    lose: Number,
-    draw: Number,
+    matchLogCleared: {type: Boolean, default: false},
+    win: {type: Number, default: 0},
+    lose: {type: Number, default: 0},
+    draw: {type: Number, default: 0},
   }, {
     timestamps: true,
     toObject: {virtuals: true},
@@ -62,15 +62,13 @@ export default () => {
     'inactive': 'Inactive',
   };
 
-  SubmissionSchema.pre('save', function(next) {
-    if (!DI.system.initialized) next();
+  SubmissionSchema.pre('save', async function(next) {
     this.__lastIsNew = this.isNew;
     this.__lastModifiedPaths = this.modifiedPaths();
     next();
   });
 
-  SubmissionSchema.post('save', function() {
-    if (!DI.system.initialized) return;
+  SubmissionSchema.post('save', async function() {
     const sdoc = this.toObject();
     Promise.all([
       (async () => {
@@ -289,9 +287,6 @@ export default () => {
       code,
       compiler,
       status: Submission.STATUS_PENDING,
-      text: '',
-      rejudge: false,
-      totalUsedTime: 0,
     });
     await Submission.createCompileTaskAsync(sdoc);
     return sdoc;
@@ -341,7 +336,7 @@ export default () => {
       sdocid: String(sdoc._id),
       token: sdoc.taskToken,
     };
-    if (DI.system.initialized) {
+    if (await DI.system.initialized()) {
       await Submission.publishCompileTaskAsync(mqData);
     } else {
       compileTaskQueue.push(mqData);
@@ -694,7 +689,7 @@ export default () => {
         throw new Error('Previous match not finished, unable to add match');
       }
     }
-    this.matches.push(mdoc);
+    this.matches.push(mdoc._id);
     this.matchStatus = mdoc.status;
     await this.save();
   };

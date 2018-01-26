@@ -27,6 +27,9 @@ gridfs:
 models:
   path: models
 
+system:
+  path: system
+
 match:
   path: match
 

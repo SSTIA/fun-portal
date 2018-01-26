@@ -11,9 +11,11 @@ export default () => {
   });
 
   eventBus.emitAsyncWithProfiling = async (name, ...args) => {
-    const endProfile = utils.profile(`eventBus.emit(${name})`, DI.config.profiling.eventBus);
-    eventBus.emitAsync(name, ...args);
-    endProfile();
+    if (await DI.system.initialized()) {
+      const endProfile = utils.profile(`eventBus.emit(${name})`, DI.config.profiling.eventBus);
+      eventBus.emitAsync(name, ...args);
+      endProfile();
+    }
   };
 
   return eventBus;

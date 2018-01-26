@@ -410,6 +410,7 @@ export default () => {
     uid, sdoc = null) {
     const user = await User.getUserObjectByIdAsync(uid);
     if (sdoc) {
+      user.match.priority = Math.abs(user.match.streak * user.match.change) + 1;
       user.match.initial = true;
       user.submission = sdoc;
     } else {
@@ -427,10 +428,10 @@ export default () => {
     await this.save();
   };
 
-  UserSchema.statics.getHighestPriorityAsync = async function() {
-    return await User.findOne({
+  UserSchema.statics.getHighestPriority = function() {
+    return User.find({
       'match.priority': {$gt: 0},
-    }).sort({'match.priority': -1}).exec();
+    }).sort({'match.priority': -1});
   };
 
   UserSchema.statics.getBestOpponentAsync = async function(u1) {
@@ -444,11 +445,10 @@ export default () => {
       '_id': {$ne: u1._id},
       'rating.score': {$lte: u1.rating.score},
     }).sort({'rating.score': -1}).exec();
-    console.log(u1);
-    console.log(higher);
-    console.log(lower);
-    const diffHigher = higher ? higher.rating.score - u1.rating.score : Infinity;
-    const diffLower = lower ? u1.rating.score - lower.rating.score : Infinity;
+    const diffHigher = higher
+      ? higher.rating.score - u1.rating.score : Infinity;
+    const diffLower = lower ?
+      u1.rating.score - lower.rating.score : Infinity;
     if (diffHigher > 100 && diffLower > 100) {
       return null;
     } else if (diffHigher > diffLower) {
@@ -475,12 +475,13 @@ export default () => {
   UserSchema.statics.getExceptionUserAsync = async function() {
     return await User.find({
       'match.priority': {$lte: 0},
-      'submission': {$ne: null},
+      //'submission': {$ne: null},
     }).exec();
   };
 
   UserSchema.methods.resetExceptionAsync = async function() {
-    const sdoc = await DI.models.Submission.getLastSubmissionByUserAsync(this._id);
+    const sdoc = await DI.models.Submission.getLastSubmissionByUserAsync(
+      this._id);
     if (sdoc) {
       this.match.priority = Math.abs(this.match.streak * this.match.change) + 1;
     } else {
