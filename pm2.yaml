@@ -4,4 +4,4 @@ apps:
     name: portal
   - script: .dist/cli.js
     args: DI.match
-    name: match
+    name: makematch
