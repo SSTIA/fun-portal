@@ -2,3 +2,6 @@
 apps:
   - script: .dist/server.js
     name: portal
+  - script: .dist/cli.js
+    args: DI.match
+    name: match
