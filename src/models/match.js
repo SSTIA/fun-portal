@@ -540,6 +540,25 @@ export default function() {
     }).sort({_id: -1});
   };
 
+  MatchSchema.statics.getMatchesBetweenSubmissions = function(s1, s2) {
+    return Match.find({
+      $or: [
+        {
+          $and:[
+            {u1Submission: s1},
+            {u2Submission: s2},
+          ],
+        },
+        {
+          $and:[
+            {u1Submission: s2},
+            {u2Submission: s1},
+          ],
+        },
+      ],
+    }).sort({_id: -1});
+  };
+
   MatchSchema.statics.getUserMatches = function(uid) {
     return Match.find({
       $or: [

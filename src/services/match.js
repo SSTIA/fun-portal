@@ -20,6 +20,8 @@ export default async (_maxMatch = 5) => {
       for (let i = 0; i < udocs.length; i++) {
         const u1 = udocs[i];
         const u2 = await DI.models.User.getBestOpponentAsync(u1);
+        //console.log(u1, u2);
+        //return false;
         if (u2) {
           //console.log(u1._id, u2._id);
           await DI.models.Match.createMatchAsync(u1, u2);

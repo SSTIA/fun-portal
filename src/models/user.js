@@ -1,3 +1,4 @@
+import _ from 'lodash';
 import bcrypt from 'bcrypt-as-promised';
 import mongoose from 'mongoose';
 import objectId from 'libs/objectId';
@@ -434,42 +435,72 @@ export default () => {
     }).sort({'match.priority': -1});
   };
 
+  UserSchema.statics.getWinCount = async function(u1, u2) {
+    const mdocs = await DI.models.Match.getMatchesBetweenSubmissions(
+      u1.submission, u2.submission);
+    let u1win = 0, u2win = 0, draw = 0, syserror = false;
+    const first = _.first(mdocs);
+    if (first && first.status === DI.models.Match.STATUS_SYSTEM_ERROR) {
+      const d1 = new Date(first.updatedAt);
+      const d2 = new Date();
+      const diff = parseInt(d2 - d1);
+      if (diff < 86400000) {
+        syserror = true;
+        return [u1win, u2win, draw, syserror];
+      }
+    }
+    _.forEach(mdocs, mdoc => {
+      if (mdoc.status === DI.models.Match.STATUS_U1WIN) {
+        mdoc.u1Submission === u1.submission ? ++u1win : ++u2win;
+      } else if (mdoc.status === DI.models.Match.STATUS_U2WIN) {
+        mdoc.u1Submission === u1.submission ? ++u2win : ++u1win;
+      } else if (mdoc.status === DI.models.Match.STATUS_DRAW) {
+        ++draw;
+      }
+    });
+    return [u1win, u2win, draw, syserror];
+  };
+
   UserSchema.statics.getBestOpponentAsync = async function(u1) {
-    let higher = await User.findOne({
+    // The default version of mongodb on Ubuntu is 2.6
+    // So we may use some naive code to avoid version problems
+    let udocs = await User.aggregate().match({
       'match.priority': {$gt: 0},
       '_id': {$ne: u1._id},
-      'rating.score': {$gte: u1.rating.score},
-    }).sort({'rating.score': 1}).exec();
-    let lower = await User.findOne({
-      'match.priority': {$gt: 0},
-      '_id': {$ne: u1._id},
-      'rating.score': {$lte: u1.rating.score},
-    }).sort({'rating.score': -1}).exec();
-    const diffHigher = higher
-      ? higher.rating.score - u1.rating.score : Infinity;
-    const diffLower = lower ?
-      u1.rating.score - lower.rating.score : Infinity;
-    if (diffHigher > 100 && diffLower > 100) {
-      return null;
-    } else if (diffHigher > diffLower) {
-      return lower;
-    } else {
-      return higher;
+      'rating.score': {
+        $gte: u1.rating.score - 100,
+        $lte: u1.rating.score + 100,
+      },
+    }).project({
+      delta: {
+        $cond: {
+          if: {
+            $gte: ['$rating.score', u1.rating.score],
+          }, then: {
+            $subtract: ['$rating.score', u1.rating.score],
+          }, else: {
+            $subtract: [u1.rating.score, '$rating.score'],
+          },
+        },
+      },
+      submission: true,
+    }).sort({
+      delta: 1,
+    }).allowDiskUse(true).exec();
+
+    for (let i = 0; i < udocs.length; i++) {
+      const u2 = udocs[i];
+      let [u1win, u2win, draw, syserror] = await User.getWinCount(u1, u2);
+      if (syserror) continue;
+      if (Math.abs(u1win - u2win) < 2) {
+        return await User.getUserObjectByIdAsync(u2._id);
+      }
+      if (u1win === u2win && draw < 2) {
+        return await User.getUserObjectByIdAsync(u2._id);
+      }
     }
 
-    // if (higher) {
-    //   return await User.findOne({
-    //     'match.priority': {$gt: 0},
-    //     '_id': {$ne: u1._id},
-    //     //'rating.score': {$gte: u1.rating.score},
-    //   }).sort({'rating.score': 1}).exec();
-    // } else {
-    //   return await User.findOne({
-    //     'match.priority': {$gt: 0},
-    //     '_id': {$ne: u1._id},
-    //     //'rating.score': {$lte: u1.rating.score},
-    //   }).sort({'rating.score': -1}).exec();
-    // }
+    return null;
   };
 
   UserSchema.statics.getExceptionUserAsync = async function() {
