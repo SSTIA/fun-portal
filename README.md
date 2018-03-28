@@ -15,7 +15,7 @@ In our game, two players take turns as black to move first. There are six rounds
 
 ## Online Judge System
 
-Visit [GomokuJudge](http://gomuku.sstia.tech) to take part in our competition!
+Visit [GomokuJudge](http://gomoku.sstia.tech) to take part in our competition!
 
 Login in via your JAccount and submit your code altered from the file **main.c** we provided.
 
