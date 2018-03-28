@@ -45,7 +45,7 @@ process.env.SUPPRESS_NO_CONFIG_WARNING = true;
   try {
     await application.start();
     await DI.system.init();
-    DI.eventBus.emitAsyncWithProfiling('system.started');
+    await DI.eventBus.emitAsyncWithProfiling('system.started');
   } catch (e) {
     console.log(e.stack);
   }

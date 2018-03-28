@@ -35,6 +35,7 @@ export default class Handler {
     _.assign(udoc.profile, req.data);
     udoc.profile.initial = false;
     await udoc.save();
+    await DI.eventBus.emitAsyncWithProfiling('user.profile:updated');
     res.redirect(utils.url('/user/profile?updated'));
   }
 
