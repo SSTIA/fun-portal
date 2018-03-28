@@ -27,7 +27,7 @@ export default class Handler {
   @web.middleware(utils.sanitizeBody({
     realName: sanitizers.nonEmptyString(),
     displayName: sanitizers.nonEmptyString(),
-    teacher: sanitizers.nonEmptyString(),
+    teacher: sanitizers.string(),
   }))
   @web.middleware(utils.checkPermission(permissions.PROFILE))
   async postUserProfileAction(req, res) {

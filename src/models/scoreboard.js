@@ -60,6 +60,10 @@ export default () => {
     cache.dirty = true;
   });
 
+  DI.eventBus.on('user.profile:updated', () => {
+    cache.dirty = true;
+  });
+
   /**
    * Calculate the latest scoreboard
    *

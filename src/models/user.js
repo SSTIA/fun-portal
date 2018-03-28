@@ -324,6 +324,7 @@ export default () => {
       user.profile.displayName = user.profile.displayName.substr(0, 100);
     }
     await user.save();
+    DI.eventBus.emitAsyncWithProfiling('user.profile:updated');
     return user;
   };
 
