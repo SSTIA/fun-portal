@@ -10,6 +10,7 @@ const page = new NamedPage('help_rules', () => {
     const $this = $(this);
     const text = $this.text();
     $this.html(converter.makeHtml(text));
+    $this.show();
   });
 });
 
