@@ -7,11 +7,11 @@
 
 ## Introduction
 
-> Gomoku is an abstract strategy board game. Also called Gobang or Five in a Row, it is traditionally played with Go pieces (black and white stones) on a go board with 19x19 (15x15) intersections; however, because pieces are not moved or removed from the board, gomoku may also be played as a paper and pencil game. This game is known in several countries under different names.
+> Gomoku is an abstract strategy board game, also called Gobang or Five in a Row. It is traditionally played with Go pieces (black and white stones) on a go board with 19x19 (15x15) intersections; however, because pieces are not moved or removed from the board, gomoku may also be played as a paper and pencil game. This game is known in several countries under different names.
 
 More information about Gomoku, see [Gomoku - Wikipedia](https://en.wikipedia.org/wiki/Gomoku)
 
-In our game, two players take turns as black to move first. There are six rounds in total and each player moves first for three times.
+In our game, two players take turns as black to move first. There are six rounds in total and each player moves first (as black) for three times.
 
 ## Online Judge System
 
@@ -82,7 +82,7 @@ to start the server.
 
 ## Openings
 
-**Important: This part is only for reference, you may not dismiss these when developing your own AI.**
+**Important: This part is only for reference, you may dismiss these when developing your own AI.**
 
 Black (the player who makes the first move) was long known to have a big advantage, so we will specify the beginning of the game so that both players will get the same advantage to make the game fair.
 
