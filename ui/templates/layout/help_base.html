@@ -1,0 +1,26 @@
+{% extends "layout/basic.html" %}
+{% block content %}
+<div class="row" data-sticky-parent>
+  <div class="medium-9 columns">
+    {% block help_content %}{% endblock %}
+  </div>
+  <div class="medium-3 columns"><div data-sticky="medium">
+    <div class="section side">
+      <ol class="menu">
+        <li class="menu__item">
+          <a href="{{ url('/help/rules') }}" class="menu__link{% if page_name == 'help_rules' %} active{% endif %}">
+            <span class="icon icon-account--circle"></span>
+            Rules
+          </a>
+        </li>
+        <li class="menu__item">
+          <a href="{{ url('/help/about') }}" class="menu__link{% if page_name == 'help_about' %} active{% endif %}">
+            <span class="icon icon-wrench"></span>
+            About
+          </a>
+        </li>
+      </ol>
+    </div>
+  </div></div>
+</div>
+{% endblock %}
