@@ -63,8 +63,8 @@ Edit the configuration according to the comments given. Then, excecute the follo
 ```
 $ npm install -g npminstall
 $ npminstall
-$ run build:server
-$ run build:ui
+$ npm run build:server
+$ npm run build:ui
 ```
 
 

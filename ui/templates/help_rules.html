@@ -1,25 +1,27 @@
 {% extends "layout/help_base.html" %}
 {% block help_content %}
 <div class="section">
-    <div class="section__header">
-        <h1 class="section__title">Rules</h1>
-    </div>
+    <!--<div class="section__header">-->
+        <!--<h1 class="section__title">Rules</h1>-->
+    <!--</div>-->
     <div class="section__body content-markdown">
     ## SSTIA Gomoku AI Competition General Rules
         Last updated on 28/3/2018. This page may be under rapid updates because it's our first time to hold such a competition and there may exist many things unclear or inequal. Please pay enough attention to this page.
-    ------
+
+        ------
     ### Game
         Each game is consisted of six rounds. Both players take the black side who serves first for three rounds for the sake of equality as it's all known that black side usually has great advantage in one match. Besides, we will random 3 openings to be used by both players as the black from 21 openings applied in official gomoku contests to ensure the equality further more.
         
     ### Elo Ranking
         We take advantage of Elo Ranking as the basic ranking method which is commonly applied in many online competitive games. Every participant has an initial rank as 1500 which will be increased, decreased or kept unchanged when there's a win, lose or draw game, repectively. The amount of changed rank is dependent on the rank difference between the two participants of one game. The higher the rank difference, the more amount of rank will be changed.
         The final top 3 players will be decided according to the on-time elo ranking result by the mid-night of 29/7/2018 (Sunday).
+
     ### Matching
         The matching mechanism can viewed as such a model: the server keeps looking for two feasible participants as opponents to hold a game.
         There are several rules defining what kind of participants are feasible to hold a game:
-        * These two participants' rank difference is no larger than 100 except one of them has just updated the AI and is of lower rank.
-        * Both participants have submitted one effective AI program (effectiveness means this AI is able to play at least one feasible step).
-        * These two participants' win game difference is no larger than 1 *unless* the one with such advantage is of lower rank. For example, if A has a 3-1 winning relation with B, A and B will not be matched together to hold a game any more *unless* A's rank is lower than B's rank.
+        + These two participants' rank difference is no larger than 100 except one of them has just updated the AI and is of lower rank.
+        + Both participants have submitted one effective AI program (effectiveness means this AI is able to play at least one feasible step).
+        + These two participants' win game difference is no larger than 1 *unless* the one with such advantage is of lower rank. For example, if A has a 3-1 winning relation with B, A and B will not be matched together to hold a game any more *unless* A's rank is lower than B's rank.
         
         Since there may exist multiple feasible games to be hold, in order to make sure those who needs to know the their AI's combat results can get their results quickly, we design the following priority for finding two players:
         1. The player who has just updated a new AI will be set with top priority.
@@ -29,6 +31,7 @@
         1. First Prize: Intel 760P 256GB NVME M.2 SSD
         2. Second Prize: Toshiba V9 1TB Portable Harddisk
         3. Third Prize: Sandisk Extreme Go 64GB SDCZ800 USB Flash Drive
+
     All the other feasible players will be granted to take part in a lucky draw with 100% percentage winning rate on various kinds of JI souveniors as the reward for participating in our beta version competition.
         
     ### Honor Code
