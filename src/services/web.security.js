@@ -9,7 +9,7 @@ export default (app) => {
       defaultSrc: ['\'self\''],
       scriptSrc: ['\'self\'', '\'unsafe-inline\'', '\'unsafe-eval\''],
       styleSrc: ['\'self\'', '\'unsafe-inline\''],
-      imgSrc: ['\'self\'', 'data:'],
+      imgSrc: ['\'self\'', 'data:', 'https://avatars0.githubusercontent.com'],
       reportUri: `${DI.config.cspReportUrl}`,
     },
   }));

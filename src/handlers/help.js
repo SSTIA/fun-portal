@@ -19,5 +19,10 @@ export default class Handler {
     });
   }
 
-
+  @web.get('/about')
+  async about(req, res) {
+    res.render('help_about', {
+      page_title: 'About',
+    });
+  }
 }
