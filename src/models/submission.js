@@ -615,7 +615,7 @@ export default () => {
       _.last(this.matches));
     if (DI.models.Match.isFinishStatus(mdoc.status)) {
       const relativeStatus = DI.models.Match.getRelativeStatus(
-        mdoc.status, mdoc.u1 === this.user);
+        mdoc.status, mdoc.u1.equals(this.user));
       if (relativeStatus === DI.models.Match.RELATIVE_STATUS_WIN) {
         this.win++;
       } else if (relativeStatus === DI.models.Match.RELATIVE_STATUS_LOSE) {
