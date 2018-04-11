@@ -1,0 +1,13 @@
+{% extends "layout/help_base.html" %}
+{% block help_content %}
+<div class="section">
+    <div class="section__header">
+        <h1 class="section__title">Change Log</h1>
+    </div>
+</div>
+{%- for changelog in changelogs %}
+<div class="section">
+    {%- include "partials/changelog.html" -%}
+</div>
+{%- endfor %}
+{% endblock %}

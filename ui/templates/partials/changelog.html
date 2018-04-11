@@ -1,0 +1,13 @@
+<div class="section__body">
+    <h3>Version {{ changelog.version }}, published by {{ changelog.publisher }} {{ changelog.timestamp|datetime }}</h3>
+    <br>
+    {%- for section in changelog.log %}
+    <h4>{{ section.type }}:</h4>
+    <ul style="margin: 0.5em 0;padding: 0 0 0 1.2em;list-style: disc;">
+        {%- for line in section.data %}
+        <li style="margin: 0.15em 0;font-size: 10pt;">{{ line }}</li>
+        {%- endfor %}
+    </ul>
+    {%- endfor %}
+    <p></p>
+</div>

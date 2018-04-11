@@ -9,14 +9,14 @@
       <ol class="menu">
         <li class="menu__item">
           <a href="{{ url('/help/rules') }}" class="menu__link{% if page_name == 'help_rules' %} active{% endif %}">
-            <span class="icon icon-edit"></span>
+            <span class="icon icon-ordered_list"></span>
             Rules
           </a>
         </li>
         <li class="menu__item">
           <a href="https://github.com/SSTIA/fun-examples" class="menu__link">
             <span class="icon icon-quote"></span>
-            Example code
+            Example Code
           </a>
         </li>
         <li class="menu__item">
@@ -29,6 +29,12 @@
           <a href="https://github.com/SSTIA/fun-portal/issues" class="menu__link">
             <span class="icon icon-comment--text"></span>
             Contact us
+          </a>
+        </li>
+        <li class="menu__item">
+          <a href="{{ url('/help/changelog') }}" class="menu__link{% if page_name == 'help_changelog' %} active{% endif %}">
+            <span class="icon icon-edit"></span>
+            Change Log
           </a>
         </li>
       </ol>

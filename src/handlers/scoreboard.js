@@ -1,6 +1,7 @@
 import * as web from 'express-decorators';
 import utils from 'libs/utils';
 import permissions from 'libs/permissions';
+import changelog from 'libs/changelog';
 
 @web.controller('/')
 export default class Handler {
@@ -19,6 +20,7 @@ export default class Handler {
       page_title: 'Scoreboard',
       udocs,
       cacheAt,
+      changelog: changelog.newest(),
     });
   }
 }

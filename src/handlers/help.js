@@ -2,6 +2,7 @@ import * as web from 'express-decorators';
 import utils from 'libs/utils';
 import sanitizers from 'libs/sanitizers';
 import permissions from 'libs/permissions';
+import changelog from '../libs/changelog';
 
 @web.controller('/help')
 export default class Handler {
@@ -25,4 +26,13 @@ export default class Handler {
       page_title: 'About',
     });
   }
+
+  @web.get('/changelog')
+  async changelog(req, res) {
+    res.render('help_changelog', {
+      page_title: 'Change Log',
+      changelogs: changelog.all(),
+    });
+  }
+
 }
