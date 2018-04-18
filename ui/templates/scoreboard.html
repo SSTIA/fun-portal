@@ -9,7 +9,9 @@
   <div class="columns">
     <div class="section">
       <div class="section__header">
-        <h1 class="section__title"><span class="icon icon-warning text-red"></span> What's New</h1>
+        <h1 class="section__title"><span class="icon icon-warning text-red">
+        </span>Version {{ changelog.version }}, published by {{ changelog.publisher }} {{ changelog.timestamp|datetime }}
+        </h1>
       </div>
       {%- include "partials/changelog.html" -%}
     </div>

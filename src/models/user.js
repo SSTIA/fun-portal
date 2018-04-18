@@ -433,7 +433,10 @@ export default () => {
   UserSchema.statics.getHighestPriority = function() {
     return User.find({
       'match.priority': {$gt: 0},
-    }).sort({'match.priority': -1});
+    }).sort({
+      'match.initial': -1,
+      'match.priority': -1,
+    });
   };
 
   UserSchema.statics.getWinCount = async function(u1, u2) {
@@ -465,13 +468,14 @@ export default () => {
   UserSchema.statics.getBestOpponentAsync = async function(u1) {
     // The default version of mongodb on Ubuntu is 2.6
     // So we may use some naive code to avoid version problems
+    let score_limit = {$gte: u1.rating.score - 100};
+    if (!u1.match.initial) {
+      score_limit['$lte'] = u1.rating.score + 100;
+    }
     let udocs = await User.aggregate().match({
       'match.priority': {$gt: 0},
       '_id': {$ne: u1._id},
-      'rating.score': {
-        $gte: u1.rating.score - 100,
-        $lte: u1.rating.score + 100,
-      },
+      'rating.score': score_limit,
     }).project({
       delta: {
         $cond: {

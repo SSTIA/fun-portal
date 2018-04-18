@@ -7,6 +7,11 @@
 </div>
 {%- for changelog in changelogs %}
 <div class="section">
+    <div class="section__header">
+        <h1 class="section__title">
+            Version {{ changelog.version }}, published by {{ changelog.publisher }} {{ changelog.timestamp|datetime }}
+        </h1>
+    </div>
     {%- include "partials/changelog.html" -%}
 </div>
 {%- endfor %}
