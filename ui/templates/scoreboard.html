@@ -82,7 +82,7 @@
               <td class="col--submission">
               {%- if udoc.submission %}
                 <a class="typo-a" href="{{ url('/submission/{0}', false, [udoc.submission._id]) }}">
-                  #{{ udoc.submission.version }}: View
+                  #{{ udoc.submission.version }}: {{ udoc.submission.compiler }}
                 </a>
               {%- else %}
                 --
