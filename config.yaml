@@ -21,19 +21,19 @@ base:
     display:
       gcc99:        GNU C 7.2.0 (-O3 -std=c99)
       gcc11:        GNU C 7.2.0 (-O3 -std=c11)
-      clang99:      LLVM / Clang 4.0.1 (-O3 -std=c99)
-      clang11:      LLVM / Clang 4.0.1 (-O3 -std=c11)
+      clang99:      LLVM / Clang 5.0.0 (-O3 -std=c99)
+      clang11:      LLVM / Clang 5.0.0 (-O3 -std=c11)
       g++98:        GNU C++ 7.2.0 (-O3 -std=c++98)
       g++11:        GNU C++ 7.2.0 (-O3 -std=c++11)
       g++14:        GNU C++ 7.2.0 (-O3 -std=c++14)
       g++17:        GNU C++ 7.2.0 (-O3 -std=c++17)
-      clang++98:    LLVM / Clang 4.0.1 (-O3 -std=c++98)
-      clang++11:    LLVM / Clang 4.0.1 (-O3 -std=c++11)
-      clang++14:    LLVM / Clang 4.0.1 (-O3 -std=c++14)
-      clang++17:    LLVM / Clang 4.0.1 (-O3 -std=c++17)
+      clang++98:    LLVM / Clang 5.0.0 (-O3 -std=c++98)
+      clang++11:    LLVM / Clang 5.0.0 (-O3 -std=c++11)
+      clang++14:    LLVM / Clang 5.0.0 (-O3 -std=c++14)
+      clang++17:    LLVM / Clang 5.0.0 (-O3 -std=c++17)
       py2:          Python 2.7.14
       py3:          Python 3.6.3
-      node:         Node.js >= 8.9.3
+      node:         Node.js >= 9.3.0
     limits:
       sizeOfCode: 1048576     # 1 MB
       sizeOfBin: 1048576      # 1 MB
