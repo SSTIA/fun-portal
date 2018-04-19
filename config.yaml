@@ -33,7 +33,7 @@ base:
       clang++17:    LLVM / Clang 5.0.0 (-O3 -std=c++17)
       py2:          Python 2.7.14
       py3:          Python 3.6.3
-      node:         Node.js >= 9.3.0
+      node:         Node.js 9.11.1
     limits:
       sizeOfCode: 1048576     # 1 MB
       sizeOfBin: 1048576      # 1 MB
