@@ -459,8 +459,8 @@ export default function() {
       } else {
         // draw
         this.status = Match.STATUS_DRAW;
-        await u1rdoc.setDrawAsync();
-        await u2rdoc.setDrawAsync();
+        await u1rdoc.setDrawAsync(u2rdoc.before);
+        await u2rdoc.setDrawAsync(u1rdoc.before);
       }
       await u1rdoc.save();
       await u2rdoc.save();

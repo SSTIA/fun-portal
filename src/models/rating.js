@@ -126,9 +126,11 @@ export default function() {
     await this.save();
   };
 
-  RatingSchema.methods.setDrawAsync = async function() {
-    this.after = this.before;
-    this.change = 0;
+  RatingSchema.methods.setDrawAsync = async function(opponentScore) {
+    const elo = this.getEloRank();
+    const expect = elo.getExpected(this.before, opponentScore);
+    this.after = elo.updateRating(expect, 0.5, this.before);
+    this.change = this.after - this.before;
     this.status = Rating.STATUS_DRAW;
     await this.save();
   };

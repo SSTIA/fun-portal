@@ -395,6 +395,8 @@ export default () => {
       }
       user.rating.lose++;
     } else if (rdoc.status === DI.models.Rating.STATUS_DRAW) {
+      user.match.streak = 0;
+      user.match.change = 0;
       user.rating.draw++;
     }
     user.match.priority = Math.abs(user.match.streak * user.match.change) + 1;
@@ -469,7 +471,7 @@ export default () => {
     // The default version of mongodb on Ubuntu is 2.6
     // So we may use some naive code to avoid version problems
     let score_limit = {$gte: u1.rating.score - 100};
-    if (!u1.match.initial) {
+    if (!u1.match.initial && u1.match.streak < 0) {
       score_limit['$lte'] = u1.rating.score + 100;
     }
     let udocs = await User.aggregate().match({
@@ -489,6 +491,7 @@ export default () => {
         },
       },
       submission: true,
+      rating: true,
     }).sort({
       delta: 1,
     }).allowDiskUse(true).exec();
@@ -497,12 +500,18 @@ export default () => {
       const u2 = udocs[i];
       let [u1win, u2win, draw, syserror] = await User.getWinCount(u1, u2);
       if (syserror) continue;
-      if (Math.abs(u1win - u2win) < 2) {
-        return await User.getUserObjectByIdAsync(u2._id);
+      if (u1win === u2win) {
+        const f1 = DI.models.Rating.getTitleData(u1.rating.score).factor;
+        const f2 = DI.models.Rating.getTitleData(u2.rating.score).factor;
+        if (draw >= 2 && u2.delta <= f1 + f2) {
+          continue;
+        }
+      } else if (u1win - u2win >= 2 && u1.rating.score >= u2.rating.score) {
+        continue;
+      } else if (u2win - u1win >= 2 && u2.rating.score >= u1.rating.score) {
+        continue;
       }
-      if (u1win === u2win && draw < 2) {
-        return await User.getUserObjectByIdAsync(u2._id);
-      }
+      return await User.getUserObjectByIdAsync(u2._id);
     }
 
     return null;

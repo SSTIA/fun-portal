@@ -2,17 +2,20 @@
   "timestamp": "2018-04-12T04:15:00+08:00",
   "version": "1.0.1",
   "publisher": "tc-imba",
-  "log": [{
-    "type": "bugs",
-    "data": [
-      "Fix a display error of win / lose in submission page"
-    ]
-  }, {
-    "type": "features",
-    "data": [
-      "Add an attention of the most recent change log on the main page",
-      "All change logs can be viewed in the help section",
-      "Modify some icons"
-    ]
-  }]
+  "log": [
+    {
+      "type": "bugs",
+      "data": [
+        "Fix a display error of win / lose in submission page"
+      ]
+    },
+    {
+      "type": "features",
+      "data": [
+        "Add an attention of the most recent change log on the main page",
+        "All change logs can be viewed in the help section",
+        "Modify some icons"
+      ]
+    }
+  ]
 }

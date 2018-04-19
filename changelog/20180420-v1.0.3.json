@@ -1,0 +1,21 @@
+{
+  "timestamp": "2018-04-20T01:00:00+08:00",
+  "version": "1.0.3",
+  "publisher": "tc-imba",
+  "log": [
+    {
+      "type": "bugs",
+      "data": [
+        "Fix a bug that AI not matched after winning once but its rating is still 100+ less than the AI ahead of him"
+      ]
+    },
+    {
+      "type": "modifications",
+      "data": [
+        "Modify the rating change of draw, now we use S=0.5 for draw in elo ranking",
+        "The priority of two AIs will be set lower after a draw",
+        "Two AI with the same wins and more than two draws will keep matched until the differ of their rating reaches a threshold"
+      ]
+    }
+  ]
+}
