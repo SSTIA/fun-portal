@@ -1,0 +1,13 @@
+{
+  "timestamp": "2018-10-07T17:40:00+08:00",
+  "version": "1.0.4",
+  "publisher": "Reapor-Yurnero",
+  "log": [
+    {
+      "type": "modifications",
+      "data": [
+        "Update the rules",
+      ]
+    }
+  ]
+}
