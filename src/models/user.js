@@ -118,7 +118,7 @@ export default () => {
 
   UserSchema.statics.getEffectiveUsersAsync = async function() {
     return await User.find({
-      'rating.score': {$gt: 0},
+      'rating.score': {$ne: 0},
     }).sort({'rating.score': -1});
   };
 
