@@ -5,7 +5,7 @@ import errors from 'libs/errors';
 export default (app, io, logger) => {
 
   const router = express.Router();
-  app.use(DI.config.urlPrefix, router);
+  app.use(router);
 
   const handlers = glob
     .sync(`${__codeRoot}/handlers/*.js`)
