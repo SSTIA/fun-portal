@@ -7,7 +7,7 @@
 
 ## Introduction
 
-> Gomoku/Renju is an abstract strategy board game played in a 15 by 15 board. To avoid ambiguity, Gomoku/Renju here applies Renju rule, which means continuous line of five wins with fouls for black stone. 
+> Gomoku/Renju is an abstract strategy board game played in a 15 by 15 board. To avoid ambiguity, Gomoku/Renju here uses Renju rule, which means continuous line of five wins with fouls for black stone. 
 
 More information about Renju, see [Study Renju](http://www.renju.net/study/rules.php)
 
@@ -82,9 +82,9 @@ to start the server.
 
 ## Openings
 
-Black, the player who makes the first move, was long known to have a big advantage (win surely under the original rule), so some balanced openings from Soosorv rule are selected to fully this issue.
+Black, the player who makes the first move, was long known to have a big advantage (win surely under the original rule), so balanced openings from Soosorv rule are selected to eliminate this issue.
 
-The followings are all the openings used in this competition. We assume X represents black and O represents white.
+The followings are the openings used in the competition. X represents black and O represents white.
 
 ### 1. 复杂平衡
 ```
