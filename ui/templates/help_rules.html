@@ -6,15 +6,15 @@
     <!--</div>-->
     <div class="section__body content-markdown">
     ## SSTIA Gomoku AI Competition General Rules
-        Last updated on 7/10/2018. This page may be under rapid updates. Please pay enough attention to this page.
+        Last updated on 2019/11/13 by Sun. This page may be under rapid updates. Please pay enough attention to this page.
 
         ------
     ### Game
-        Each game is consisted of six rounds. Both players take the black side who serves first for three rounds for the sake of equality as it's all known that black side usually has great advantage in one match. Besides, we will random 3 openings to be used by both players as the black from 21 openings applied in official gomoku contests to ensure the equality further more.
+        Each game is consisted of six rounds. Both players take the black side who serves first for three rounds for the sake of equality. Besides, we will random 3 openings to be used by both players as the black from 26 balanced openings. See the detailed openings and server files [here!](https://github.com/SSTIA/fun-portal)
         
     ### Elo Ranking
         We take advantage of Elo Ranking as the basic ranking method which is commonly applied in many online competitive games. Every participant has an initial rank as 1500 which will be increased, decreased or kept unchanged when there's a win, lose or draw game, repectively. The amount of changed rank is dependent on the rank difference between the two participants of one game. The higher the rank difference, the more amount of rank will be changed.
-        The final top 3 players will be decided according to the on-time elo ranking result by the mid-night of 2/8/2019 (Sunday).
+        The final top 3 players will be decided according to the on-time elo ranking result by some day in the future.
 
     ### Matching
         The matching mechanism can viewed as such a model: the server keeps looking for two feasible participants as opponents to hold a game.
@@ -30,8 +30,18 @@
     ### Sample Code
         Refer to [here!](https://github.com/SSTIA/fun-examples).
         
+    ### Recommended Strategy
+		1. Implement minimax search with alpha-beta pruning.
+		2. Try to optimize and speed up the search.
+		3. Learn and adopt some Renju knowledge.
+		4. Be creative!
+
+    ### Notes
+		1. In sample codes, x coordinate refers to file index and y coordinate refers to rank index.
+		2. The speed of the server is not exactly known, so the brain must be able to adapt.
+
     ### Rewards
-        Will be announced after the official opening ceremony.
+        Will be announced later.
         
     ### Honor Code
         This competiton is following UM-SJTU JI Honor Code. **Don't share your codes or copy and plagarize codes from _any source_.**

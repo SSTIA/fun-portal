@@ -7,7 +7,7 @@
 
 ## Introduction
 
-> Gomoku/Renju is an abstract strategy board game played in a 15 by 15 board. To avoid ambiguity, Gomoku/Renju here means Renju Rule, which is continuous line of five wins with fouls for black stone. 
+> Gomoku/Renju is an abstract strategy board game played in a 15 by 15 board. To avoid ambiguity, Gomoku/Renju here applies Renju rule, which means continuous line of five wins with fouls for black stone. 
 
 More information about Renju, see [Study Renju](http://www.renju.net/study/rules.php)
 
@@ -590,6 +590,8 @@ Online Judge System by [GomokuFun](https://github.com/sse2016-gomoku-fun/)
 
 Server by Luke Lazurite, Liu Yihao and Shen zheyu
 
-Manual written by Liu Yihao and Sun Yuliang
+Manual written by Liu Yihao and modified by Sun Yuliang
+
+Openings chosen by Sun Yuliang
 
 JI-SSTIA All Right Reverved
