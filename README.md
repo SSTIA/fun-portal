@@ -7,19 +7,21 @@
 
 ## Introduction
 
-> Gomoku is an abstract strategy board game, also called Gobang or Five in a Row. It is traditionally played with Go pieces (black and white stones) on a go board with 19x19 (15x15) intersections; however, because pieces are not moved or removed from the board, gomoku may also be played as a paper and pencil game. This game is known in several countries under different names.
+> Gomoku/Renju is an abstract strategy board game played in a 15 by 15 board. To avoid ambiguity, Gomoku/Renju here means Renju Rule, which is continuous line of five wins with fouls for black stone. 
 
-More information about Gomoku, see [Gomoku - Wikipedia](https://en.wikipedia.org/wiki/Gomoku)
+More information about Renju, see [Study Renju](http://www.renju.net/study/rules.php)
 
 In our game, two players take turns as black to move first. There are six rounds in total and each player moves first (as black) for three times.
 
+The openings are selected from Soosorv rule openings, which are balanced for both sides.
+
 ## Online Judge System
 
-Visit [GomokuJudge](http://gomoku.sstia.tech) to take part in our competition!
+Visit [GomokuJudge](http://focs.ji.sjtu.edu.cn/gomoku) to take part in our competition!
 
 Login in via your JAccount and submit your code altered from the file **main.c** we provided.
 
-The max size of Source code and Compiled exe are both 1MB.
+For one side, time limit for initialization is 5s, time limit per move is 5s, and time limit per match is 180s. Memory limit is 350MB. The max size of Source code and Compiled exe are both 1MB.
 
 There are some warnings:
 1. Do not copy others' source code. All the code you submitted will be checked for plagiarism. Copycats will fail this project!
@@ -78,23 +80,13 @@ $ npm run start
 
 to start the server.
 
-## Matching
-
-
-
 ## Openings
 
-**Important: This part is only for reference, you may dismiss these when developing your own AI.**
+Black, the player who makes the first move, was long known to have a big advantage (win surely under the original rule), so some balanced openings from Soosorv rule are selected to fully this issue.
 
-Black (the player who makes the first move) was long known to have a big advantage, so we will specify the beginning of the game so that both players will get the same advantage to make the game fair.
+The followings are all the openings used in this competition. We assume X represents black and O represents white.
 
-We assume the openings are exactly the displayed 5x5 square in the center, x represents black and o represents white
-
-The followings are all of the opening situations (on the Judge System):
-
-### 直指 (黑优)
-
-#### 1. 复杂平衡
+### 1. 复杂平衡
 ```
     4   5   6   7   8   9   10
   +---+---+---+---+---+---+---+
@@ -113,7 +105,7 @@ The followings are all of the opening situations (on the Judge System):
 10|   |   |   |   |   |   |   |
   +---+---+---+---+---+---+---+
 ```
-#### 2. 平衡
+### 2. 平衡
 ```
     4   5   6   7   8   9   10
   +---+---+---+---+---+---+---+
@@ -132,7 +124,7 @@ The followings are all of the opening situations (on the Judge System):
 10|   |   |   |   |   |   |   |
   +---+---+---+---+---+---+---+
 ```
-#### 3. 平衡（疏星一打）
+### 3. 平衡（疏星一打）
 ```
     4   5   6   7   8   9   10
   +---+---+---+---+---+---+---+
@@ -151,7 +143,7 @@ The followings are all of the opening situations (on the Judge System):
 10|   |   |   |   |   |   |   |
   +---+---+---+---+---+---+---+
 ```
-#### 4. 平衡
+### 4. 平衡
 ```
     4   5   6   7   8   9   10
   +---+---+---+---+---+---+---+
@@ -170,7 +162,7 @@ The followings are all of the opening situations (on the Judge System):
 10|   |   |   |   |   |   |   |
   +---+---+---+---+---+---+---+
 ```
-#### 5. 平衡
+### 5. 平衡
 ```
     4   5   6   7   8   9   10
   +---+---+---+---+---+---+---+
@@ -189,7 +181,7 @@ The followings are all of the opening situations (on the Judge System):
 10|   |   |   |   |   |   |   |
   +---+---+---+---+---+---+---+
 ```
-#### 6. 平衡
+### 6. 平衡
 ```
     4   5   6   7   8   9   10
   +---+---+---+---+---+---+---+
@@ -208,7 +200,7 @@ The followings are all of the opening situations (on the Judge System):
 10|   |   |   |   |   |   |   |
   +---+---+---+---+---+---+---+
 ```
-#### 7. 平衡（金星三打）
+### 7. 平衡（金星三打）
 ```
     4   5   6   7   8   9   10
   +---+---+---+---+---+---+---+
@@ -227,7 +219,7 @@ The followings are all of the opening situations (on the Judge System):
 10|   |   |   |   |   |   |   |
   +---+---+---+---+---+---+---+
 ```
-#### 8. 平衡
+### 8. 平衡
 ```
     4   5   6   7   8   9   10
   +---+---+---+---+---+---+---+
@@ -246,7 +238,7 @@ The followings are all of the opening situations (on the Judge System):
 10|   |   |   |   |   |   |   |
   +---+---+---+---+---+---+---+
 ```
-#### 9. 平衡（斜月三打）
+### 9. 平衡（斜月三打）
 ```
     4   5   6   7   8   9   10
   +---+---+---+---+---+---+---+
@@ -265,7 +257,7 @@ The followings are all of the opening situations (on the Judge System):
 10|   |   |   |   |   |   |   |
   +---+---+---+---+---+---+---+
 ```
-#### 10. 平衡
+### 10. 平衡
 ```
     4   5   6   7   8   9   10
   +---+---+---+---+---+---+---+
@@ -284,7 +276,7 @@ The followings are all of the opening situations (on the Judge System):
 10|   |   |   |   |   |   |   |
   +---+---+---+---+---+---+---+
 ```
-#### 11. 平衡（瑞星二打）
+### 11. 平衡（瑞星二打）
 ```
     4   5   6   7   8   9   10
   +---+---+---+---+---+---+---+
@@ -303,7 +295,7 @@ The followings are all of the opening situations (on the Judge System):
 10|   |   |   |   |   |   |   |
   +---+---+---+---+---+---+---+
 ```
-#### 12. 平衡
+### 12. 平衡
 ```
     4   5   6   7   8   9   10
   +---+---+---+---+---+---+---+
@@ -322,7 +314,7 @@ The followings are all of the opening situations (on the Judge System):
 10|   |   |   |   |   |   |   |
   +---+---+---+---+---+---+---+
 ```
-#### 13. 平衡
+### 13. 平衡
 ```
     4   5   6   7   8   9   10
   +---+---+---+---+---+---+---+
@@ -341,7 +333,7 @@ The followings are all of the opening situations (on the Judge System):
 10|   |   |   |   |   |   |   |
   +---+---+---+---+---+---+---+
 ```
-#### 14. 平衡（长星一打）
+### 14. 平衡（长星一打）
 ```
     4   5   6   7   8   9   10
   +---+---+---+---+---+---+---+
@@ -360,7 +352,7 @@ The followings are all of the opening situations (on the Judge System):
 10|   |   |   |   |   |   |   |
   +---+---+---+---+---+---+---+
 ```
-#### 15. 平衡
+### 15. 平衡
 ```
     4   5   6   7   8   9   10
   +---+---+---+---+---+---+---+
@@ -379,7 +371,7 @@ The followings are all of the opening situations (on the Judge System):
 10|   |   |   |   |   |   |   |
   +---+---+---+---+---+---+---+
 ```
-#### 16. 平衡
+### 16. 平衡
 ```
     4   5   6   7   8   9   10
   +---+---+---+---+---+---+---+
@@ -398,7 +390,7 @@ The followings are all of the opening situations (on the Judge System):
 10|   |   |   |   |   |   |   |
   +---+---+---+---+---+---+---+
 ```
-#### 17. 平衡
+### 17. 平衡
 ```
     4   5   6   7   8   9   10
   +---+---+---+---+---+---+---+
@@ -417,7 +409,7 @@ The followings are all of the opening situations (on the Judge System):
 10|   |   |   |   |   |   |   |
   +---+---+---+---+---+---+---+
 ```
-#### 18. 平衡
+### 18. 平衡
 ```
     4   5   6   7   8   9   10
   +---+---+---+---+---+---+---+
@@ -436,7 +428,7 @@ The followings are all of the opening situations (on the Judge System):
 10|   |   |   |   | O |   |   |
   +---+---+---+---+---+---+---+
 ```
-#### 19. 平衡
+### 19. 平衡
 ```
     4   5   6   7   8   9   10
   +---+---+---+---+---+---+---+
@@ -455,7 +447,7 @@ The followings are all of the opening situations (on the Judge System):
 10|   |   |   |   |   |   |   |
   +---+---+---+---+---+---+---+
 ```
-#### 20. 复杂白好
+### 20. 复杂白好
 ```
     4   5   6   7   8   9   10
   +---+---+---+---+---+---+---+
@@ -474,7 +466,7 @@ The followings are all of the opening situations (on the Judge System):
 10|   |   |   |   |   |   |   |
   +---+---+---+---+---+---+---+
 ```
-#### 21. 平衡
+### 21. 平衡
 ```
     4   5   6   7   8   9   10
   +---+---+---+---+---+---+---+
@@ -493,7 +485,7 @@ The followings are all of the opening situations (on the Judge System):
 10|   |   |   |   |   |   |   |
   +---+---+---+---+---+---+---+
 ```
-#### 22. 平衡
+### 22. 平衡
 ```
     4   5   6   7   8   9   10
   +---+---+---+---+---+---+---+
@@ -512,7 +504,7 @@ The followings are all of the opening situations (on the Judge System):
 10|   |   |   |   |   |   |   |
   +---+---+---+---+---+---+---+
 ```
-#### 23. 平衡
+### 23. 平衡
 ```
     4   5   6   7   8   9   10
   +---+---+---+---+---+---+---+
@@ -531,7 +523,7 @@ The followings are all of the opening situations (on the Judge System):
 10|   |   |   |   |   |   |   |
   +---+---+---+---+---+---+---+
 ```
-#### 24. 黑稍好
+### 24. 黑稍好
 ```
     4   5   6   7   8   9   10
   +---+---+---+---+---+---+---+
@@ -550,7 +542,7 @@ The followings are all of the opening situations (on the Judge System):
 10|   |   |   |   |   |   |   |
   +---+---+---+---+---+---+---+
 ```
-#### 25. 平衡
+### 25. 平衡
 ```
     4   5   6   7   8   9   10
   +---+---+---+---+---+---+---+
@@ -569,7 +561,7 @@ The followings are all of the opening situations (on the Judge System):
 10|   |   |   |   |   |   |   |
   +---+---+---+---+---+---+---+
 ```
-#### 26. 平衡
+### 26. 平衡
 ```
     4   5   6   7   8   9   10
   +---+---+---+---+---+---+---+
@@ -589,16 +581,15 @@ The followings are all of the opening situations (on the Judge System):
   +---+---+---+---+---+---+---+
 ```
 
-
 ## Reference
-1. [Gomoku - Wikipedia](https://en.wikipedia.org/wiki/Gomoku)
-2. [五子棋26种开局 - 百度文库](http://wenku.baidu.com/link?url=oDoH2qYWR6MRDVLuwNRnYDlOUN8n0Zg5YuVg5IyFR58v8nI1A0wDMC2ERctDs5Nwmg9cQIXnI33cM7EG_rrafprMe0idLYzYO8hVnPCu_tG)
+1. [Renju Net](http://www.renju.net/)
+2. 索索夫开局指南2019-07-01
 
 ---
 Online Judge System by [GomokuFun](https://github.com/sse2016-gomoku-fun/)
 
 Server by Luke Lazurite, Liu Yihao and Shen zheyu
 
-Manual written by Liu Yihao
+Manual written by Liu Yihao and Sun Yuliang
 
 JI-SSTIA All Right Reverved
